@@ -20,7 +20,26 @@ class AppDb extends _$AppDb {
   AppDb() : super(_openConnection());
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
+
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+    onCreate: (m) async {
+      await m.createAll();
+      await _createIndex();
+    },
+    onUpgrade: (m, from, to) async {
+      if (from < 2) {
+        await _createIndex();
+      }
+    }
+  );
+
+  Future<void> _createIndex() async {
+    customStatement('CREATE INDEX IF NOT EXISTS idx_sires_father_id ON sires(father_id)');
+    customStatement('CREATE INDEX IF NOT EXISTS idx_horses_father_id ON horses(father_id)');
+    customStatement('CREATE INDEX IF NOT EXISTS idx_horses_birth_year ON horses(birth_year)');
+  }
 
   static LazyDatabase _openConnection() {
     return LazyDatabase(() async {
