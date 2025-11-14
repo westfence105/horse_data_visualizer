@@ -10,3 +10,25 @@ class LineageSummary {
     required this.descendantCount,
   });
 }
+
+class LineageAnnualProduction {
+  final String lineageName;
+  final int founderId;
+  final Map<int,int> data;
+  LineageAnnualProduction({
+    required this.lineageName,
+    required this.founderId,
+    required this.data,
+  });
+}
+
+class LineageAnnualSexRatio {
+  final String lineageName;
+  final int founderId;
+  final Map<int,double> data;
+  LineageAnnualSexRatio({
+    required this.lineageName,
+    required this.founderId,
+    required this.data,
+  });
+}

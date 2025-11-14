@@ -4,7 +4,7 @@ import '../db/dao/sires_dao.dart';
 import '../db/dao/mares_dao.dart';
 import '../db/dao/sire_stats_dao.dart';
 import '../entity/horse_status_distribution.dart';
-import '../entity/lineage_annual_sex_ratio.dart';
+import '../entity/lineage_summary.dart';
 
 class HorsesRepository {
   static final _db = AppDb();
@@ -84,6 +84,10 @@ class HorsesRepository {
 
   static Future<HorseStatusDistribution?> fetchHorseStatusDistribution(int founderId, String key) {
     return _sireStatsDao.fetchHorseStatusDistribution(founderId, key);
+  }
+
+  static Future<LineageAnnualProduction?> fetchLineageAnnualProduction(int founderId) {
+    return _sireStatsDao.fetchLineageAnnualProduction(founderId);
   }
 
   static Future<LineageAnnualSexRatio?> fetchLineageAnnualSexRatio(int founderId) {

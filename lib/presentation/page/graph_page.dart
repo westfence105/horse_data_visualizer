@@ -49,6 +49,7 @@ class _GraphPageState extends State<GraphPage> {
       _GraphDefinition('馬場',   () => _fetchDistribution('surface')),
       _GraphDefinition('距離',   () => _fetchDistribution('distance')),
       _GraphDefinition('評価',   () => _fetchDistribution('rating')),
+      _GraphDefinition('年度別生産数', () => _fetchAnnualProduction()),
       _GraphDefinition('年度別性別比', () => _fetchAnnualSexRatio()),
     ];
   }
@@ -102,6 +103,17 @@ class _GraphPageState extends State<GraphPage> {
             _meters = ['短距離','マイル','中距離','クラシック','長距離'].asMap();
           }
           _chartType = _ChartType.bar;
+        });
+      });
+    }
+  }
+
+  void _fetchAnnualProduction() {
+    if (_selectedLineage != null) {
+      HorsesRepository.fetchLineageAnnualProduction(_selectedLineage!).then((value) {
+        setState(() {
+          _spots = value?.data.map((k, v) => MapEntry(k, v.toDouble()));
+          _chartType = _ChartType.line;
         });
       });
     }
@@ -173,7 +185,36 @@ class _GraphPageState extends State<GraphPage> {
         ),
         const VerticalDivider(),
         Expanded(
-          child: _buildChart(context),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Builder(
+                builder: (ctx) {
+                  LineageSummary? lineage;
+                  if (_selectedLineage != null) {
+                    for (final l in _lineages) {
+                      if (l.founderId == _selectedLineage) {
+                        lineage = l;
+                        break;
+                      }
+                    }
+                  }
+                  if (lineage != null) {
+                    return Container(
+                      padding: EdgeInsets.symmetric(vertical: 16, horizontal: 48),
+                      child: Text('${lineage.lineageName}系  種牡馬:${lineage.sireCount}頭  産駒:${lineage.descendantCount}頭'),
+                    );
+                  }
+                  else {
+                    return SizedBox.shrink();
+                  }
+                },
+              ),
+              Expanded(
+                child: _buildChart(context),
+              ),
+            ],
+          ),
         ),
       ],
     ),
@@ -185,6 +226,7 @@ class _GraphPageState extends State<GraphPage> {
     }
     double? maxX = _meters?.keys.reduce(max).toDouble();
     double? maxY;
+    double? minY;
     if (_spots != null) {
       for (final s in _spots!.entries) {
         if (maxX == null || maxX < s.key) maxX = s.key.toDouble();
@@ -193,7 +235,13 @@ class _GraphPageState extends State<GraphPage> {
     }
     double intervalY = 1;
     if (maxY != null) {
-      if (maxY > 80) {
+      if (maxY > 300) {
+        intervalY = 100;
+      }
+      else if (maxY > 200) {
+        intervalY = 50;
+      }
+      else if (maxY > 80) {
         intervalY = 10;
       }
       else if (maxY > 10) {
@@ -201,26 +249,54 @@ class _GraphPageState extends State<GraphPage> {
       }
       maxY = ((maxY + 1) / intervalY).ceil() * intervalY;
     }
+    if (_selectedGraph == 10) {
+      minY = -1.5;
+      maxY =  1.5;
+      intervalY = 10;
+    }
 
     switch (_chartType!) {
-      case _ChartType.line: {
+      case _ChartType.line:
         return Padding(
           padding: EdgeInsets.all(24),
           child: LineChart(
             LineChartData(
               minX: (_spots?.keys.reduce(min).toDouble() ?? 0) - 0.5,
               maxX: (_spots?.keys.reduce(max).toDouble() ?? 0) + 0.5,
-              minY:  1.25,
-              maxY: -1.25,
+              minY: (minY ?? 0) - 0.1 * intervalY,
+              maxY: (maxY ?? 1) + 0.1 * intervalY,
               lineBarsData: [
                 LineChartBarData(
-                  spots: _spots?.entries.map((e) {
-                    return FlSpot(e.key.toDouble(), e.value);
-                  }).toList(growable: false) ?? const [],
+                  spots: (_spots?.entries.toList()?..sort((a, b) => a.key - b.key))
+                    ?.map((e) {
+                      return FlSpot(e.key.toDouble(), e.value);
+                    }).toList(growable: false) ?? const [],
+                  dotData: FlDotData(
+                    getDotPainter: (spot, percent, barData, index) => FlDotCirclePainter(
+                      color: Colors.lightBlue,
+                      radius: 3,
+                    ),
+                  ),
                 ),
               ],
               titlesData: FlTitlesData(
-                leftTitles: AxisTitles(),
+                leftTitles: _selectedGraph == 10 ? AxisTitles() :
+                  AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      reservedSize: 32,
+                      interval: intervalY,
+                      getTitlesWidget: (value, meta) {
+                        final d = value / intervalY;
+                        if ((d - d.round()).abs() < 0.05) {
+                          return Text(value.round().toString());
+                        }
+                        else {
+                          return SizedBox.shrink();
+                        }
+                      },
+                    )
+                  ),
                 bottomTitles: AxisTitles(
                   sideTitles: SideTitles(
                     showTitles: true,
@@ -240,19 +316,20 @@ class _GraphPageState extends State<GraphPage> {
                 topTitles: AxisTitles(),
               ),
               gridData: FlGridData(
-                horizontalInterval: 0.1,
+                horizontalInterval: intervalY,
+                drawVerticalLine: false,
               ),
               borderData: FlBorderData(
                 show: false,
-              )
+              ),
             ),
           ),
         );
-      }
       case _ChartType.bar:
         return BarChart(
           BarChartData(
-            maxY: maxY,
+            minY: (minY ?? 0),
+            maxY: (maxY ?? 1) + 0.1 * intervalY,
             barGroups: [
               for (int i = 0; i <= (maxX ?? 0); ++i)
                 BarChartGroupData(

@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:drift/drift.dart';
 import '../app_database.dart';
 import '../tables.dart';
@@ -5,7 +7,6 @@ import '../../entity/sire_stats.dart';
 import '../../entity/sire_summary.dart';
 import '../../entity/lineage_summary.dart';
 import '../../entity/horse_status_distribution.dart';
-import '../../entity/lineage_annual_sex_ratio.dart';
 
 part 'sire_stats_dao.g.dart';
 
@@ -133,7 +134,7 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
       SELECT 
         l.lineage_name,
         l.founder_id,
-        COUNT(l.id)  AS sire_count,
+        COUNT(DISTINCT l.id) AS sire_count,
         COUNT(h.sex) AS descendant_count,
         l.direct_sire_count,
         l.direct_horse_count
@@ -233,6 +234,47 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
     }
   }
 
+  Future<LineageAnnualProduction?> fetchLineageAnnualProduction(int founderId) async {
+    final rows = await customSelect(
+      '''
+      $_withRecursiveLineage
+      SELECT
+        l.lineage_name,
+        birth_year,
+        COUNT(*) AS count
+      FROM horses
+      INNER JOIN lineage l ON l.id = father_id
+      GROUP BY l.lineage_name, birth_year
+      ORDER BY birth_year
+      ''',
+      variables: [Variable(founderId)],
+    ).get();
+
+    String? lineageName;
+    final data = <int,int>{};
+    for (final r in rows) {
+      lineageName = r.read('lineage_name');
+      int birthYear = r.read('birth_year');
+      int count = r.read('count');
+      data[birthYear] = count;
+    }
+    if (lineageName != null) {
+      final yearMin = data.keys.reduce(min);
+      final yearMax = data.keys.reduce(max);
+      for (int i = yearMin; i < yearMax; ++i) {
+        data[i] ??= 0;
+      }
+      return LineageAnnualProduction(
+        lineageName: lineageName,
+        founderId: founderId,
+        data: data,
+      );
+    }
+    else {
+      return null;
+    }
+  }
+
   Future<LineageAnnualSexRatio?> fetchLineageAnnualSexRatio(int founderId) async {
     final rows = await customSelect(
       '''
@@ -258,6 +300,11 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
       data[birthYear] = ratio;
     }
     if (lineageName != null) {
+      final yearMin = data.keys.reduce(min);
+      final yearMax = data.keys.reduce(max);
+      for (int i = yearMin; i < yearMax; ++i) {
+        data[i] ??= 0;
+      }
       return LineageAnnualSexRatio(
         lineageName: lineageName,
         founderId: founderId,
