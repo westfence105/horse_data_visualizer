@@ -2,12 +2,16 @@ import '../db/app_database.dart';
 import '../db/dao/horses_dao.dart';
 import '../db/dao/sires_dao.dart';
 import '../db/dao/mares_dao.dart';
+import '../db/dao/sire_stats_dao.dart';
+import '../entity/horse_status_distribution.dart';
+import '../entity/lineage_annual_sex_ratio.dart';
 
 class HorsesRepository {
   static final _db = AppDb();
   static final _horsesDao = HorsesDao(_db);
   static final _siresDao = SiresDao(_db);
   static final _maresDao = MaresDao(_db);
+  static final _sireStatsDao = SireStatsDao(_db);
 
   static Future<void> importFromMap(List<Map<String,String>> rawData) async {
     final data = <Horse>[];
@@ -76,5 +80,13 @@ class HorsesRepository {
     };
     final str = s.trim();
     return (str.isNotEmpty) ? dict[str] : null;
+  }
+
+  static Future<HorseStatusDistribution?> fetchHorseStatusDistribution(int founderId, String key) {
+    return _sireStatsDao.fetchHorseStatusDistribution(founderId, key);
+  }
+
+  static Future<LineageAnnualSexRatio?> fetchLineageAnnualSexRatio(int founderId) {
+    return _sireStatsDao.fetchLineageAnnualSexRatio(founderId);
   }
 }

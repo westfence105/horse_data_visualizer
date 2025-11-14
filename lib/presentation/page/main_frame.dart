@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'top_page.dart';
 import 'sires_page.dart';
 import 'stats_page.dart';
+import 'graph_page.dart';
 
 class MainFrame extends StatefulWidget {
   const MainFrame({super.key});
@@ -18,6 +19,7 @@ class _MainFrameState extends State<MainFrame> {
     const TopPage(),
     const SiresPage(),
     const StatsPage(),
+    const GraphPage(),
   ];
 
   @override
@@ -26,23 +28,31 @@ class _MainFrameState extends State<MainFrame> {
       title: const Text('Horse Data Visualizer'),
     ),
     body: _childPages[_currentIndex],
-    bottomNavigationBar: BottomNavigationBar(
-      currentIndex: _currentIndex,
-      items: const <BottomNavigationBarItem>[
-        BottomNavigationBarItem(
-          label: 'ホーム',
-          icon: Icon(Icons.home),
-        ),
-        BottomNavigationBarItem(
-          label: '種牡馬',
-          icon: Icon(Icons.list),
-        ),
-        BottomNavigationBarItem(
-          label: '集計',
-          icon: Icon(Icons.table_chart),
-        ),
-      ],
-      onTap: (i) => setState(() => _currentIndex = i),
+    bottomNavigationBar: SizedBox(
+      height: 60,
+      child: BottomNavigationBar(
+        type: BottomNavigationBarType.fixed,
+        currentIndex: _currentIndex,
+        items: const <BottomNavigationBarItem>[
+          BottomNavigationBarItem(
+            label: 'ホーム',
+            icon: Icon(Icons.home),
+          ),
+          BottomNavigationBarItem(
+            label: '種牡馬',
+            icon: Icon(Icons.list),
+          ),
+          BottomNavigationBarItem(
+            label: '集計',
+            icon: Icon(Icons.table_chart),
+          ),
+          BottomNavigationBarItem(
+            label: 'グラフ',
+            icon: Icon(Icons.bar_chart),
+          ),
+        ],
+        onTap: (i) => setState(() => _currentIndex = i),
+      ),
     ),
   );
 }

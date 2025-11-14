@@ -5,6 +5,7 @@ import '../db/dao/sires_dao.dart';
 import '../db/dao/sire_stats_dao.dart';
 import '../entity/sire_raw.dart';
 import '../entity/sire_summary.dart';
+import '../entity/lineage_summary.dart';
 
 class SiresRepository {
   static final _db = AppDb();
@@ -22,15 +23,19 @@ class SiresRepository {
     }
   }
 
-  static Future<List<SireSummary>> getAllSireSummaries() {
-    return _siresDao.fetchAllSummaries();
-  }
-
   static Future<void> updateSires(Iterable<SireRaw> rawData) {
     return _siresDao.upsertList(rawData);
   }
 
-  static Future<List<SireStats>> getAllSireStats() {
+  static Future<List<SireSummary>> fetchAllSireSummaries() {
+    return _siresDao.fetchAllSummaries();
+  }
+
+  static Future<List<LineageSummary>> fetchAllLineageSummaries() {
+    return _sireStatsDao.fetchAllLineageSummaries();
+  }
+
+  static Future<List<SireStats>> fetchAllSireStats() {
     return _sireStatsDao.fetchAllSireStats();
   }
 }

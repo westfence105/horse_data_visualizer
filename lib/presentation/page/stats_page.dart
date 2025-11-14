@@ -24,12 +24,12 @@ class _StatsPageState extends State<StatsPage> {
 
   int _sortColumn = 2;
   bool _sortAscending = false;
-  static const notSortable = <int>[4,11];
+  static const notSortable = <int>[4,6];
 
   @override
   void initState() {
     super.initState();
-    SiresRepository.getAllSireStats().then((value) => setState(() => _stats = value));
+    SiresRepository.fetchAllSireStats().then((value) => setState(() => _stats = value));
     _headerScrollController.addListener(() {
       if (_headerScrollController.offset != _bodyScrollController.offset) {
         _bodyScrollController.jumpTo(_headerScrollController.offset);
@@ -55,14 +55,14 @@ class _StatsPageState extends State<StatsPage> {
       _ColumnInfo('幼駒数', (s) => s.foalCount),
       _ColumnInfo('所有率', (s) => s.ownRate),
       _ColumnInfo('性別比', (s) => s.sex),
+      _ColumnInfo('成長型', (s) => s.growth),
+      _ColumnInfo('馬場',   (s) => s.surface),
+      _ColumnInfo('距離',   (s) => s.distance),
       _ColumnInfo('秘書',   (s) => s.rating01),
       _ColumnInfo('牧場長', (s) => s.rating02),
       _ColumnInfo('河童木', (s) => s.rating03),
       _ColumnInfo('長峰',   (s) => s.rating04),
       _ColumnInfo('美香',   (s) => s.rating05),
-      _ColumnInfo('成長型', (s) => s.growth),
-      _ColumnInfo('馬場',   (s) => s.surface),
-      _ColumnInfo('距離',   (s) => s.distance),
       _ColumnInfo('評価',   (s) => s.rating),
     ];
     if (_stats.isNotEmpty) {
@@ -106,7 +106,7 @@ class _StatsPageState extends State<StatsPage> {
         Row(
           children: [
             DataTable(
-              columns: [DataColumn(label: Text(''), columnWidth: FixedColumnWidth(300))],
+              columns: [DataColumn(label: Text(''), columnWidth: FixedColumnWidth(180))],
               rows: const [],
               dataRowMaxHeight: 0,
             ),
@@ -132,7 +132,7 @@ class _StatsPageState extends State<StatsPage> {
             child: Row(
               children: [
                 DataTable(
-                  columns: [DataColumn(label: Text(''), columnWidth: FixedColumnWidth(300))],
+                  columns: [DataColumn(label: Text(''), columnWidth: FixedColumnWidth(180))],
                   rows: _stats.map(
                     (e) => DataRow(cells: [DataCell(Text(e.name))])
                   ).toList(),
@@ -243,14 +243,14 @@ class _StatsPageState extends State<StatsPage> {
             _buildDataCell(e.foalCount.toString()),
             _buildNumericCell(e.ownRate, 1.0),
             _buildDataCell(_padForSign(e.sex)),
+            _buildNumericCell(e.growth,   3),
+            _buildDataCell(_padForSign(e.surface), (e.surface != null ? _cellStyle( e.surface! /2 + 0.5) : null)),
+            _buildNumericCell(e.distance, 4, (d) => '${(d * 400 + 1200).round()}m'),
             _buildNumericCell(e.rating01, 4),
             _buildNumericCell(e.rating02, 4),
             _buildNumericCell(e.rating03, 4),
             _buildNumericCell(e.rating04, 4),
             _buildNumericCell(e.rating05, 4),
-            _buildNumericCell(e.growth,   3),
-            _buildDataCell(_padForSign(e.surface), (e.surface != null ? _cellStyle( e.surface! /2 + 0.5) : null)),
-            _buildNumericCell(e.distance, 4, (d) => '${(d * 400 + 1200).round()}m'),
             _buildNumericCell(e.rating, 4),
             DataCell(SizedBox.shrink()),
           ])

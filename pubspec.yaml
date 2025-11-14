@@ -41,6 +41,7 @@ dependencies:
   path: ^1.9.1
   file_selector: ^1.0.4
   file_selector_windows: ^0.9.3+4
+  fl_chart: ^1.1.1
 
 dev_dependencies:
   flutter_test:

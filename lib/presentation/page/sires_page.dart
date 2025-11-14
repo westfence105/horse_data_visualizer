@@ -17,7 +17,7 @@ class _SiresPageState extends State<SiresPage> {
   final _changedFathers = <String,String>{};
 
   void _fetch() {
-    SiresRepository.getAllSireSummaries()
+    SiresRepository.fetchAllSireSummaries()
       .then((result) => setState(
         () => _summaries = result..sort(_compareSires)
       ));
