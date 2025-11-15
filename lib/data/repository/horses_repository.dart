@@ -7,11 +7,11 @@ import '../entity/horse_status_distribution.dart';
 import '../entity/lineage_summary.dart';
 
 class HorsesRepository {
-  static final _db = AppDb();
-  static final _horsesDao = HorsesDao(_db);
-  static final _siresDao = SiresDao(_db);
-  static final _maresDao = MaresDao(_db);
-  static final _sireStatsDao = SireStatsDao(_db);
+  static AppDb get db => AppDb.instance;
+  static final _horsesDao = HorsesDao(db);
+  static final _siresDao = SiresDao(db);
+  static final _maresDao = MaresDao(db);
+  static final _sireStatsDao = SireStatsDao(db);
 
   static Future<void> importFromMap(List<Map<String,String>> rawData) async {
     final data = <Horse>[];
@@ -82,15 +82,27 @@ class HorsesRepository {
     return (str.isNotEmpty) ? dict[str] : null;
   }
 
-  static Future<HorseStatusDistribution?> fetchHorseStatusDistribution(int founderId, String key) {
-    return _sireStatsDao.fetchHorseStatusDistribution(founderId, key);
+  static Future<int?> getFirstProductionYear() {
+    return _horsesDao.getFirstProductionYear();
   }
 
-  static Future<LineageAnnualProduction?> fetchLineageAnnualProduction(int founderId) {
-    return _sireStatsDao.fetchLineageAnnualProduction(founderId);
+  static Future<int?> getLatestProductionYear() {
+    return _horsesDao.getLatestProductionYear();
   }
 
-  static Future<LineageAnnualSexRatio?> fetchLineageAnnualSexRatio(int founderId) {
-    return _sireStatsDao.fetchLineageAnnualSexRatio(founderId);
+  static Future<int?> getLatestDebutGeneration() {
+    return _horsesDao.getLatestDebutGeneration();
+  }
+
+  static Future<HorseStatusDistribution?> fetchHorseStatusDistribution(int founderId, String key, [int? beginYear, int? endYear]) {
+    return _sireStatsDao.fetchHorseStatusDistribution(founderId, key, beginYear, endYear);
+  }
+
+  static Future<LineageAnnualProduction?> fetchLineageAnnualProduction(int founderId, [int? beginYear, int? endYear]) {
+    return _sireStatsDao.fetchLineageAnnualProduction(founderId, beginYear, endYear);
+  }
+
+  static Future<LineageAnnualSexRatio?> fetchLineageAnnualSexRatio(int founderId, [int? beginYear, int? endYear]) {
+    return _sireStatsDao.fetchLineageAnnualSexRatio(founderId, beginYear, endYear);
   }
 }

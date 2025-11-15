@@ -17,7 +17,9 @@ part 'app_database.g.dart';
   daos: [SiresDao, MaresDao, HorsesDao, SireStatsDao],
 )
 class AppDb extends _$AppDb {
-  AppDb() : super(_openConnection());
+  static final AppDb instance = AppDb._instance();
+
+  AppDb._instance() : super(_openConnection());
 
   @override
   int get schemaVersion => 2;

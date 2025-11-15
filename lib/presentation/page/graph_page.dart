@@ -7,6 +7,7 @@ import 'package:fl_chart/fl_chart.dart';
 import '../../data/entity/lineage_summary.dart';
 import '../../data/repository/horses_repository.dart';
 import '../../data/repository/sires_repository.dart';
+import '../widget/period_widget.dart';
 
 class GraphPage extends StatefulWidget {
   const GraphPage({ super.key });
@@ -34,22 +35,27 @@ class _GraphPageState extends State<GraphPage> {
   late final List<_GraphDefinition> _graphDefinitions;
   int? _selectedGraph;
 
+  int _minYear = 1971;
+  int? _beginYear;
+  int? _endYear;
+
   Map<int, double>? _spots;
   Map<int, String>? _meters;
   _ChartType? _chartType;
 
   _GraphPageState() {
     _graphDefinitions = <_GraphDefinition>[
-      _GraphDefinition('秘書',   () => _fetchDistribution('rating01')),
-      _GraphDefinition('牧場長', () => _fetchDistribution('rating02')),
-      _GraphDefinition('河童木', () => _fetchDistribution('rating03')),
-      _GraphDefinition('長峰',   () => _fetchDistribution('rating04')),
-      _GraphDefinition('美香',   () => _fetchDistribution('rating05')),
+      _GraphDefinition('年度別生産数', () => _fetchAnnualProduction()),
+      _GraphDefinition('性別',   () => _fetchDistribution('sex')),
       _GraphDefinition('成長型', () => _fetchDistribution('growth')),
       _GraphDefinition('馬場',   () => _fetchDistribution('surface')),
       _GraphDefinition('距離',   () => _fetchDistribution('distance')),
       _GraphDefinition('評価',   () => _fetchDistribution('rating')),
-      _GraphDefinition('年度別生産数', () => _fetchAnnualProduction()),
+      // _GraphDefinition('秘書',   () => _fetchDistribution('rating01')),
+      // _GraphDefinition('牧場長', () => _fetchDistribution('rating02')),
+      _GraphDefinition('河童木', () => _fetchDistribution('rating03')),
+      // _GraphDefinition('長峰',   () => _fetchDistribution('rating04')),
+      _GraphDefinition('美香',   () => _fetchDistribution('rating05')),
       _GraphDefinition('年度別性別比', () => _fetchAnnualSexRatio()),
     ];
   }
@@ -58,7 +64,20 @@ class _GraphPageState extends State<GraphPage> {
   void initState() {
     super.initState();
 
-    SiresRepository.fetchAllLineageSummaries().then((value) => setState(() {
+    HorsesRepository.getFirstProductionYear().then(
+      (value) => setState(() {
+        _beginYear = value;
+        if (value != null) {
+          _minYear = value;
+        }
+      }));
+    HorsesRepository.getLatestProductionYear().then(
+      (value) => setState(() => _endYear = value));
+    _fetchSummaries();
+  }
+
+  void _fetchSummaries() {
+    SiresRepository.fetchAllLineageSummaries(_beginYear, _endYear).then((value) => setState(() {
       _lineages = value;
     }));
   }
@@ -75,9 +94,9 @@ class _GraphPageState extends State<GraphPage> {
 
   void _fetchDistribution(String key) {
     if (_selectedLineage != null) {
-      HorsesRepository.fetchHorseStatusDistribution(_selectedLineage!, key).then((value) {
+      HorsesRepository.fetchHorseStatusDistribution(_selectedLineage!, key, _beginYear, _endYear).then((value) {
         setState(() {
-          if (key == 'growth' || key == 'distance') {
+          if (const {'growth','distance'}.contains(key)) {
             _spots = value?.counts.map((k, v) => MapEntry<int,double>(k, v.toDouble()));
           }
           else if (key == 'surface') {
@@ -85,6 +104,12 @@ class _GraphPageState extends State<GraphPage> {
               0: value?.counts[ 1]?.toDouble() ?? 0,
               1: value?.counts[-1]?.toDouble() ?? 0,
               2: value?.counts[ 0]?.toDouble() ?? 0,
+            };
+          }
+          else if (key == 'sex') {
+            _spots = {
+              0: value?.counts[ 1]?.toDouble() ?? 0,
+              1: value?.counts[-1]?.toDouble() ?? 0,
             };
           }
           else {
@@ -99,6 +124,9 @@ class _GraphPageState extends State<GraphPage> {
           else if (key == 'surface') {
             _meters = ['芝','ダート','万能'].asMap();
           }
+          else if (key == 'sex') {
+            _meters = ['牡','牝'].asMap();
+          }
           else if (key == 'distance') {
             _meters = ['短距離','マイル','中距離','クラシック','長距離'].asMap();
           }
@@ -110,7 +138,7 @@ class _GraphPageState extends State<GraphPage> {
 
   void _fetchAnnualProduction() {
     if (_selectedLineage != null) {
-      HorsesRepository.fetchLineageAnnualProduction(_selectedLineage!).then((value) {
+      HorsesRepository.fetchLineageAnnualProduction(_selectedLineage!, _beginYear, _endYear).then((value) {
         setState(() {
           _spots = value?.data.map((k, v) => MapEntry(k, v.toDouble()));
           _chartType = _ChartType.line;
@@ -121,7 +149,7 @@ class _GraphPageState extends State<GraphPage> {
 
   void _fetchAnnualSexRatio() {
     if (_selectedLineage != null) {
-      HorsesRepository.fetchLineageAnnualSexRatio(_selectedLineage!).then((value) {
+      HorsesRepository.fetchLineageAnnualSexRatio(_selectedLineage!, _beginYear, _endYear).then((value) {
         setState(() {
           _spots = value?.data;
           _chartType = _ChartType.line;
@@ -133,85 +161,118 @@ class _GraphPageState extends State<GraphPage> {
   @override
   Widget build(BuildContext context) => Padding(
     padding: EdgeInsets.all(8),
-    child: Row(
+    child: Column(
       children: [
-        ConstrainedBox(
-          constraints: BoxConstraints(
-            maxWidth: 180,
-          ),
-          child: ListView.builder(
-            shrinkWrap: true,
-            itemCount: _lineages.length,
-            itemBuilder: (ctx, i) {
-              final lineage = _lineages[i];
-              final selected = _selectedLineage == lineage.founderId;
-              return ListTile(
-                title: Text(lineage.lineageName),
-                selected: selected,
-                selectedColor: Colors.blueAccent,
-                onTap: () {
-                  setState(() {
-                    _selectedLineage = lineage.founderId;
-                    _onSelect();
-                  });
-                },
-              );
-            },
-          ),
-        ),
-        const VerticalDivider(),
-        ConstrainedBox(
-          constraints: BoxConstraints(
-            maxWidth: 180,
-          ),
-          child: ListView.builder(
-            shrinkWrap: true,
-            itemCount: _graphDefinitions.length,
-            itemBuilder: (ctx, i) {
-              final selected = _selectedGraph == i;
-              return ListTile(
-                title: Text(_graphDefinitions[i].label),
-                selected: selected,
-                selectedColor: Colors.blueAccent,
-                onTap: () {
-                  setState(() {
-                    _selectedGraph = i;
-                    _onSelect();
-                  });
-                },
-              );
-            },
-          ),
-        ),
-        const VerticalDivider(),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+        Padding(
+          padding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              Builder(
-                builder: (ctx) {
-                  LineageSummary? lineage;
-                  if (_selectedLineage != null) {
-                    for (final l in _lineages) {
-                      if (l.founderId == _selectedLineage) {
-                        lineage = l;
-                        break;
-                      }
-                    }
-                  }
-                  if (lineage != null) {
-                    return Container(
-                      padding: EdgeInsets.symmetric(vertical: 16, horizontal: 48),
-                      child: Text('${lineage.lineageName}系  種牡馬:${lineage.sireCount}頭  産駒:${lineage.descendantCount}頭'),
-                    );
-                  }
-                  else {
-                    return SizedBox.shrink();
-                  }
+              PeriodWidget(
+                begin: _beginYear ?? 1971,
+                end: _endYear ?? 2100,
+                min: _minYear,
+                max: 2100,
+                onChanged: (begin, end) {
+                  setState(() {
+                    _beginYear = begin;
+                    _endYear = end;
+                    _fetchSummaries();
+                    _onSelect();
+                  });
                 },
               ),
+            ],
+          ),
+        ),
+        Expanded(
+          child: Row(
+            children: [
+              ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxWidth: 180,
+                ),
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: _lineages.length,
+                  itemBuilder: (ctx, i) {
+                    final lineage = _lineages[i];
+                    final selected = _selectedLineage == lineage.founderId;
+                    return ListTile(
+                      title: Text(lineage.lineageName),
+                      selected: selected,
+                      selectedColor: Colors.blueAccent,
+                      onTap: () {
+                        setState(() {
+                          _selectedLineage = lineage.founderId;
+                          _selectedGraph ??= 0;
+                          _onSelect();
+                        });
+                      },
+                    );
+                  },
+                ),
+              ),
+              const VerticalDivider(),
+              ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxWidth: 180,
+                ),
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: _graphDefinitions.length,
+                  itemBuilder: (ctx, i) {
+                    final selected = _selectedGraph == i;
+                    return ListTile(
+                      title: Text(_graphDefinitions[i].label),
+                      selected: selected,
+                      selectedColor: Colors.blueAccent,
+                      onTap: () {
+                        setState(() {
+                          _selectedGraph = i;
+                          _onSelect();
+                        });
+                      },
+                    );
+                  },
+                ),
+              ),
+              const VerticalDivider(),
               Expanded(
-                child: _buildChart(context),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Builder(
+                      builder: (ctx) {
+                        LineageSummary? lineage;
+                        if (_selectedLineage != null) {
+                          for (final l in _lineages) {
+                            if (l.founderId == _selectedLineage) {
+                              lineage = l;
+                              break;
+                            }
+                          }
+                        }
+                        if (lineage != null) {
+                          return Container(
+                            padding: EdgeInsets.symmetric(vertical: 16, horizontal: 48),
+                            child: Text([
+                              '${lineage.lineageName}系',
+                              '種牡馬:${lineage.sireCount}頭',
+                              '産駒:${lineage.descendantCount}頭',
+                            ].join('   ')),
+                          );
+                        }
+                        else {
+                          return SizedBox.shrink();
+                        }
+                      },
+                    ),
+                    Expanded(
+                      child: _buildChart(context),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
@@ -225,46 +286,70 @@ class _GraphPageState extends State<GraphPage> {
       return SizedBox.shrink();
     }
     double? maxX = _meters?.keys.reduce(max).toDouble();
+    double? minX;
     double? maxY;
     double? minY;
     if (_spots != null) {
       for (final s in _spots!.entries) {
         if (maxX == null || maxX < s.key) maxX = s.key.toDouble();
+        if (minX == null || minX > s.key) minX = s.key.toDouble();
         if (maxY == null || maxY < s.value) maxY = s.value;
+        if (minY == null || minY > s.value) minY = s.value;
       }
     }
     double intervalY = 1;
     if (maxY != null) {
-      if (maxY > 300) {
+      if (minY == null || minY > 0) {
+        minY = 0;
+      }
+      double range = maxY - minY;
+      if (range > 300) {
         intervalY = 100;
       }
-      else if (maxY > 200) {
+      else if (range > 200) {
         intervalY = 50;
       }
-      else if (maxY > 80) {
+      else if (range > 80) {
         intervalY = 10;
       }
-      else if (maxY > 10) {
+      else if (range > 10) {
         intervalY = 5;
       }
-      maxY = ((maxY + 1) / intervalY).ceil() * intervalY;
-    }
-    if (_selectedGraph == 10) {
-      minY = -1.5;
-      maxY =  1.5;
-      intervalY = 10;
+      if (minY < 0) {
+        maxY = (maxY / intervalY).ceil()  * intervalY;
+        minY = (minY / intervalY).floor() * intervalY - 0.2 * intervalY;
+      }
+      else {
+        maxY = ((maxY + 1) / intervalY).ceil() * intervalY;
+      }
     }
 
     switch (_chartType!) {
-      case _ChartType.line:
+      case _ChartType.line: {
+        double intervalX = 1;
+        if (maxX != null && minX != null) {
+          double range = maxX - minX;
+          if (range > 300) {
+            intervalX = 100;
+          }
+          else if (range > 200) {
+            intervalX = 50;
+          }
+          else if (range > 80) {
+            intervalX = 10;
+          }
+          else if (range > 10) {
+            intervalX = 5;
+          }
+        }
         return Padding(
-          padding: EdgeInsets.all(24),
+          padding: EdgeInsets.fromLTRB(24, 0, 24, 24),
           child: LineChart(
             LineChartData(
               minX: (_spots?.keys.reduce(min).toDouble() ?? 0) - 0.5,
               maxX: (_spots?.keys.reduce(max).toDouble() ?? 0) + 0.5,
-              minY: (minY ?? 0) - 0.1 * intervalY,
-              maxY: (maxY ?? 1) + 0.1 * intervalY,
+              minY: (minY ?? 0),
+              maxY: (maxY ?? 1) + 0.2 * intervalY,
               lineBarsData: [
                 LineChartBarData(
                   spots: (_spots?.entries.toList()?..sort((a, b) => a.key - b.key))
@@ -280,29 +365,28 @@ class _GraphPageState extends State<GraphPage> {
                 ),
               ],
               titlesData: FlTitlesData(
-                leftTitles: _selectedGraph == 10 ? AxisTitles() :
-                  AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      reservedSize: 32,
-                      interval: intervalY,
-                      getTitlesWidget: (value, meta) {
-                        final d = value / intervalY;
-                        if ((d - d.round()).abs() < 0.05) {
-                          return Text(value.round().toString());
-                        }
-                        else {
-                          return SizedBox.shrink();
-                        }
-                      },
-                    )
-                  ),
+                leftTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    reservedSize: 32,
+                    interval: intervalY,
+                    getTitlesWidget: (value, meta) {
+                      final d = value / intervalY;
+                      if ((d - d.round()).abs() < 0.05) {
+                        return Text(value.round().toString());
+                      }
+                      else {
+                        return SizedBox.shrink();
+                      }
+                    },
+                  )
+                ),
                 bottomTitles: AxisTitles(
                   sideTitles: SideTitles(
                     showTitles: true,
-                    interval: 5,
+                    interval: intervalX,
                     getTitlesWidget: (value, meta) {
-                      final d = value / 5;
+                      final d = value / intervalX;
                       if ((d - d.round()).abs() < 0.1) {
                         return Text(value.round().toString());
                       }
@@ -319,19 +403,18 @@ class _GraphPageState extends State<GraphPage> {
                 horizontalInterval: intervalY,
                 drawVerticalLine: false,
               ),
-              borderData: FlBorderData(
-                show: false,
-              ),
             ),
+            duration: Duration.zero,
           ),
         );
+      }
       case _ChartType.bar:
         return BarChart(
           BarChartData(
             minY: (minY ?? 0),
             maxY: (maxY ?? 1) + 0.1 * intervalY,
             barGroups: [
-              for (int i = 0; i <= (maxX ?? 0); ++i)
+              for (int i = 0; i <= (maxX?.ceil() ?? 0); ++i)
                 BarChartGroupData(
                   x: i,
                   barRods: [
@@ -395,6 +478,7 @@ class _GraphPageState extends State<GraphPage> {
               drawVerticalLine: false,
             ),
           ),
+          duration: Duration.zero,
         );
     }
   }

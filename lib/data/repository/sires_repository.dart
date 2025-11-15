@@ -8,9 +8,9 @@ import '../entity/sire_summary.dart';
 import '../entity/lineage_summary.dart';
 
 class SiresRepository {
-  static final _db = AppDb();
-  static final _siresDao = SiresDao(_db);
-  static final _sireStatsDao = SireStatsDao(_db);
+  static AppDb get db => AppDb.instance;
+  static final _siresDao = SiresDao(db);
+  static final _sireStatsDao = SireStatsDao(db);
 
   static Future<void> importFromMap(List<Map<String,String>> rawData) async {
     final data = rawData
@@ -31,11 +31,11 @@ class SiresRepository {
     return _siresDao.fetchAllSummaries();
   }
 
-  static Future<List<LineageSummary>> fetchAllLineageSummaries() {
-    return _sireStatsDao.fetchAllLineageSummaries();
+  static Future<List<LineageSummary>> fetchAllLineageSummaries([int? beginYear, int? endYear]) {
+    return _sireStatsDao.fetchAllLineageSummaries(beginYear, endYear);
   }
 
-  static Future<List<SireStats>> fetchAllSireStats() {
-    return _sireStatsDao.fetchAllSireStats();
+  static Future<List<SireStats>> fetchAllSireStats([int? beginYear, int? endYear]) {
+    return _sireStatsDao.fetchAllSireStats(beginYear, endYear);
   }
 }

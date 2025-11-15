@@ -43,4 +43,24 @@ class HorsesDao extends DatabaseAccessor<AppDb> with _$HorsesDaoMixin {
       mode: InsertMode.insertOrReplace,
     );
   }
+
+  Future<int?> getFirstProductionYear() async {
+    final q = selectOnly(horses)..addColumns([horses.birthYear.min()]);
+    final r = await q.getSingle();
+    return r.read(db.horses.birthYear.min());
+  }
+
+  Future<int?> getLatestProductionYear() async {
+    final q = selectOnly(horses)..addColumns([horses.birthYear.max()]);
+    final r = await q.getSingle();
+    return r.read(db.horses.birthYear.max());
+  }
+
+  Future<int?> getLatestDebutGeneration() async {
+    final q = selectOnly(horses)
+                ..addColumns([horses.birthYear.max()])
+                ..where(horses.rating.isNotNull());
+    final r = await q.getSingle();
+    return r.read(db.horses.birthYear.max());
+  }
 }

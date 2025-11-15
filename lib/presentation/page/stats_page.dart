@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../data/entity/sire_stats.dart';
 import '../../data/repository/sires_repository.dart';
+import '../../data/repository/horses_repository.dart';
+import '../widget/period_widget.dart';
 
 class StatsPage extends StatefulWidget {
   const StatsPage({super.key});
@@ -22,14 +24,21 @@ class _StatsPageState extends State<StatsPage> {
   final _headerScrollController = ScrollController();
   final _bodyScrollController = ScrollController();
 
+  int _minYear = 1971;
+  int? _beginYear;
+  int? _endYear;
+
   int _sortColumn = 2;
   bool _sortAscending = false;
   static const notSortable = <int>[4,6];
 
+  void _fetch() {
+    SiresRepository.fetchAllSireStats(_beginYear, _endYear).then((value) => setState(() => _stats = value));
+  }
+
   @override
   void initState() {
     super.initState();
-    SiresRepository.fetchAllSireStats().then((value) => setState(() => _stats = value));
     _headerScrollController.addListener(() {
       if (_headerScrollController.offset != _bodyScrollController.offset) {
         _bodyScrollController.jumpTo(_headerScrollController.offset);
@@ -40,6 +49,16 @@ class _StatsPageState extends State<StatsPage> {
         _headerScrollController.jumpTo(_bodyScrollController.offset);
       }
     });
+    HorsesRepository.getFirstProductionYear().then((value) => setState(() {
+      _beginYear = value;
+      if (value != null) {
+        _minYear = value;
+      }
+    }));
+    HorsesRepository.getLatestProductionYear().then((value) => setState(() {
+      _endYear = value;
+    }));
+    _fetch();
   }
 
   TextStyle _cellStyle(double value)
@@ -103,6 +122,27 @@ class _StatsPageState extends State<StatsPage> {
 
     return Column(
       children: [
+        Padding(
+          padding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              PeriodWidget(
+                begin: _beginYear ?? 1971,
+                end: _endYear ?? 2100,
+                min: _minYear,
+                max: 2100,
+                onChanged: (begin, end) {
+                  setState(() {
+                    _beginYear = begin;
+                    _endYear = end;
+                    _fetch();
+                  });
+                },
+              ),
+            ],
+          ),
+        ),
         Row(
           children: [
             DataTable(

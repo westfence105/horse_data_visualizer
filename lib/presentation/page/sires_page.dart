@@ -67,7 +67,7 @@ class _SiresPageState extends State<SiresPage> {
               },
               child: const Text('編集を適用'),
             ),
-            const SizedBox(width: 32),
+            const SizedBox(width: 48),
           ],
         ),
         DataTable(
