@@ -1,3 +1,5 @@
+import 'package:horse_data_visualizer/data/entity/sire_summary.dart';
+
 import '../db/app_database.dart';
 import '../db/dao/horses_dao.dart';
 import '../db/dao/sires_dao.dart';
@@ -8,10 +10,10 @@ import '../entity/lineage_summary.dart';
 
 class HorsesRepository {
   static AppDb get db => AppDb.instance;
-  static final _horsesDao = HorsesDao(db);
-  static final _siresDao = SiresDao(db);
-  static final _maresDao = MaresDao(db);
-  static final _sireStatsDao = SireStatsDao(db);
+  static HorsesDao get _horsesDao => HorsesDao(db);
+  static SiresDao get _siresDao => SiresDao(db);
+  static MaresDao get _maresDao => MaresDao(db);
+  static SireStatsDao get _sireStatsDao => SireStatsDao(db);
 
   static Future<void> importFromMap(List<Map<String,String>> rawData) async {
     final data = <Horse>[];
@@ -92,6 +94,10 @@ class HorsesRepository {
 
   static Future<int?> getLatestDebutGeneration() {
     return _horsesDao.getLatestDebutGeneration();
+  }
+
+  static Future<List<SireSummary>> fetchLineageSires(int founderId) {
+    return _sireStatsDao.fetchLineageSires(founderId);
   }
 
   static Future<HorseStatusDistribution?> fetchHorseStatusDistribution(int founderId, String key, [int? beginYear, int? endYear]) {

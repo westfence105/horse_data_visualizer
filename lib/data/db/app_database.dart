@@ -17,12 +17,32 @@ part 'app_database.g.dart';
   daos: [SiresDao, MaresDao, HorsesDao, SireStatsDao],
 )
 class AppDb extends _$AppDb {
-  static final AppDb instance = AppDb._instance();
+  static AppDb _instance = AppDb._init();
 
-  AppDb._instance() : super(_openConnection());
+  static AppDb get instance => _instance;
+
+  static Future<File> get _defaultDB async {
+      final dir = await getApplicationDocumentsDirectory();
+      return File(p.join(dir.path, 'horses.db'));
+  }
+
+  AppDb._init()
+    : dbPath = _defaultDB,
+      super(_openConnection(_defaultDB));
+
+  AppDb._(Future<File> dbFile)
+    : dbPath = dbFile,
+      super(_openConnection(dbFile));
+
+  static void open(Future<File> dbFile) {
+    _instance.close();
+    _instance = AppDb._(dbFile);
+  }
+
+  final Future<File> dbPath;
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -34,6 +54,13 @@ class AppDb extends _$AppDb {
       if (from < 2) {
         await _createIndex();
       }
+      if (from < 3) {
+        await m.addColumn(sires, sires.isHistorical);
+        await m.addColumn(mares, mares.isHistorical);
+      }
+      if (from < 4) {
+        await m.addColumn(sires, sires.isFounder);
+      }
     }
   );
 
@@ -43,11 +70,9 @@ class AppDb extends _$AppDb {
     customStatement('CREATE INDEX IF NOT EXISTS idx_horses_birth_year ON horses(birth_year)');
   }
 
-  static LazyDatabase _openConnection() {
+  static LazyDatabase _openConnection(Future<File> dbFile) {
     return LazyDatabase(() async {
-      final dir = await getApplicationDocumentsDirectory();
-      final file = File(p.join(dir.path, 'horses.db'));
-      return NativeDatabase(file, logStatements: false);
+      return NativeDatabase(await dbFile, logStatements: false);
     });
   }
 }

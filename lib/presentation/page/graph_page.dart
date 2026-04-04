@@ -25,7 +25,7 @@ class _GraphDefinition {
 }
 
 enum _ChartType {
-  bar, line,
+  bar, line, list,
 }
 
 class _GraphPageState extends State<GraphPage> {
@@ -45,6 +45,7 @@ class _GraphPageState extends State<GraphPage> {
 
   _GraphPageState() {
     _graphDefinitions = <_GraphDefinition>[
+      _GraphDefinition('種牡馬一覧', () => _fetchSireList()),
       _GraphDefinition('年度別生産数', () => _fetchAnnualProduction()),
       _GraphDefinition('性別',   () => _fetchDistribution('sex')),
       _GraphDefinition('成長型', () => _fetchDistribution('growth')),
@@ -89,6 +90,23 @@ class _GraphPageState extends State<GraphPage> {
     });
     if (_selectedLineage != null && _selectedGraph != null) {
       _graphDefinitions[_selectedGraph!].fetch();
+    }
+  }
+
+  void _fetchSireList() {
+    if (_selectedLineage != null) {
+      HorsesRepository.fetchLineageSires(_selectedLineage!).then((value) {
+        setState(() {
+          _spots = {};
+          _meters = {};
+          for(int i = 0; i < value.length; ++i) {
+            final s = value[i];
+            _spots![i] = s.childCount?.toDouble() ?? 0;
+            _meters![i] = s.name;
+          }
+          _chartType = _ChartType.list;
+        });
+      });
     }
   }
 
@@ -198,8 +216,15 @@ class _GraphPageState extends State<GraphPage> {
                   itemBuilder: (ctx, i) {
                     final lineage = _lineages[i];
                     final selected = _selectedLineage == lineage.founderId;
+                    final isRoot = lineage.progenitorId == null;
                     return ListTile(
-                      title: Text(lineage.lineageName),
+                      title: Text(
+                        lineage.lineageName,
+                        style: isRoot ?
+                        DefaultTextStyle.of(context).style.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ) : null,
+                      ),
                       selected: selected,
                       selectedColor: Colors.blueAccent,
                       onTap: () {
@@ -479,6 +504,90 @@ class _GraphPageState extends State<GraphPage> {
             ),
           ),
           duration: Duration.zero,
+        );
+      case _ChartType.list:
+        return SingleChildScrollView(
+          child: SizedBox(
+            height: ((_meters?.length ?? 1) + 2) * 40,
+            child: BarChart(
+              BarChartData(
+                rotationQuarterTurns: 1,
+                minY: (minY ?? 0),
+                maxY: (maxY ?? 1) + 0.1 * intervalY,
+                barGroups: [
+                  for (int i = 0; i <= (maxX?.ceil() ?? 0); ++i)
+                    BarChartGroupData(
+                      x: i,
+                      barRods: [
+                        BarChartRodData(
+                          toY: _spots?[i] ?? 0,
+                          width: 16,
+                          borderRadius: BorderRadius.only(),
+                        ),
+                      ],
+                    ),
+                ],
+                titlesData: FlTitlesData(
+                  leftTitles: AxisTitles(),
+                  topTitles: AxisTitles(),
+                  bottomTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      reservedSize: 180,
+                      getTitlesWidget: (value, meta) {
+                        String text = '';
+                        if ((value - value.round()).abs() < 0.01) {
+                          if (_meters?.containsKey(value.round()) == true) {
+                            text = _meters?[value.round()] ?? '';
+                          }
+                          else {
+                            text = value.round().toString();
+                          }
+                        }
+                        return RotatedBox(
+                          quarterTurns: 3,
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 8),
+                            child: Text(text, style: TextStyle(fontSize: 16))
+                          ),
+                        );
+                      }
+                    ),
+                  ),
+                  rightTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      reservedSize: 48,
+                      interval: intervalY.toDouble(),
+                      getTitlesWidget: (value, meta) {
+                        final div = value / intervalY;
+                        if ((div - div.round()).abs() < 0.01) {
+                          return RotatedBox(
+                            quarterTurns: 3,
+                            child: Padding(
+                              padding: EdgeInsets.only(right: 8),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [Text(value.round().toString())],
+                              ),
+                            ),
+                          );
+                        }
+                        else {
+                          return SizedBox.shrink();
+                        }
+                      },
+                    ),
+                  ),
+                ),
+                gridData: FlGridData(
+                  horizontalInterval: intervalY,
+                  drawVerticalLine: false,
+                ),
+              ),
+              duration: Duration.zero,
+            ),
+          ),
         );
     }
   }

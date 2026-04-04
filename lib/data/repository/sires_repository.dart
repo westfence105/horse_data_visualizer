@@ -9,14 +9,14 @@ import '../entity/lineage_summary.dart';
 
 class SiresRepository {
   static AppDb get db => AppDb.instance;
-  static final _siresDao = SiresDao(db);
-  static final _sireStatsDao = SireStatsDao(db);
+  static SiresDao get _siresDao => SiresDao(db);
+  static SireStatsDao get _sireStatsDao => SireStatsDao(db);
 
   static Future<void> importFromMap(List<Map<String,String>> rawData) async {
     final data = rawData
       .where((e) => e.containsKey('種牡馬'))
       .map((d) => SireRaw(
-        d['種牡馬']!, d['父'],
+        d['種牡馬']!, d['父'], (d['史実']?.isNotEmpty ?? false),
       ));
     if (data.isNotEmpty) {
       await _siresDao.upsertList(data);

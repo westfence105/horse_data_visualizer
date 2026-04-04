@@ -24,6 +24,10 @@ class TopPage extends StatelessWidget {
             spacing: 16,
             children: [
               ElevatedButton(
+                onPressed: openDbAction,
+                child: const Text('データベースファイルを開く'),
+              ),
+              ElevatedButton(
                 onPressed: importHorseCsvAction,
                 child: const Text('生産馬CSVインポート'),
               ),

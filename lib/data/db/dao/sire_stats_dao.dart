@@ -37,8 +37,8 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
         s.id,
         s.name,
         s.father_id,
-        f.name      AS father_name,
-        COUNT(h.id) AS child_count
+        f.name       AS father_name,
+        COUNT(h.sex) AS child_count
       FROM sires AS s
       LEFT JOIN sires AS f
         ON s.father_id = f.id
@@ -123,8 +123,6 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
           f.id    AS founder_id,
           p.id    AS progenitor_id,
           p.name  AS progenitor_name,
-          COUNT(ds.id)  AS direct_sire_count,
-          COUNT(dh.sex) AS direct_horse_count,
           0 AS depth
         FROM sires f
           LEFT JOIN sires p ON p.id = f.father_id
@@ -140,8 +138,6 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
           l.founder_id,
           l.progenitor_id,
           l.progenitor_name,
-          l.direct_sire_count,
-          l.direct_horse_count,
           l.depth + 1 AS depth
         FROM sires s
         INNER JOIN lineage l ON l.id = s.father_id
@@ -154,9 +150,6 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
         l.progenitor_name,
         COUNT(DISTINCT l.id) AS sire_count,
         COUNT(h.sex) AS descendant_count,
-        COUNT(DISTINCT h.father_id) AS active_sire_count,
-        l.direct_sire_count,
-        l.direct_horse_count,
         MAX(l.depth) AS max_depth
       FROM horses h
       LEFT JOIN lineage l ON l.id = h.father_id
@@ -174,13 +167,6 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
       final sireCount = r.read<int>('sire_count');
       final descendantCount = r.read<int>('descendant_count');
       final maxDepth = r.read<int>('max_depth');
-      // final directSireCount = r.read<int>('direct_sire_count');
-      // final directHorseCount = r.read<int>('direct_horse_count');
-      // final activeSireCount = r.read<int>('active_sire_count');
-      // print('$lineageName, directSire=$directSireCount, directHorse=$directHorseCount');
-      // if ((directSireCount == 1 || activeSireCount == 1) && directHorseCount == 0) {
-      //   continue;
-      // }
       result[founderId] = LineageSummary(
         lineageName: lineageName,
         founderId: founderId,
@@ -191,23 +177,28 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
         maxDepth: maxDepth,
       );
     }
-    for (final e in result.values.toList()..sort((a, b) => b.maxDepth - a.maxDepth)) {
+    for (final e in result.values.toList()..sort((a, b) => a.maxDepth - b.maxDepth)) {
       if (e.progenitorId != null && result.containsKey(e.progenitorId)) {
         if (e.descendantCount == result[e.progenitorId]?.descendantCount) {
-          result.remove(e.progenitorId);
+          if (result[e.progenitorId]?.progenitorId != null) {
+            result.remove(e.progenitorId);
+          }
         }
       }
     }
     return result.values.toList()..sort(
       (a, b) {
-        if (a.descendantCount != b.descendantCount) {
-          return b.descendantCount - a.descendantCount;
-        }
-        else if (a.sireCount != b.sireCount) {
+        if (a.sireCount != b.sireCount) {
           return b.sireCount - a.sireCount;
         }
+        else if (a.descendantCount != b.descendantCount) {
+          return b.descendantCount - a.descendantCount;
+        }
+        else if (a.maxDepth != b.maxDepth) {
+          return b.maxDepth - a.maxDepth;
+        }
         else {
-          return b.maxDepth - b.maxDepth;
+          return a.lineageName.compareTo(b.lineageName);
         }
       }
     );
@@ -216,17 +207,52 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
   static const _withRecursiveLineage =
     '''
     WITH RECURSIVE lineage AS (
-      SELECT id, name AS lineage_name
+      SELECT id, name AS lineage_name, 0 AS depth
       FROM sires
       WHERE id = :founderId
 
       UNION ALL
 
-      SELECT s.id, l.lineage_name
+      SELECT s.id, l.lineage_name, l.depth + 1 AS depth
       FROM sires s
       INNER JOIN lineage l ON l.id = s.father_id
     )
     ''';
+
+  Future<List<SireSummary>> fetchLineageSires(int founderId, [int? beginYear, int? endYear]) async {
+    final rows = await customSelect(
+      '''
+      $_withRecursiveLineage
+
+      SELECT
+        s.id,
+        s.name,
+        l.lineage_name,
+        l.depth,
+        COUNT(h.sex) AS child_count
+      FROM horses AS h
+      INNER JOIN lineage l
+        ON l.id = h.father_id
+      LEFT JOIN sires AS s
+        ON h.father_id = s.id
+      ${_yearRange('h.birth_year', beginYear, endYear)}
+      GROUP BY
+        s.id,
+        s.name,
+        l.depth
+      ORDER BY l.depth ASC, child_count DESC;
+      ''',
+      variables: [Variable(founderId)],
+    ).get();
+
+    return rows.map((r) => SireSummary(
+      id: r.read('id'),
+      name: r.read('name'),
+      fatherId: founderId,
+      fatherName: r.read('lineage_name'),
+      childCount: r.read('child_count'),
+    )).toList();
+  }
 
   Future<HorseStatusDistribution?> fetchHorseStatusDistribution(int founderId, String key, [int? beginYear, int? endYear]) async {
     const validKeys = <String>{

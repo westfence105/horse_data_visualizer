@@ -4,5 +4,15 @@ class SireSummary {
   final int? fatherId;
   final String? fatherName;
   final int? childCount;
-  SireSummary({ required this.id, required this.name, this.fatherName, this.fatherId, this.childCount });
+  final bool? isHistorical;
+  final bool? isFounder;
+  SireSummary({
+    required this.id,
+    required this.name,
+      this.fatherName,
+      this.fatherId,
+      this.childCount,
+      this.isHistorical,
+      this.isFounder,
+    });
 }

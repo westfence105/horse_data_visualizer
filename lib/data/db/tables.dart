@@ -5,6 +5,8 @@ class Sires extends Table {
   TextColumn get name => text().unique()();
   IntColumn get fatherId => integer().nullable()
     .customConstraint('REFERENCES sires(id)')();
+  BoolColumn get isHistorical => boolean().withDefault(Constant(true))();
+  BoolColumn get isFounder => boolean().withDefault(Constant(false))();
 
   @override
   Set<Column<Object>>? get primaryKey => { id };
@@ -17,6 +19,7 @@ class Mares extends Table {
     .customConstraint('REFERENCES sires(id)')();
   IntColumn get motherId => integer().nullable()
     .customConstraint('REFERENCES mares(id)')();
+  BoolColumn get isHistorical => boolean().withDefault(Constant(true))();
 
   @override
   Set<Column<Object>>? get primaryKey => { id };
