@@ -1,3 +1,4 @@
+import 'package:horse_data_visualizer/data/entity/owned_horse_data.dart';
 import 'package:horse_data_visualizer/data/entity/sire_summary.dart';
 
 import '../db/app_database.dart';
@@ -94,6 +95,10 @@ class HorsesRepository {
 
   static Future<int?> getLatestDebutGeneration() {
     return _horsesDao.getLatestDebutGeneration();
+  }
+
+  static Future<List<OwnedHorseData>> fetchOwnedHorseData(int? fatherId, int? motherId) {
+    return _horsesDao.fetchOwnedHorseData(fatherId, motherId);
   }
 
   static Future<List<SireSummary>> fetchLineageSires(int founderId) {

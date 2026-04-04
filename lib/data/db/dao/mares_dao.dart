@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 import '../app_database.dart';
 import '../tables.dart';
+import '../../entity/mare_summary.dart';
 
 part 'mares_dao.g.dart';
 
@@ -102,5 +103,38 @@ class MaresDao extends DatabaseAccessor<AppDb> with _$MaresDaoMixin {
         );
       '''
     );
+  }
+
+  Future<List<MareSummary>> fetchAllSummaries() async {
+    final rows = await customSelect(
+      '''
+      SELECT
+        h.id,
+        h.name,
+        h.father_id,
+        f.name AS father_name,
+        h.mother_id,
+        m.name AS mother_name,
+        COUNT(c.sex) AS child_count
+      FROM mares AS h
+      LEFT JOIN sires AS f
+        ON h.father_id = f.id
+      LEFT JOIN mares AS m
+        ON h.mother_id = m.id
+      LEFT JOIN horses AS c
+        ON c.mother_id = h.id
+      GROUP BY h.id, h.name, h.father_id, f.name, h.mother_id, m.name
+      '''
+    ).get();
+
+    return rows.map((r) => MareSummary(
+      id: r.read('id'),
+      name: r.read('name'),
+      fatherId: r.read('father_id'),
+      fatherName: r.read('father_name'),
+      motherId: r.read('mother_id'),
+      motherName: r.read('mother_name'),
+      childCount: r.read('child_count'),
+    )).toList();
   }
 }

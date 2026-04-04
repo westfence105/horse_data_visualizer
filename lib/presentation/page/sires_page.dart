@@ -27,8 +27,8 @@ class SiresPage extends StatefulWidget {
 class _SiresPageState extends State<SiresPage> {
   List<SireSummary> _summaries = [];
   
-  Map<String, ValueNotifier<bool>> _historicalNotifiers = {};
-  Map<String, ValueNotifier<bool>> _founderNotifiers = {};
+  final _historicalNotifiers = <String, ValueNotifier<bool>>{};
+  final _founderNotifiers = <String, ValueNotifier<bool>>{};
 
   void _fetch() {
     SiresRepository.fetchAllSireSummaries()

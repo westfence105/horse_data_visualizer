@@ -1,4 +1,4 @@
-import 'package:horse_data_visualizer/data/entity/sire_stats.dart';
+import 'package:horse_data_visualizer/data/entity/parent_stats.dart';
 
 import '../db/app_database.dart';
 import '../db/dao/sires_dao.dart';
@@ -27,6 +27,10 @@ class SiresRepository {
     return _siresDao.upsertList(rawData);
   }
 
+  static Future<int> findByName(String name) {
+    return _siresDao.findByName(name);
+  }
+
   static Future<List<SireSummary>> fetchAllSireSummaries() {
     return _siresDao.fetchAllSummaries();
   }
@@ -35,7 +39,7 @@ class SiresRepository {
     return _sireStatsDao.fetchAllLineageSummaries(beginYear, endYear);
   }
 
-  static Future<List<SireStats>> fetchAllSireStats([int? beginYear, int? endYear]) {
+  static Future<List<ParentStats>> fetchAllSireStats([int? beginYear, int? endYear]) {
     return _sireStatsDao.fetchAllSireStats(beginYear, endYear);
   }
 }

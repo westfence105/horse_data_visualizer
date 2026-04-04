@@ -3,32 +3,17 @@ import 'dart:math';
 import 'package:drift/drift.dart';
 import '../app_database.dart';
 import '../tables.dart';
-import '../../entity/sire_stats.dart';
+import '../../entity/parent_stats.dart';
 import '../../entity/sire_summary.dart';
 import '../../entity/lineage_summary.dart';
 import '../../entity/horse_status_distribution.dart';
+import './dao_util.dart';
 
 part 'sire_stats_dao.g.dart';
 
 @DriftAccessor(tables: [Sires,Horses])
 class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
   SireStatsDao(super.db);
-
-  static String _yearRange(String columnName, int? beginYear, int? endYear, [bool alone = true]) {
-    String s = alone ? 'WHERE' : 'AND';
-    if (beginYear != null && endYear != null) {
-      return '$s $columnName BETWEEN $beginYear AND $endYear';
-    }
-    else if (beginYear != null) {
-      return '$s $columnName >= $beginYear';
-    }
-    else if (endYear != null) {
-      return '$s $columnName <= $endYear';
-    }
-    else {
-      return '';
-    }
-  }
 
   Future<List<SireSummary>> fetchAllSireSummaries([int? beginYear, int? endYear]) async {
     final rows = await customSelect(
@@ -44,7 +29,7 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
         ON s.father_id = f.id
       LEFT JOIN horses AS h
         ON h.father_id = s.id
-        ${_yearRange('h.birth_year', beginYear, endYear, false)}
+        ${yearRange('h.birth_year', beginYear, endYear, false)}
       GROUP BY
         s.id,
         s.name,
@@ -63,7 +48,7 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
     )).toList();
   }
 
-  Future<List<SireStats>> fetchAllSireStats([int? beginYear, int? endYear]) async {
+  Future<List<ParentStats>> fetchAllSireStats([int? beginYear, int? endYear]) async {
     final q = selectOnly(horses)
                 ..addColumns([horses.birthYear.max()])
                 ..where(horses.rating.isNotNull());
@@ -89,13 +74,13 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
       FROM horses AS h
       JOIN sires AS s
         ON h.father_id = s.id
-      ${_yearRange('h.birth_year', beginYear, endYear)}
+      ${yearRange('h.birth_year', beginYear, endYear)}
       GROUP BY s.id
       ORDER BY child_count DESC
       ''',
       variables: [Variable(debut)],
     ).get();
-    return rows.map((r) => SireStats(
+    return rows.map((r) => ParentStats(
       name: r.read('sire_name'),
       childCount: r.read('child_count'),
       sex: r.read('sex'),
@@ -153,7 +138,7 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
         MAX(l.depth) AS max_depth
       FROM horses h
       LEFT JOIN lineage l ON l.id = h.father_id
-      ${_yearRange('h.birth_year', beginYear, endYear)}
+      ${yearRange('h.birth_year', beginYear, endYear)}
       GROUP BY l.founder_id
       '''
     ).get();
@@ -235,7 +220,7 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
         ON l.id = h.father_id
       LEFT JOIN sires AS s
         ON h.father_id = s.id
-      ${_yearRange('h.birth_year', beginYear, endYear)}
+      ${yearRange('h.birth_year', beginYear, endYear)}
       GROUP BY
         s.id,
         s.name,
@@ -271,7 +256,7 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
         COUNT(*) AS count
       FROM horses
       INNER JOIN lineage l ON l.id = father_id
-      ${_yearRange('birth_year', beginYear, endYear)}
+      ${yearRange('birth_year', beginYear, endYear)}
       GROUP BY l.lineage_name, value
       ORDER BY value
       ''',
@@ -311,7 +296,7 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
         COUNT(*) AS count
       FROM horses
       INNER JOIN lineage l ON l.id = father_id
-      ${_yearRange('birth_year', beginYear, endYear)}
+      ${yearRange('birth_year', beginYear, endYear)}
       GROUP BY l.lineage_name, birth_year
       ORDER BY birth_year
       ''',
@@ -353,7 +338,7 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
         AVG(sex) AS ratio
       FROM horses
       INNER JOIN lineage l ON l.id = father_id
-      ${_yearRange('birth_year', beginYear, endYear)}
+      ${yearRange('birth_year', beginYear, endYear)}
       GROUP BY l.lineage_name, birth_year
       ORDER BY birth_year
       ''',

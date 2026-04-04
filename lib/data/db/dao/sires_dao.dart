@@ -114,10 +114,20 @@ class SiresDao extends DatabaseAccessor<AppDb> with _$SiresDaoMixin {
         s.father_id,
         f.name AS father_name,
         s.is_historical,
-        s.is_founder
+        s.is_founder,
+        COUNT(c.sex) AS child_count
       FROM sires AS s
       LEFT JOIN sires AS f
         ON s.father_id = f.id
+      LEFT JOIN horses AS c
+        ON c.father_id = s.id
+      GROUP BY
+        s.id,
+        s.name,
+        s.father_id,
+        father_name,
+        s.is_historical,
+        s.is_founder
       '''
     ).get();
 
@@ -126,6 +136,7 @@ class SiresDao extends DatabaseAccessor<AppDb> with _$SiresDaoMixin {
       name: r.read('name'),
       fatherId: r.read('father_id'),
       fatherName: r.read('father_name'),
+      childCount: r.read('child_count'),
       isHistorical: r.read('is_historical'),
       isFounder: r.read('is_founder'),
     )).toList();

@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../../data/entity/sire_stats.dart';
+import '../../data/entity/parent_stats.dart';
 import '../../data/repository/sires_repository.dart';
 import '../../data/repository/horses_repository.dart';
+import '../../data/repository/mares_repository.dart';
 import '../widget/period_widget.dart';
 
 class StatsPage extends StatefulWidget {
@@ -12,28 +13,48 @@ class StatsPage extends StatefulWidget {
   State<StatefulWidget> createState() => _StatsPageState();
 }
 
+enum _AggMode {
+  sire("種牡馬"),
+  mare("繁殖牝馬");
+
+  final String label;
+  const _AggMode(this.label);
+}
+
 class _ColumnInfo {
   final String label;
-  final num? Function(SireStats) valueGetter;
+  final num? Function(ParentStats) valueGetter;
   _ColumnInfo(this.label, this.valueGetter);
 }
 
 class _StatsPageState extends State<StatsPage> {
-  List<SireStats> _stats = const [];
+  List<ParentStats> _stats = const [];
 
   final _headerScrollController = ScrollController();
   final _bodyScrollController = ScrollController();
+
+  _AggMode _aggMode = _AggMode.sire;
 
   int _minYear = 1971;
   int? _beginYear;
   int? _endYear;
 
-  int _sortColumn = 2;
+  int _sortColumn = 1;
   bool _sortAscending = false;
   static const notSortable = <int>[4,6];
 
   void _fetch() {
-    SiresRepository.fetchAllSireStats(_beginYear, _endYear).then((value) => setState(() => _stats = value));
+    Future<List<ParentStats>> future;
+    if (_aggMode == _AggMode.sire) {
+      future = SiresRepository.fetchAllSireStats(_beginYear, _endYear);
+    }
+    else if (_aggMode == _AggMode.mare) {
+      future = MaresRepository.fetchAllMareStats(_beginYear, _endYear);
+    }
+    else {
+      return;
+    }
+    future.then((value) => setState(() => _stats = value));
   }
 
   @override
@@ -125,8 +146,26 @@ class _StatsPageState extends State<StatsPage> {
         Padding(
           padding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.end,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
+              DropdownButton<_AggMode>(
+                items: _AggMode.values.map(
+                  (e) => DropdownMenuItem(
+                    value: e,
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+                      child: Text(e.label),
+                    ),
+                  ),
+                ).toList(growable: false),
+                value: _aggMode,
+                onChanged: (value) => setState(() {
+                  if (value != null) {
+                    _aggMode = value;
+                    _fetch();
+                  }
+                }),
+              ),
               PeriodWidget(
                 begin: _beginYear ?? 1971,
                 end: _endYear ?? 2100,

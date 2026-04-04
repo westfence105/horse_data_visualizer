@@ -4,6 +4,7 @@ import 'top_page.dart';
 import 'sires_page.dart';
 import 'stats_page.dart';
 import 'graph_page.dart';
+import 'owned_page.dart';
 
 class MainFrame extends StatefulWidget {
   const MainFrame({super.key});
@@ -20,6 +21,7 @@ class _MainFrameState extends State<MainFrame> {
     const SiresPage(),
     const StatsPage(),
     const GraphPage(),
+    const OwnedPage(),
   ];
 
   @override
@@ -39,7 +41,7 @@ class _MainFrameState extends State<MainFrame> {
             icon: Icon(Icons.home),
           ),
           BottomNavigationBarItem(
-            label: '種牡馬',
+            label: '種牡馬マスタ',
             icon: Icon(Icons.list),
           ),
           BottomNavigationBarItem(
@@ -49,6 +51,10 @@ class _MainFrameState extends State<MainFrame> {
           BottomNavigationBarItem(
             label: 'グラフ',
             icon: Icon(Icons.bar_chart),
+          ),
+          BottomNavigationBarItem(
+            label: '産駒リスト',
+            icon: Icon(Icons.list_alt),
           ),
         ],
         onTap: (i) => setState(() => _currentIndex = i),

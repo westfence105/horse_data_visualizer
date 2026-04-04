@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 import '../app_database.dart';
 import '../tables.dart';
+import '../../entity/owned_horse_data.dart';
 
 part 'horses_dao.g.dart';
 
@@ -62,5 +63,69 @@ class HorsesDao extends DatabaseAccessor<AppDb> with _$HorsesDaoMixin {
                 ..where(horses.rating.isNotNull());
     final r = await q.getSingle();
     return r.read(db.horses.birthYear.max());
+  }
+
+  Future<List<OwnedHorseData>> fetchOwnedHorseData(int? fatherId, int? motherId) async {
+    String whereStr;
+    if (fatherId == null) {
+      if (motherId == null) {
+        return [];
+      }
+      else {
+        whereStr = 'h.mother_id = $motherId';
+      }
+    }
+    else {
+      if (motherId == null) {
+        whereStr = 'h.father_id = $fatherId';
+      }
+      else {
+        whereStr = 'h.father_id = $fatherId AND h.mother_id = $motherId';
+      }
+    }
+
+    final rows = await customSelect(
+      '''
+      SELECT
+        h.birth_year,
+        h.name,
+        f.name AS father_name,
+        b.name AS mother_name,
+        h.sex,
+        h.growth,
+        h.surface,
+        h.distance,
+        h.rating,
+        COUNT(s.id) + COUNT(m.id) > 0 AS breeding
+      FROM horses AS h
+      LEFT JOIN sires AS s ON h.name = s.name
+      LEFT JOIN mares AS m ON h.name = m.name
+      LEFT JOIN sires AS f ON h.father_id = f.id
+      LEFT JOIN mares AS b ON h.mother_id = b.id
+      WHERE $whereStr AND h.rating IS NOT NULL
+      GROUP BY
+        h.birth_year,
+        h.name,
+        father_name,
+        mother_name,
+        h.sex,
+        h.growth,
+        h.surface,
+        h.rating
+      '''
+    ).get();
+
+    return rows.map((r) => OwnedHorseData(
+      birthYear: r.read('birth_year'),
+      name: r.read('name'),
+      fatherName: r.read('father_name'),
+      motherName: r.read('mother_name'),
+      sex: r.read('sex'),
+      growth: r.read('growth'),
+      surface: r.read('surface'),
+      distance: r.read('distance'),
+      rating: r.read('rating'),
+      breeding: r.read('breeding'),
+    )).toList(growable: false);
   }
 }

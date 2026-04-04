@@ -1,4 +1,4 @@
-class SireStats {
+class ParentStats {
   final String name;
   final int childCount;
   final double sex;
@@ -16,7 +16,7 @@ class SireStats {
 
   double? get ownRate => (childCount - foalCount > 0) ? ownCount.toDouble() / (childCount - foalCount) : null;
 
-  SireStats({
+  ParentStats({
     required this.name,
     required this.childCount,
     required this.sex,

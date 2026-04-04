@@ -3,18 +3,20 @@ import 'package:path/path.dart' as p;
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'tables.dart';
 import 'dao/sires_dao.dart';
 import 'dao/mares_dao.dart';
 import 'dao/sire_stats_dao.dart';
 import 'dao/horses_dao.dart';
+import 'dao/mare_stats_dao.dart';
 
 part 'app_database.g.dart';
 
 @DriftDatabase(
   tables: [Sires, Horses],
-  daos: [SiresDao, MaresDao, HorsesDao, SireStatsDao],
+  daos: [SiresDao, MaresDao, HorsesDao, SireStatsDao, MareStatsDao],
 )
 class AppDb extends _$AppDb {
   static AppDb _instance = AppDb._init();
@@ -22,8 +24,15 @@ class AppDb extends _$AppDb {
   static AppDb get instance => _instance;
 
   static Future<File> get _defaultDB async {
-      final dir = await getApplicationDocumentsDirectory();
-      return File(p.join(dir.path, 'horses.db'));
+      final prefs = await SharedPreferences.getInstance();
+      final savedPath = prefs.getString('db.path');
+      if (savedPath != null) {
+        return File(savedPath);
+      }
+      else {
+        final dir = await getApplicationDocumentsDirectory();
+        return File(p.join(dir.path, 'horses.db'));
+      }
   }
 
   AppDb._init()
@@ -37,6 +46,10 @@ class AppDb extends _$AppDb {
   static void open(Future<File> dbFile) {
     _instance.close();
     _instance = AppDb._(dbFile);
+
+    SharedPreferences.getInstance().then((prefs) async {
+      prefs.setString('db.path', (await dbFile).path);
+    });
   }
 
   final Future<File> dbPath;
