@@ -4,6 +4,8 @@ import '../../data/entity/parent_stats.dart';
 import '../../data/repository/sires_repository.dart';
 import '../../data/repository/horses_repository.dart';
 import '../../data/repository/mares_repository.dart';
+import '../misc/enums.dart';
+import '../widget/aggregation_mode_selector.dart';
 import '../widget/period_widget.dart';
 
 class StatsPage extends StatefulWidget {
@@ -11,14 +13,6 @@ class StatsPage extends StatefulWidget {
 
   @override
   State<StatefulWidget> createState() => _StatsPageState();
-}
-
-enum _AggMode {
-  sire("種牡馬"),
-  mare("繁殖牝馬");
-
-  final String label;
-  const _AggMode(this.label);
 }
 
 class _ColumnInfo {
@@ -33,7 +27,7 @@ class _StatsPageState extends State<StatsPage> {
   final _headerScrollController = ScrollController();
   final _bodyScrollController = ScrollController();
 
-  _AggMode _aggMode = _AggMode.sire;
+  AggregationMode _aggMode = AggregationMode.sire;
 
   int _minYear = 1971;
   int? _beginYear;
@@ -45,14 +39,14 @@ class _StatsPageState extends State<StatsPage> {
 
   void _fetch() {
     Future<List<ParentStats>> future;
-    if (_aggMode == _AggMode.sire) {
+    if (_aggMode == AggregationMode.sire) {
       future = SiresRepository.fetchAllSireStats(_beginYear, _endYear);
     }
-    else if (_aggMode == _AggMode.mare) {
+    else if (_aggMode == AggregationMode.mare) {
       future = MaresRepository.fetchAllMareStats(_beginYear, _endYear);
     }
     else {
-      return;
+      future = SiresRepository.fetchAllLineageStats(_beginYear, _endYear);
     }
     future.then((value) => setState(() => _stats = value));
   }
@@ -148,17 +142,8 @@ class _StatsPageState extends State<StatsPage> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              DropdownButton<_AggMode>(
-                items: _AggMode.values.map(
-                  (e) => DropdownMenuItem(
-                    value: e,
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-                      child: Text(e.label),
-                    ),
-                  ),
-                ).toList(growable: false),
-                value: _aggMode,
+              AggregationModeSelector(
+                aggregationMode: _aggMode,
                 onChanged: (value) => setState(() {
                   if (value != null) {
                     _aggMode = value;

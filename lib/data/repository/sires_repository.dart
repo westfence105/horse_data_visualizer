@@ -1,11 +1,10 @@
-import 'package:horse_data_visualizer/data/entity/parent_stats.dart';
-
 import '../db/app_database.dart';
 import '../db/dao/sires_dao.dart';
 import '../db/dao/sire_stats_dao.dart';
 import '../entity/sire_raw.dart';
 import '../entity/sire_summary.dart';
 import '../entity/lineage_summary.dart';
+import '../entity/parent_stats.dart';
 
 class SiresRepository {
   static AppDb get db => AppDb.instance;
@@ -41,5 +40,13 @@ class SiresRepository {
 
   static Future<List<ParentStats>> fetchAllSireStats([int? beginYear, int? endYear]) {
     return _sireStatsDao.fetchAllSireStats(beginYear, endYear);
+  }
+
+  static Future<List<ParentStats>> fetchAllLineageStats([int? beginYear, int? endYear]) {
+    return _sireStatsDao.fetchAllLineageStats(beginYear, endYear);
+  }
+
+  static Future<void> cleanupFictionalSiresWithoutDescendants() {
+    return _siresDao.cleanupFictionalSiresWithoutDescendants();
   }
 }

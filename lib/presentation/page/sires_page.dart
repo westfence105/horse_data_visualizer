@@ -1,12 +1,10 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
-import 'package:horse_data_visualizer/presentation/action/file_actions.dart';
-import 'package:horse_data_visualizer/presentation/theme/button_style.dart';
 
 import '../../data/entity/sire_raw.dart';
 import '../../data/entity/sire_summary.dart';
 import '../../data/repository/sires_repository.dart';
+import '../action/file_actions.dart';
+import '../theme/button_style.dart';
 
 enum  _SortMode {
   name(1),
@@ -82,6 +80,12 @@ class _SiresPageState extends State<SiresPage> {
     });
   }
 
+  void _cleanupFictionalSires() {
+    SiresRepository.cleanupFictionalSiresWithoutDescendants().then((_) {
+      _fetch();
+    });
+  }
+
   @override
   void initState() {
     super.initState();
@@ -129,6 +133,12 @@ class _SiresPageState extends State<SiresPage> {
               style: elevatedButtonStyleSecond,
               onPressed: exportSireCsvAction,
               child: const Text('種牡馬CSVエクスポート'),
+            ),
+            const SizedBox(width: 16),
+            ElevatedButton(
+              style: elevatedButtonStyleThird,
+              onPressed: _cleanupFictionalSires,
+              child: const Text('架空種牡馬クリーンアップ'),
             ),
             const SizedBox(width: 16),
             ElevatedButton(

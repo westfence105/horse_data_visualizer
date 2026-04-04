@@ -1,4 +1,4 @@
-import 'package:horse_data_visualizer/data/entity/sire_summary.dart';
+import 'sire_summary.dart';
 
 class SireRaw {
   final String name;

@@ -115,7 +115,8 @@ class MaresDao extends DatabaseAccessor<AppDb> with _$MaresDaoMixin {
         f.name AS father_name,
         h.mother_id,
         m.name AS mother_name,
-        COUNT(c.sex) AS child_count
+        COUNT(c.sex) AS child_count,
+        COUNT(c.rating) AS own_count
       FROM mares AS h
       LEFT JOIN sires AS f
         ON h.father_id = f.id
@@ -135,6 +136,7 @@ class MaresDao extends DatabaseAccessor<AppDb> with _$MaresDaoMixin {
       motherId: r.read('mother_id'),
       motherName: r.read('mother_name'),
       childCount: r.read('child_count'),
+      ownCount: r.read('own_count'),
     )).toList();
   }
 }

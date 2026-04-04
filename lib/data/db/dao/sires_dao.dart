@@ -1,5 +1,4 @@
 import 'package:drift/drift.dart';
-import 'package:flutter/foundation.dart';
 import '../app_database.dart';
 import '../tables.dart';
 import '../../entity/sire_raw.dart';
@@ -115,7 +114,8 @@ class SiresDao extends DatabaseAccessor<AppDb> with _$SiresDaoMixin {
         f.name AS father_name,
         s.is_historical,
         s.is_founder,
-        COUNT(c.sex) AS child_count
+        COUNT(c.sex) AS child_count,
+        COUNT(c.rating) AS own_count
       FROM sires AS s
       LEFT JOIN sires AS f
         ON s.father_id = f.id
@@ -137,8 +137,48 @@ class SiresDao extends DatabaseAccessor<AppDb> with _$SiresDaoMixin {
       fatherId: r.read('father_id'),
       fatherName: r.read('father_name'),
       childCount: r.read('child_count'),
+      ownCount: r.read('own_count'),
       isHistorical: r.read('is_historical'),
       isFounder: r.read('is_founder'),
     )).toList();
+  }
+
+  Future<void> cleanupFictionalSiresWithoutDescendants() {
+    return customUpdate(
+      '''
+      WITH RECURSIVE lineage AS (
+        SELECT
+          id AS founder_id,
+          id AS sire_id,
+          0 AS depth
+        FROM sires
+        WHERE is_historical = FALSE
+
+        UNION ALL
+
+        SELECT
+          l.founder_id,
+          s.id AS sire_id,
+          l.depth + 1 AS depth
+        FROM sires s
+        INNER JOIN lineage l
+          ON s.father_id = l.sire_id
+      ),
+      targets AS (
+        SELECT l.founder_id
+        FROM lineage l
+        LEFT JOIN horses h
+          ON h.father_id = l.sire_id
+        GROUP BY l.founder_id
+        HAVING COUNT(h.sex) = 0
+      )
+      DELETE FROM sires
+      WHERE id IN (
+        SELECT founder_id
+        FROM targets
+      )
+      ''',
+      updates: {sires},
+    );
   }
 }

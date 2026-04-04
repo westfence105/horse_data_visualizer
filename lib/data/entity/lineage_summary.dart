@@ -5,13 +5,21 @@ class LineageSummary {
   final int? progenitorId;
   final int sireCount;
   final int descendantCount;
+  final int ownDescendantCount;
+  final int directChildCount;
+  final int depth;
   final int maxDepth;
+  final bool isFounderLine;
   LineageSummary({
     required this.lineageName,
     required this.founderId,
     required this.sireCount,
     required this.descendantCount,
+    required this.ownDescendantCount,
+    required this.directChildCount,
+    required this.depth,
     required this.maxDepth,
+    required this.isFounderLine,
     this.progenitorId,
     this.progenitorName,
   });

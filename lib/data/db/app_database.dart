@@ -43,13 +43,12 @@ class AppDb extends _$AppDb {
     : dbPath = dbFile,
       super(_openConnection(dbFile));
 
-  static void open(Future<File> dbFile) {
-    _instance.close();
+  static Future<void> open(Future<File> dbFile) async {
+    await _instance.close();
     _instance = AppDb._(dbFile);
-
-    SharedPreferences.getInstance().then((prefs) async {
-      prefs.setString('db.path', (await dbFile).path);
-    });
+    
+    final prefs = await SharedPreferences.getInstance();
+    prefs.setString('db.path', (await dbFile).path);
   }
 
   final Future<File> dbPath;

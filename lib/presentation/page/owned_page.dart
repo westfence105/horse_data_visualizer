@@ -1,13 +1,15 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:horse_data_visualizer/data/entity/sire_summary.dart';
-import 'package:horse_data_visualizer/data/repository/mares_repository.dart';
-import 'package:horse_data_visualizer/data/repository/sires_repository.dart';
 
+import '../../data/entity/lineage_summary.dart';
 import '../../data/entity/owned_horse_data.dart';
 import '../../data/entity/sire_summary.dart';
 import '../../data/entity/mare_summary.dart';
 import '../../data/repository/horses_repository.dart';
+import '../../data/repository/mares_repository.dart';
+import '../../data/repository/sires_repository.dart';
+import '../misc/enums.dart';
+import '../widget/aggregation_mode_selector.dart';
 
 class OwnedPage extends StatefulWidget {
   const OwnedPage({ super.key });
@@ -16,34 +18,30 @@ class OwnedPage extends StatefulWidget {
   State<StatefulWidget> createState() => _OwnedPageState();
 }
 
-enum _AggMode {
-  sire("種牡馬"),
-  mare("繁殖牝馬");
-
-  final String label;
-  const _AggMode(this.label);
-}
-
 class _OwnedPageState extends State<OwnedPage> {
   int? _selectedParent;
   List<SireSummary> _sireSummaries = [];
   List<MareSummary> _mareSummaries = [];
+  List<LineageSummary> _lineageSummaries = [];
   Map<int,Map<int,List<OwnedHorseData>>> _childrenData = {};
 
-  _AggMode _aggMode = _AggMode.sire;
+  AggregationMode _aggMode = AggregationMode.sire;
 
   void _fetch() {
     Future.wait([
       SiresRepository.fetchAllSireSummaries(),
       MaresRepository.fetchAllMareSummaries(),
+      SiresRepository.fetchAllLineageSummaries(),
     ]).then((result) {
       setState(() {
         _sireSummaries = result[0].cast<SireSummary>()
-          .where((e) => (e.childCount ?? 0) > 0).toList()
+          .where((e) => (e.ownCount ?? 0) > 0).toList()
           ..sort(_compareSires);
         _mareSummaries = result[1].cast<MareSummary>()
-          .where((e) => (e.childCount ?? 0) > 0).toList()
+          .where((e) => (e.ownCount ?? 0) > 0).toList()
           ..sort(_compareMares);
+        _lineageSummaries = result[2].cast<LineageSummary>()
+          .where((e) => e.ownDescendantCount > 0).toList();
       });
     });
   }
@@ -68,11 +66,17 @@ class _OwnedPageState extends State<OwnedPage> {
 
   void _fetchChildrenData() {
     Future<List<OwnedHorseData>> future;
-    if (_aggMode == _AggMode.sire) {
+    if (_selectedParent == null) {
+      return;
+    }
+    else if (_aggMode == AggregationMode.sire) {
       future = HorsesRepository.fetchOwnedHorseData(_selectedParent, null);
     }
-    else {
+    else if (_aggMode == AggregationMode.mare){
       future = HorsesRepository.fetchOwnedHorseData(null, _selectedParent);
+    }
+    else {
+      future = HorsesRepository.fetchLineageOwnedHorseData(_selectedParent!);
     }
     future.then((result) => setState(() {
       _childrenData = {};
@@ -93,11 +97,14 @@ class _OwnedPageState extends State<OwnedPage> {
   @override
   Widget build(BuildContext context) {
     List<MapEntry<int,String>> parents;
-    if (_aggMode == _AggMode.sire) {
+    if (_aggMode == AggregationMode.sire) {
       parents = _sireSummaries.map((e) => MapEntry(e.id, e.name)).toList(growable: false);
     }
-    else {
+    else if (_aggMode == AggregationMode.mare){
       parents = _mareSummaries.map((e) => MapEntry(e.id, e.name)).toList(growable: false);
+    }
+    else {
+      parents = _lineageSummaries.map((e) => MapEntry(e.founderId, e.lineageName)).toList(growable: false);
     }
 
     return Padding(
@@ -105,19 +112,11 @@ class _OwnedPageState extends State<OwnedPage> {
       child: Column(
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            mainAxisAlignment: MainAxisAlignment.start,
+            spacing: 64,
             children: [
-              DropdownButton<_AggMode>(
-                items: _AggMode.values.map(
-                  (e) => DropdownMenuItem(
-                    value: e,
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-                      child: Text(e.label),
-                    ),
-                  ),
-                ).toList(growable: false),
-                value: _aggMode,
+              AggregationModeSelector(
+                aggregationMode: _aggMode,
                 onChanged: (value) => setState(() {
                   if (value != null) {
                     _aggMode = value;
@@ -125,6 +124,28 @@ class _OwnedPageState extends State<OwnedPage> {
                     _fetch();
                   }
                 }),
+              ),
+              Builder(
+                builder: (ctx) {
+                  String? parentName;
+                  for (final e in parents) {
+                    if (e.key == _selectedParent) {
+                      parentName = e.value;
+                    }
+                  }
+                  if (parentName != null) {
+                    return Text(
+                      '[$parentName]',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    );
+                  }
+                  else {
+                    return SizedBox.shrink();
+                  }
+                },
               ),
             ],
           ),
@@ -142,9 +163,19 @@ class _OwnedPageState extends State<OwnedPage> {
                     itemBuilder: (ctx, i) {
                       final parent = parents[i];
                       final selected = _selectedParent == parent.key;
+                      FontWeight weight = FontWeight.normal;
+                      if (_aggMode == AggregationMode.lineage) {
+                        LineageSummary? s = _lineageSummaries[i];
+                        if (s.progenitorId == null) {
+                          weight = FontWeight.bold;
+                        }
+                      }
                       return ListTile(
                         title: Text(
                           parent.value,
+                          style: TextStyle(
+                            fontWeight: weight,
+                          ),
                         ),
                         selected: selected,
                         selectedColor: Colors.blueAccent,
@@ -167,13 +198,6 @@ class _OwnedPageState extends State<OwnedPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            '[${parents.where((e) => e.key == _selectedParent).firstOrNull?.value ?? ''}]',
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
                           for (int i = 4; i >= 0; --i)
                             if (_childrenData[i]?[1]?.isNotEmpty == true || _childrenData[i]?[-1]?.isNotEmpty == true)
                               Container(
@@ -209,7 +233,7 @@ class _OwnedPageState extends State<OwnedPage> {
         spacing: 5,
         children: horses.where((r) => r.name.isNotEmpty)
           .map<Widget>((r) {
-            final pair = (_aggMode == _AggMode.sire) ? r.motherName : r.fatherName;
+            final pair = (_aggMode == AggregationMode.sire) ? r.motherName : r.fatherName;
             final styleBase = TextStyle(
               fontSize: 16,
               color: (r.sex == 1) ? 
@@ -241,7 +265,7 @@ class _OwnedPageState extends State<OwnedPage> {
                       }
                       id.then((value) =>
                         setState(() {
-                          _aggMode = (r.sex == 1) ? _AggMode.sire : _AggMode.mare;
+                          _aggMode = (r.sex == 1) ? AggregationMode.sire : AggregationMode.mare;
                           _selectedParent = value;
                           _fetchChildrenData();
                         })

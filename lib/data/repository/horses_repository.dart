@@ -1,6 +1,3 @@
-import 'package:horse_data_visualizer/data/entity/owned_horse_data.dart';
-import 'package:horse_data_visualizer/data/entity/sire_summary.dart';
-
 import '../db/app_database.dart';
 import '../db/dao/horses_dao.dart';
 import '../db/dao/sires_dao.dart';
@@ -8,6 +5,8 @@ import '../db/dao/mares_dao.dart';
 import '../db/dao/sire_stats_dao.dart';
 import '../entity/horse_status_distribution.dart';
 import '../entity/lineage_summary.dart';
+import '../entity/owned_horse_data.dart';
+import '../entity/sire_summary.dart';
 
 class HorsesRepository {
   static AppDb get db => AppDb.instance;
@@ -99,6 +98,10 @@ class HorsesRepository {
 
   static Future<List<OwnedHorseData>> fetchOwnedHorseData(int? fatherId, int? motherId) {
     return _horsesDao.fetchOwnedHorseData(fatherId, motherId);
+  }
+
+  static Future<List<OwnedHorseData>> fetchLineageOwnedHorseData(int founderId) {
+    return _sireStatsDao.fetchLineageOwnedHorseData(founderId);
   }
 
   static Future<List<SireSummary>> fetchLineageSires(int founderId) {

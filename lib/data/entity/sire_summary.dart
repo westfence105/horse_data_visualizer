@@ -4,6 +4,7 @@ class SireSummary {
   final int? fatherId;
   final String? fatherName;
   final int? childCount;
+  final int? ownCount;
   final bool? isHistorical;
   final bool? isFounder;
   SireSummary({
@@ -14,5 +15,6 @@ class SireSummary {
       this.childCount,
       this.isHistorical,
       this.isFounder,
+      this.ownCount,
     });
 }

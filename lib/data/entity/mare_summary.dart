@@ -6,6 +6,7 @@ class MareSummary {
   final int? motherId;
   final String? motherName;
   final int? childCount;
+  final int? ownCount;
   MareSummary({
     required this.id,
     required this.name,
@@ -14,5 +15,6 @@ class MareSummary {
       this.motherName,
       this.motherId,
       this.childCount,
+      this.ownCount,
     });
 }

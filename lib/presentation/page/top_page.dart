@@ -1,7 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:horse_data_visualizer/presentation/action/file_actions.dart';
+import '../action/file_actions.dart';
 
 class TopPage extends StatelessWidget {
   const TopPage({super.key});

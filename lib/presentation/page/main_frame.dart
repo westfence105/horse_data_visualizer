@@ -18,10 +18,10 @@ class _MainFrameState extends State<MainFrame> {
 
   final _childPages = [
     const TopPage(),
-    const SiresPage(),
-    const StatsPage(),
-    const GraphPage(),
     const OwnedPage(),
+    const GraphPage(),
+    const StatsPage(),
+    const SiresPage(),
   ];
 
   @override
@@ -41,20 +41,20 @@ class _MainFrameState extends State<MainFrame> {
             icon: Icon(Icons.home),
           ),
           BottomNavigationBarItem(
-            label: '種牡馬マスタ',
-            icon: Icon(Icons.list),
-          ),
-          BottomNavigationBarItem(
-            label: '集計',
-            icon: Icon(Icons.table_chart),
+            label: '産駒リスト',
+            icon: Icon(Icons.list_alt),
           ),
           BottomNavigationBarItem(
             label: 'グラフ',
             icon: Icon(Icons.bar_chart),
           ),
           BottomNavigationBarItem(
-            label: '産駒リスト',
-            icon: Icon(Icons.list_alt),
+            label: '集計',
+            icon: Icon(Icons.table_chart),
+          ),
+          BottomNavigationBarItem(
+            label: '種牡馬マスタ',
+            icon: Icon(Icons.list),
           ),
         ],
         onTap: (i) => setState(() => _currentIndex = i),
