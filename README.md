@@ -1,16 +1,280 @@
-# horse_data_visualizer
+# Horse Data Visualizer
 
-A new Flutter project.
+『ウイニングポスト』で生産した競走馬データを、CSV から取り込み、一覧・集計・グラフで確認するための Flutter アプリです。
 
-## Getting Started
+Windows 環境での利用を前提としています。他環境での動作は未確認です。
 
-This project is a starting point for a Flutter application.
+## できること
 
-A few resources to get you started if this is your first Flutter project:
+* 生産馬 CSV のインポート
+* 種牡馬 CSV のインポート
+* 繁殖牝馬 CSV のインポート
+* 生産馬 CSV のエクスポート
+* 種牡馬マスタの編集・CSV エクスポート
+* 繁殖牝馬マスタの編集・CSV エクスポート
+* 種牡馬 / 繁殖牝馬 / 系統ごとの産駒一覧表示
+* 系統ごとの年度別生産数・性別比・各種傾向のグラフ表示
+* 種牡馬 / 繁殖牝馬 / 系統ごとの集計表表示
+* 使用するデータベースファイルの切り替え
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+## 画面構成
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+### ホーム
+
+* データベースファイルを開く
+* 生産馬 CSV インポート
+* 種牡馬 CSV インポート
+* 繁殖牝馬 CSV インポート
+
+### 産駒リスト
+
+集計単位を以下から切り替えて、対象ごとの産駒を確認できます。
+
+* 種牡馬
+* 繁殖牝馬
+* 系統
+
+所有馬や幼駒を評価別・性別別に一覧表示できます。系統表示では、その系統に属する繁殖牝馬も確認できます。
+
+### グラフ
+
+系統を選択し、期間を指定して以下を確認できます。
+
+* 種牡馬一覧
+* 年度別生産数
+* 性別
+* 成長型
+* 馬場適性
+* 距離適性
+* 評価
+* 河童木評価
+* 美香評価
+* 年度別性別比
+
+### 集計
+
+種牡馬 / 繁殖牝馬 / 系統ごとの集計値を表形式で確認できます。
+
+主な項目:
+
+* 産駒数
+* 所有数
+* 幼駒数
+* 所有率
+* 性別比
+* 成長型
+* 馬場
+* 距離
+* 各人物評価
+* 総合評価
+
+期間指定とソートに対応しています。
+
+### 種牡馬マスタ
+
+* 種牡馬名、父、史実フラグ、系統フラグの確認と編集
+* CSV エクスポート
+* 編集内容の適用
+
+### 繁殖牝馬マスタ
+
+* 繁殖牝馬名、父、母、史実フラグの確認と編集
+* CSV エクスポート
+* 編集内容の適用
+
+## 対応 CSV
+
+### 生産馬 CSV
+
+読み込み時に使用する主な列:
+
+* 生年
+* 名前
+* 性別
+* 父
+* 母
+* 秘書
+* 牧場長
+* 河童木
+* 長峰
+* 美香
+* 成長型
+* 馬場
+* 距離
+* 評価
+
+想定される値の例:
+
+* 性別: `牡` / `牝`
+* 評価: `◎` / `○` / `▲` / `△` / `-`
+* 成長型: `早熟` / `早め` / `遅め` / `覚醒` / `晩成`
+* 馬場: `芝` / `ダート` / `万能`
+* 距離: `短距離` / `マイル` / `中距離` / `クラシック` / `長距離`
+
+補足:
+
+* `生年` `父` `母` `性別` が空の行は取り込まれません。
+* `名前` が `☆` で始まる行は取り込まれません。
+* 生産馬 CSV の取り込み後、種牡馬・繁殖牝馬マスタは生産馬データを元に補完されます。
+
+### 種牡馬 CSV
+
+列:
+
+* 名前
+* 父
+* 史実
+* 系統
+
+`史実` と `系統` は、値が入っていれば有効として扱われます。
+
+### 繁殖牝馬 CSV
+
+列:
+
+* 名前
+* 父
+* 母
+* 史実
+
+`史実` は、値が入っていれば有効として扱われます。
+
+## CSV の入出力について
+
+### インポート
+
+ホーム画面から各 CSV を取り込めます。
+
+* 生産馬 CSV インポート
+* 種牡馬 CSV インポート
+* 繁殖牝馬 CSV インポート
+
+各インポートの実行前に、現在のデータは自動でバックアップ CSV として保存されます。
+
+### エクスポート
+
+以下の CSV を出力できます。
+
+* 生産馬 CSV
+* 種牡馬 CSV
+* 繁殖牝馬 CSV
+
+種牡馬 CSV と繁殖牝馬 CSV は、保存時に以下を選べます。
+
+* 史実馬のみ
+* 架空馬を含む
+
+出力 CSV は UTF-8 BOM 付きで保存されるため、Excel で開く用途を想定した作りになっています。
+
+## バックアップ
+
+CSV インポート時、既存データはバックアップとして自動保存されます。
+
+保存先は、Windows のドキュメント系ディレクトリ配下の以下のフォルダです。
+
+```text
+HorseDataVisualizer/backup
+```
+
+ファイル名にはタイムスタンプが付きます。
+
+例:
+
+```text
+horses_20260406123045.csv
+sires_20260406123045.csv
+mares_20260406123045.csv
+```
+
+## データベース
+
+SQLite を使用しています。
+
+アプリ起動後は、保存済みのデータベースパスがあればそのファイルを使用します。ホーム画面の「データベースファイルを開く」から、使用する `.db` ファイルを切り替えることもできます。
+
+既定では `horses.db` という名前のデータベースを利用します。
+
+## 動作環境
+
+* Windows
+* Flutter SDK 3.9 系
+* Dart SDK 3.9 系
+
+※ macOS / Linux / モバイル環境での動作は未確認です。
+
+## 開発環境での起動方法
+
+### 1. 依存関係を取得
+
+```bash
+flutter pub get
+```
+
+### 2. Drift のコード生成
+
+```bash
+dart run build_runner build
+```
+
+継続的に生成したい場合:
+
+```bash
+dart run build_runner watch
+```
+
+### 3. 実行
+
+```bash
+flutter run -d windows
+```
+
+## 使用ライブラリ
+
+主な依存パッケージ:
+
+* `drift`
+* `sqlite3_flutter_libs`
+* `csv`
+* `path_provider`
+* `file_selector`
+* `fl_chart`
+* `shared_preferences`
+* `intl`
+
+## プロジェクト構成
+
+```text
+lib/
+├─ data/
+│  ├─ db/
+│  │  ├─ app_database.dart
+│  │  ├─ tables.dart
+│  │  └─ dao/
+│  ├─ entity/
+│  ├─ repository/
+│  └─ service/csv/
+├─ presentation/
+│  ├─ action/
+│  ├─ misc/
+│  ├─ page/
+│  ├─ theme/
+│  └─ widget/
+└─ main.dart
+```
+
+役割の概要:
+
+* `data/db`: SQLite / Drift の定義と DAO
+* `data/entity`: 生データや集計結果のモデル
+* `data/repository`: 画面側から使うデータ操作の窓口
+* `data/service/csv`: CSV の読み込み処理
+* `presentation/page`: 各画面
+* `presentation/action`: ファイル操作やインポート / エクスポート処理
+* `presentation/widget`: 共通 UI 部品
+
+## 注意事項
+
+* この README は、2026/4/6現在のソースコード実装をもとに整理したものです。
+* Windows 以外の動作確認はしていません。
+* CSV の列名や値は、想定形式と異なると正しく取り込めない場合があります。
+* 既存データを上書きする前にバックアップは自動作成されますが、重要なデータは別途保管してください。
