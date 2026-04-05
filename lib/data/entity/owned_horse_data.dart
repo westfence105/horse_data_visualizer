@@ -12,7 +12,7 @@ class OwnedHorseData {
   final int rating;
   final bool breeding;
 
-  OwnedHorseData({
+  const OwnedHorseData({
     required this.birthYear,
     required this.name,
     required this.fatherName,

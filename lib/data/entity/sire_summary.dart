@@ -10,7 +10,7 @@ class SireSummary {
   final bool? isHistorical;
   final bool? isFounder;
 
-  SireSummary({
+  const SireSummary({
     required this.id,
     required this.name,
       this.fatherName,

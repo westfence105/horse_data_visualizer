@@ -3,7 +3,8 @@ class HorseStatusDistribution {
   final int founderId;
   final String columnName;
   final Map<int,int> counts;
-  HorseStatusDistribution({
+
+  const HorseStatusDistribution({
     required this.lineageName,
     required this.founderId,
     required this.columnName,

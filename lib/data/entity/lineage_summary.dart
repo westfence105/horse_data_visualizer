@@ -13,7 +13,7 @@ class LineageSummary {
   final int maxDepth;
   final bool isFounderLine;
 
-  LineageSummary({
+  const LineageSummary({
     required this.lineageName,
     required this.founderId,
     required this.sireCount,
@@ -46,7 +46,8 @@ class LineageAnnualProduction {
   final String lineageName;
   final int founderId;
   final Map<int,int> data;
-  LineageAnnualProduction({
+  
+  const LineageAnnualProduction({
     required this.lineageName,
     required this.founderId,
     required this.data,
@@ -57,7 +58,8 @@ class LineageAnnualSexRatio {
   final String lineageName;
   final int founderId;
   final Map<int,double> data;
-  LineageAnnualSexRatio({
+  
+  const LineageAnnualSexRatio({
     required this.lineageName,
     required this.founderId,
     required this.data,

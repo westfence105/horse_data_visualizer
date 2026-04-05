@@ -3,6 +3,7 @@ import '../db/dao/horses_dao.dart';
 import '../db/dao/sires_dao.dart';
 import '../db/dao/mares_dao.dart';
 import '../db/dao/sire_stats_dao.dart';
+import '../entity/foal_data.dart';
 import '../entity/horse_status_distribution.dart';
 import '../entity/lineage_summary.dart';
 import '../entity/owned_horse_data.dart';
@@ -97,6 +98,10 @@ class HorsesRepository {
 
   static Future<List<OwnedHorseData>> fetchOwnedHorseData(int? fatherId, int? motherId) {
     return _horsesDao.fetchOwnedHorseData(fatherId, motherId);
+  }
+
+  static Future<List<FoalData>> fetchFoalData(int? fatherId, int? motherId) {
+    return _horsesDao.fetchFoalData(fatherId, motherId);
   }
 
   static Future<List<OwnedHorseData>> fetchLineageOwnedHorseData(int founderId) {

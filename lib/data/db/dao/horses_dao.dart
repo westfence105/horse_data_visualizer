@@ -1,4 +1,5 @@
 import 'package:drift/drift.dart';
+import '../../entity/foal_data.dart';
 import '../app_database.dart';
 import '../tables.dart';
 import '../../entity/owned_horse_data.dart';
@@ -65,11 +66,11 @@ class HorsesDao extends DatabaseAccessor<AppDb> with _$HorsesDaoMixin {
     return r.read(db.horses.birthYear.max());
   }
 
-  Future<List<OwnedHorseData>> fetchOwnedHorseData(int? fatherId, int? motherId) async {
+  String _whereParent(int? fatherId, int? motherId) {
     String whereStr;
     if (fatherId == null) {
       if (motherId == null) {
-        return [];
+        return 'h.sex IS NOT NULL';
       }
       else {
         whereStr = 'h.mother_id = $motherId';
@@ -83,7 +84,10 @@ class HorsesDao extends DatabaseAccessor<AppDb> with _$HorsesDaoMixin {
         whereStr = 'h.father_id = $fatherId AND h.mother_id = $motherId';
       }
     }
+    return whereStr;
+  }
 
+  Future<List<OwnedHorseData>> fetchOwnedHorseData(int? fatherId, int? motherId) async {
     final rows = await customSelect(
       '''
       SELECT
@@ -102,7 +106,7 @@ class HorsesDao extends DatabaseAccessor<AppDb> with _$HorsesDaoMixin {
       LEFT JOIN mares AS m ON h.name = m.name
       LEFT JOIN sires AS f ON h.father_id = f.id
       LEFT JOIN mares AS b ON h.mother_id = b.id
-      WHERE $whereStr AND h.rating IS NOT NULL
+      WHERE ${_whereParent(fatherId, motherId)} AND h.rating IS NOT NULL
       GROUP BY
         h.birth_year,
         h.name,
@@ -115,17 +119,50 @@ class HorsesDao extends DatabaseAccessor<AppDb> with _$HorsesDaoMixin {
       '''
     ).get();
 
-    return rows.map((r) => OwnedHorseData(
-      birthYear: r.read('birth_year'),
-      name: r.read('name'),
-      fatherName: r.read('father_name'),
-      motherName: r.read('mother_name'),
-      sex: r.read('sex'),
-      growth: r.read('growth'),
-      surface: r.read('surface'),
-      distance: r.read('distance'),
-      rating: r.read('rating'),
-      breeding: r.read('breeding'),
-    )).toList(growable: false);
+    return rows.map(OwnedHorseData.fromRow).toList(growable: false);
+  }
+
+  Future<int> getDebutGeneration() async {
+    final q = selectOnly(horses)
+                ..addColumns([horses.birthYear.max()])
+                ..where(horses.rating.isNotNull());
+    final r = await q.getSingle();
+    return r.read<int>(horses.birthYear.max()) ?? 1968;
+  }
+
+  Future<List<FoalData>> fetchFoalData(int? fatherId, int? motherId) async {
+    final debut = await getDebutGeneration();
+    final rows = await customSelect(
+      '''
+      SELECT
+        h.birth_year,
+        h.name,
+        f.name AS father_name,
+        b.name AS mother_name,
+        h.sex,
+        h.rating01,
+        h.rating02,
+        h.rating03,
+        h.rating04,
+        h.rating05
+      FROM horses AS h
+      LEFT JOIN sires AS f ON h.father_id = f.id
+      LEFT JOIN mares AS b ON h.mother_id = b.id
+      WHERE ${_whereParent(fatherId, motherId)} AND h.birth_year > :debut
+      GROUP BY
+        h.birth_year,
+        h.name,
+        father_name,
+        mother_name,
+        h.rating01,
+        h.rating02,
+        h.rating03,
+        h.rating04,
+        h.rating05
+      ''',
+      variables: [Variable(debut)],
+    ).get();
+
+    return rows.map(FoalData.fromRow).toList(growable: false);
   }
 }

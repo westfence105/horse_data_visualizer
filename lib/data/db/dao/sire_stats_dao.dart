@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:drift/drift.dart';
+import '../../entity/foal_data.dart';
 import '../../entity/mare_raw.dart';
 import '../../entity/owned_horse_data.dart';
 import '../app_database.dart';
@@ -83,12 +84,16 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
     return rows.map(SireSummary.fromRow).toList();
   }
 
-  Future<List<ParentStats>> fetchAllSireStats([int? beginYear, int? endYear]) async {
+  Future<int> getDebutGeneration() async {
     final q = selectOnly(horses)
                 ..addColumns([horses.birthYear.max()])
                 ..where(horses.rating.isNotNull());
     final r = await q.getSingle();
-    final debut = r.read<int>(horses.birthYear.max());
+    return r.read<int>(horses.birthYear.max()) ?? 1968;
+  }
+
+  Future<List<ParentStats>> fetchAllSireStats([int? beginYear, int? endYear]) async {
+    final debut = await getDebutGeneration();
     final rows = await customSelect(
       '''
       SELECT
@@ -471,6 +476,45 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
     ).get();
 
     return rows.map(OwnedHorseData.fromRow).toList(growable: false);
+  }
+
+  Future<List<FoalData>> fetchLineageFoalData(int founderId) async {
+    final debut = await getDebutGeneration();
+    final rows = await customSelect(
+      '''
+      $_withRecursiveTargetLineage
+
+      SELECT
+        h.birth_year,
+        h.name,
+        f.name AS father_name,
+        b.name AS mother_name,
+        h.sex,
+        h.rating01,
+        h.rating02,
+        h.rating03,
+        h.rating04,
+        h.rating05
+      FROM horses AS h
+      INNER JOIN lineage l ON l.id = h.father_id
+      LEFT JOIN sires AS f ON h.father_id = f.id
+      LEFT JOIN mares AS b ON h.mother_id = b.id
+      WHERE h.birth_year > :debut
+      GROUP BY
+        h.birth_year,
+        h.name,
+        father_name,
+        mother_name,
+        h.rating01,
+        h.rating02,
+        h.rating03,
+        h.rating04,
+        h.rating05
+      ''',
+      variables: [Variable(founderId),Variable(debut)],
+    ).get();
+
+    return rows.map(FoalData.fromRow).toList(growable: false);
   }
 
   Future<HorseStatusDistribution?> fetchHorseStatusDistribution(int founderId, String key, [int? beginYear, int? endYear]) async {

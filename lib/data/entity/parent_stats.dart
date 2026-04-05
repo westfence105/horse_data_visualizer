@@ -18,7 +18,7 @@ class ParentStats {
 
   double? get ownRate => (childCount - foalCount > 0) ? ownCount.toDouble() / (childCount - foalCount) : null;
 
-  ParentStats({
+  const ParentStats({
     required this.name,
     required this.childCount,
     required this.sex,

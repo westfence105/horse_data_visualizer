@@ -11,7 +11,7 @@ class MareSummary {
   final int? ownCount;
   final bool? isHistorical;
 
-  MareSummary({
+  const MareSummary({
     required this.id,
     required this.name,
       this.fatherName,

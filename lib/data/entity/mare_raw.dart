@@ -8,7 +8,7 @@ class MareRaw {
   final String? mother;
   final bool? isHistorical;
 
-  MareRaw(this.name, [this.father, this.mother, this.isHistorical]);
+  const MareRaw(this.name, [this.father, this.mother, this.isHistorical]);
 
   MareRaw.fromSummary(MareSummary summary, {
     String? name,

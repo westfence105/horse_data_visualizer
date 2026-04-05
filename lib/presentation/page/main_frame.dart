@@ -5,7 +5,7 @@ import 'top_page.dart';
 import 'sires_page.dart';
 import 'stats_page.dart';
 import 'graph_page.dart';
-import 'owned_page.dart';
+import 'list_page.dart';
 
 class MainFrame extends StatefulWidget {
   const MainFrame({super.key});
@@ -19,7 +19,7 @@ class _MainFrameState extends State<MainFrame> {
 
   final _childPages = [
     const TopPage(),
-    const OwnedPage(),
+    const ListPage(),
     const GraphPage(),
     const StatsPage(),
     const SiresPage(),

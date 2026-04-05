@@ -6,7 +6,7 @@ class SireRaw {
   final bool? isHistorical;
   final bool? isFounder;
 
-  SireRaw(this.name, [this.father, this.isHistorical, this.isFounder]);
+  const SireRaw(this.name, [this.father, this.isHistorical, this.isFounder]);
 
   SireRaw.fromSummary(SireSummary summary, {
     String? name,
