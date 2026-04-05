@@ -22,14 +22,14 @@ class MaresRepository {
   }
 
   static Future<List<List<String>>> exportToMap({ bool historical = false }) async {
-    final data = await MaresRepository.fetchAllMareSummaries();
+    final data = await _maresDao.fetchAll();
     return <List<String>>[
       ["名前","父","母","史実"],
       ...data.where((s) => !historical || (s.isHistorical ?? false))
         .map((m) => [
           m.name,
-          m.fatherName ?? '',
-          m.motherName ?? '',
+          m.father ?? '',
+          m.mother ?? '',
           m.isHistorical == true ? '○' : '',
         ])
     ];

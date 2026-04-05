@@ -25,13 +25,13 @@ class SiresRepository {
   }
 
   static Future<List<List<String>>> exportToMap({ bool historical = false }) async {
-    final data = await SiresRepository.fetchAllSireSummaries();
+    final data = await _siresDao.fetchAll();
     return <List<String>>[
       ["名前","父","史実","系統"],
       ...data.where((s) => !historical || (s.isHistorical ?? false))
         .map((s) => [
           s.name,
-          s.fatherName ?? '',
+          s.father ?? '',
           s.isHistorical == true ? '○' : '',
           s.isFounder == true ? '○' : '',
         ])

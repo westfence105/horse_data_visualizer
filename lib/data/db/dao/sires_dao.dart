@@ -81,6 +81,22 @@ class SiresDao extends DatabaseAccessor<AppDb> with _$SiresDaoMixin {
     );
   }
 
+  Future<List<SireRaw>> fetchAll() async {
+    final rows = await customSelect(
+      '''
+      SELECT
+        s.name,
+        f.name AS father_name,
+        s.is_historical,
+        s.is_founder
+      FROM sires s
+      LEFT JOIN sires f ON f.id = s.father_id
+      '''
+    ).get();
+
+    return rows.map(SireRaw.fromRow).toList(growable: false);
+  }
+
   Future<void> backfillFromHorses() async {
     await customStatement(
       '''

@@ -1,5 +1,8 @@
 import 'package:drift/drift.dart';
 import '../../entity/foal_data.dart';
+import '../../entity/horse_raw.dart';
+import '../../repository/mares_repository.dart';
+import '../../repository/sires_repository.dart';
 import '../app_database.dart';
 import '../tables.dart';
 import '../../entity/owned_horse_data.dart';
@@ -10,13 +13,13 @@ part 'horses_dao.g.dart';
 class HorsesDao extends DatabaseAccessor<AppDb> with _$HorsesDaoMixin {
   HorsesDao(super.db);
 
-  Future<void> upsert(Horse d) async {
+  Future<void> upsert(HorseRaw d) async {
     db.transaction(() async {
       await _upsert(d);
     });
   }
 
-  Future<void> upsertList(Iterable<Horse> data) async {
+  Future<void> upsertList(Iterable<HorseRaw> data) async {
     db.transaction(() async {
       for(final d in data) {
         await _upsert(d);
@@ -24,14 +27,14 @@ class HorsesDao extends DatabaseAccessor<AppDb> with _$HorsesDaoMixin {
     });
   }
 
-  Future<void> _upsert(Horse d) async {
+  Future<void> _upsert(HorseRaw d) async {
     await into(db.horses).insert(
       HorsesCompanion.insert(
         birthYear: d.birthYear,
         name: Value(d.name?.trim()),
         sex:       d.sex,
-        fatherId:  d.fatherId,
-        motherId:  d.motherId,
+        fatherId:  await SiresRepository.findByName(d.fatherName),
+        motherId:  await MaresRepository.findByName(d.motherName),
         rating01:  d.rating01,
         rating02:  d.rating02,
         rating03:  d.rating03,
@@ -85,6 +88,32 @@ class HorsesDao extends DatabaseAccessor<AppDb> with _$HorsesDaoMixin {
       }
     }
     return whereStr;
+  }
+
+  Future<List<HorseData>> fetchAll() async {
+    final rows = await customSelect(
+      '''
+        SELECT
+          h.birth_year,
+          h.sex,
+          f.name AS father_name,
+          m.name AS mother_name,
+          h.rating01,
+          h.rating02,
+          h.rating03,
+          h.rating04,
+          h.rating05,
+          h.name,
+          h.growth,
+          h.surface,
+          h.distance,
+          h.rating
+        FROM horses h
+        LEFT JOIN sires f ON f.id = h.father_id
+        LEFT JOIN mares m ON m.id = h.mother_id
+      '''
+    ).get();
+    return rows.map(HorseData.fromRow).toList(growable: false);
   }
 
   Future<List<OwnedHorseData>> fetchOwnedHorseData(int? fatherId, int? motherId) async {

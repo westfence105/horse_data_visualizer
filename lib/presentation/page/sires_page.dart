@@ -6,15 +6,6 @@ import '../../data/repository/sires_repository.dart';
 import '../action/file_actions.dart';
 import '../theme/button_style.dart';
 
-enum  _SortMode {
-  name(1),
-  fatherName(2);
-
-  final int value;
-
-  const _SortMode(this.value);
-}
-
 class SiresPage extends StatefulWidget {
   const SiresPage({super.key});
 

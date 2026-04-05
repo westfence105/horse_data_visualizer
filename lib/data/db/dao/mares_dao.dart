@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
 import '../../entity/mare_raw.dart';
+import '../../repository/sires_repository.dart';
 import '../app_database.dart';
 import '../tables.dart';
 
@@ -39,25 +40,6 @@ class MaresDao extends DatabaseAccessor<AppDb> with _$MaresDaoMixin {
     }
   }
 
-  Future<int> _findSireByName(String name) async {
-    final q = select(db.sires)
-      ..where((t) => t.name.equals(name));
-    final f = await q.getSingleOrNull();
-    if (f == null) {
-      final id = await into(db.sires).insert(
-        SiresCompanion.insert(
-          name: name,
-        )
-      );
-      final q2 = select(db.sires)
-        ..where((t) => t.id.equals(id));
-      return (await q2.getSingle()).id;
-    }
-    else {
-      return f.id;
-    }
-  }
-
   Future<void> _upsert(String name, String? father, String? mother, bool? isHistorical) async {
     if (name == mother) {
       // 自己参照の禁止
@@ -66,7 +48,7 @@ class MaresDao extends DatabaseAccessor<AppDb> with _$MaresDaoMixin {
 
     int? fatherId;
     if (father?.isNotEmpty == true) {
-      fatherId = await _findSireByName(father!);
+      fatherId = await SiresRepository.findByName(father!);
     }
 
     int? motherId;
@@ -91,6 +73,23 @@ class MaresDao extends DatabaseAccessor<AppDb> with _$MaresDaoMixin {
       ],
       updates: {db.sires},
     );
+  }
+
+  Future<List<MareRaw>> fetchAll() async {
+    final rows = await customSelect(
+      '''
+      SELECT
+        h.name,
+        f.name AS father_name,
+        m.name AS mother_name,
+        h.is_historical
+      FROM mares h
+      LEFT JOIN sires f ON f.id = h.father_id
+      LEFT JOIN mares m ON m.id = h.mother_id
+      '''
+    ).get();
+
+    return rows.map(MareRaw.fromRow).toList(growable: false);
   }
 
   Future<void> backfillFromHorses() async {

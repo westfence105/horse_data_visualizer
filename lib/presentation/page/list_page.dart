@@ -10,7 +10,9 @@ import '../../data/entity/mare_summary.dart';
 import '../../data/repository/horses_repository.dart';
 import '../../data/repository/mares_repository.dart';
 import '../../data/repository/sires_repository.dart';
+import '../action/file_actions.dart';
 import '../misc/enums.dart';
+import '../theme/button_style.dart';
 import '../widget/aggregation_mode_selector.dart';
 
 class ListPage extends StatefulWidget {
@@ -128,7 +130,7 @@ class _ListPageState extends State<ListPage> {
         }
       }
     }));
-    foalFuture?.then((result) {
+    foalFuture.then((result) {
       setState(() {
         for (final r in result) {
           final f = (_foalData[r.birthYear] ??= _SexPair([],[]));
@@ -209,6 +211,12 @@ class _ListPageState extends State<ListPage> {
               SizedBox(width: 16),
               if (_lineages.isNotEmpty)
                 Text('(${_lineages.join(' - ')})'),
+              Expanded(child: SizedBox.shrink()),
+              ElevatedButton(
+                style: elevatedButtonStyleSecond,
+                onPressed: exportHorseCsvAction,
+                child: const Text('生産馬CSVエクスポート'),
+              ),
             ],
           ),
           const SizedBox(height: 16),
