@@ -1,3 +1,5 @@
+import 'package:drift/drift.dart';
+
 class SireSummary {
   final int id;
   final String name;
@@ -7,6 +9,7 @@ class SireSummary {
   final int? ownCount;
   final bool? isHistorical;
   final bool? isFounder;
+
   SireSummary({
     required this.id,
     required this.name,
@@ -17,4 +20,15 @@ class SireSummary {
       this.isFounder,
       this.ownCount,
     });
+  
+  SireSummary.fromRow(QueryRow r) : this(
+      id: r.read('id'),
+      name: r.read('name'),
+      fatherId: r.read('father_id'),
+      fatherName: r.read('father_name'),
+      childCount: r.read('child_count'),
+      isHistorical: r.read('is_historical'),
+      isFounder: r.read('is_founder'),
+      ownCount: r.read('own_count'),
+  );
 }

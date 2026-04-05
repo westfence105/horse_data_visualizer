@@ -1,32 +1,24 @@
 import 'package:drift/drift.dart';
+import '../../entity/mare_raw.dart';
 import '../app_database.dart';
 import '../tables.dart';
-import '../../entity/mare_summary.dart';
 
 part 'mares_dao.g.dart';
 
-class MareRaw {
-  final String name;
-  final int? fatherId;
-  final String? mother;
-  MareRaw(this.name, [this.fatherId, this.mother]);
-}
-
-
-@DriftAccessor(tables: [Mares])
+@DriftAccessor(tables: [Mares,Sires])
 class MaresDao extends DatabaseAccessor<AppDb> with _$MaresDaoMixin {
   MaresDao(super.db);
 
-  Future<void> upsert(String name, [int? fatherId, String? mother]) async {
+  Future<void> upsert(String name, [String? father, String? mother, bool? isHistorical]) async {
     await db.transaction(() async {
-      await _upsert(name.trim(), fatherId, mother?.trim());
+      await _upsert(name.trim(), father?.trim(), mother?.trim(), isHistorical);
     });
   }
 
   Future<void> upsertList(Iterable<MareRaw> rawData) async {
     await db.transaction(() async {
       for (MareRaw d in rawData) {
-        await _upsert(d.name.trim(), d.fatherId, d.mother?.trim());
+        await _upsert(d.name.trim(), d.father?.trim(), d.mother?.trim(), d.isHistorical);
       }
     });
   }
@@ -47,31 +39,55 @@ class MaresDao extends DatabaseAccessor<AppDb> with _$MaresDaoMixin {
     }
   }
 
-  Future<void> _upsert(String name, int? fatherId, String? mother) async {
+  Future<int> _findSireByName(String name) async {
+    final q = select(db.sires)
+      ..where((t) => t.name.equals(name));
+    final f = await q.getSingleOrNull();
+    if (f == null) {
+      final id = await into(db.sires).insert(
+        SiresCompanion.insert(
+          name: name,
+        )
+      );
+      final q2 = select(db.sires)
+        ..where((t) => t.id.equals(id));
+      return (await q2.getSingle()).id;
+    }
+    else {
+      return f.id;
+    }
+  }
+
+  Future<void> _upsert(String name, String? father, String? mother, bool? isHistorical) async {
     if (name == mother) {
       // 自己参照の禁止
       return;
     }
 
+    int? fatherId;
+    if (father?.isNotEmpty == true) {
+      fatherId = await _findSireByName(father!);
+    }
+
     int? motherId;
-    if (mother != null) {
-      motherId = await findByName(mother);
+    if (mother?.isNotEmpty == true) {
+      motherId = await findByName(mother!);
     }
 
     await customInsert(
       '''
-      INSERT INTO mares(name, father_id, mother_id)
-      VALUES(:name, :fatherId, :motherId)
+      INSERT INTO mares(name, father_id, mother_id, is_historical)
+      VALUES(:name, :fatherId, :motherId, :isHistorical)
       ON CONFLICT(name) DO UPDATE
-        SET father_id = COALESCE(mares.father_id, excluded.father_id),
-            mother_id = COALESCE(mares.mother_id, excluded.mother_id)
-        WHERE mares.father_id IS NULL
-           OR mares.mother_id IS NULL;
+        SET father_id = excluded.father_id,
+            mother_id = excluded.mother_id,
+            is_historical = excluded.is_historical
       ''',
       variables: [
         Variable(name),
         Variable(fatherId),
-        Variable(motherId)
+        Variable(motherId),
+        Variable(isHistorical),
       ],
       updates: {db.sires},
     );
@@ -93,7 +109,8 @@ class MaresDao extends DatabaseAccessor<AppDb> with _$MaresDaoMixin {
           FROM horses
           WHERE horses.name = mares.name
           LIMIT 1
-        )
+        ),
+        is_historical = FALSE
       WHERE
         (father_id IS NULL OR mother_id IS NULL)
         AND EXISTS (
@@ -103,40 +120,5 @@ class MaresDao extends DatabaseAccessor<AppDb> with _$MaresDaoMixin {
         );
       '''
     );
-  }
-
-  Future<List<MareSummary>> fetchAllSummaries() async {
-    final rows = await customSelect(
-      '''
-      SELECT
-        h.id,
-        h.name,
-        h.father_id,
-        f.name AS father_name,
-        h.mother_id,
-        m.name AS mother_name,
-        COUNT(c.sex) AS child_count,
-        COUNT(c.rating) AS own_count
-      FROM mares AS h
-      LEFT JOIN sires AS f
-        ON h.father_id = f.id
-      LEFT JOIN mares AS m
-        ON h.mother_id = m.id
-      LEFT JOIN horses AS c
-        ON c.mother_id = h.id
-      GROUP BY h.id, h.name, h.father_id, f.name, h.mother_id, m.name
-      '''
-    ).get();
-
-    return rows.map((r) => MareSummary(
-      id: r.read('id'),
-      name: r.read('name'),
-      fatherId: r.read('father_id'),
-      fatherName: r.read('father_name'),
-      motherId: r.read('mother_id'),
-      motherName: r.read('mother_name'),
-      childCount: r.read('child_count'),
-      ownCount: r.read('own_count'),
-    )).toList();
   }
 }

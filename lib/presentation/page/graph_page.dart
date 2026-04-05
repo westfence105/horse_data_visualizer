@@ -95,7 +95,7 @@ class _GraphPageState extends State<GraphPage> {
 
   void _fetchSireList() {
     if (_selectedLineage != null) {
-      HorsesRepository.fetchLineageSires(_selectedLineage!).then((value) {
+      SiresRepository.fetchLineageSires(_selectedLineage!).then((value) {
         setState(() {
           _spots = {};
           _meters = {};

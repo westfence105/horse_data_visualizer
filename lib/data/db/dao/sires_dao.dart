@@ -2,7 +2,6 @@ import 'package:drift/drift.dart';
 import '../app_database.dart';
 import '../tables.dart';
 import '../../entity/sire_raw.dart';
-import '../../entity/sire_summary.dart';
 
 part 'sires_dao.g.dart';
 
@@ -71,7 +70,6 @@ class SiresDao extends DatabaseAccessor<AppDb> with _$SiresDaoMixin {
         SET father_id = excluded.father_id,
             is_historical = excluded.is_historical,
             is_founder = excluded.is_founder
-        WHERE excluded.father_id IS NOT NULL
       ''',
       variables: [
         Variable<String>(name),
@@ -93,7 +91,8 @@ class SiresDao extends DatabaseAccessor<AppDb> with _$SiresDaoMixin {
           FROM horses
           WHERE horses.name = sires.name
           LIMIT 1
-        )
+        ),
+        is_historical = FALSE
       WHERE father_id IS NULL
         AND EXISTS (
           SELECT 1
@@ -102,45 +101,6 @@ class SiresDao extends DatabaseAccessor<AppDb> with _$SiresDaoMixin {
         );
       '''
     );
-  }
-
-  Future<List<SireSummary>> fetchAllSummaries() async {
-    final rows = await customSelect(
-      '''
-      SELECT
-        s.id,
-        s.name,
-        s.father_id,
-        f.name AS father_name,
-        s.is_historical,
-        s.is_founder,
-        COUNT(c.sex) AS child_count,
-        COUNT(c.rating) AS own_count
-      FROM sires AS s
-      LEFT JOIN sires AS f
-        ON s.father_id = f.id
-      LEFT JOIN horses AS c
-        ON c.father_id = s.id
-      GROUP BY
-        s.id,
-        s.name,
-        s.father_id,
-        father_name,
-        s.is_historical,
-        s.is_founder
-      '''
-    ).get();
-
-    return rows.map((r) => SireSummary(
-      id: r.read('id'),
-      name: r.read('name'),
-      fatherId: r.read('father_id'),
-      fatherName: r.read('father_name'),
-      childCount: r.read('child_count'),
-      ownCount: r.read('own_count'),
-      isHistorical: r.read('is_historical'),
-      isFounder: r.read('is_founder'),
-    )).toList();
   }
 
   Future<void> cleanupFictionalSiresWithoutDescendants() {

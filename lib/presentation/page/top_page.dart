@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import '../action/file_actions.dart';
+import '../theme/button_style.dart';
 
 class TopPage extends StatelessWidget {
   const TopPage({super.key});
@@ -25,6 +26,7 @@ class TopPage extends StatelessWidget {
             children: [
               ElevatedButton(
                 onPressed: openDbAction,
+                style: elevatedButtonStyleFirst,
                 child: const Text('データベースファイルを開く'),
               ),
               ElevatedButton(
@@ -34,6 +36,10 @@ class TopPage extends StatelessWidget {
               ElevatedButton(
                 onPressed: importSireCsvAction,
                 child: const Text('種牡馬CSVインポート'),
+              ),
+              ElevatedButton(
+                onPressed: importMareCsvAction,
+                child: const Text('繁殖牝馬CSVインポート'),
               ),
             ],
           ),

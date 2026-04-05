@@ -1,3 +1,5 @@
+import 'package:drift/drift.dart';
+
 class OwnedHorseData {
   final int birthYear;
   final String name;
@@ -22,4 +24,17 @@ class OwnedHorseData {
     required this.rating,
     required this.breeding,
   });
+
+  OwnedHorseData.fromRow(QueryRow r) : this(
+    birthYear: r.read('birth_year'),
+    name: r.read('name'),
+    fatherName: r.read('father_name'),
+    motherName: r.read('mother_name'),
+    sex: r.read('sex'),
+    growth: r.read('growth'),
+    surface: r.read('surface'),
+    distance: r.read('distance'),
+    rating: r.read('rating'),
+    breeding: r.read('breeding'),
+  );
 }

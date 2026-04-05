@@ -1,45 +1,34 @@
 import 'package:flutter/material.dart';
 
-import '../../data/entity/sire_raw.dart';
-import '../../data/entity/sire_summary.dart';
-import '../../data/repository/sires_repository.dart';
+import '../../data/entity/mare_raw.dart';
+import '../../data/entity/mare_summary.dart';
+import '../../data/repository/mares_repository.dart';
 import '../action/file_actions.dart';
 import '../theme/button_style.dart';
 
-enum  _SortMode {
-  name(1),
-  fatherName(2);
-
-  final int value;
-
-  const _SortMode(this.value);
-}
-
-class SiresPage extends StatefulWidget {
-  const SiresPage({super.key});
+class MaresPage extends StatefulWidget {
+  const MaresPage({ super.key });
 
   @override
-  State<StatefulWidget> createState() => _SiresPageState();
+  State<StatefulWidget> createState() => _MaresPageState();
 }
 
-class _SiresPageState extends State<SiresPage> {
-  List<SireSummary> _summaries = [];
-  
+class _MaresPageState extends State<MaresPage> {
+  List<MareSummary> _summaries = [];
+
   final _historicalNotifiers = <String, ValueNotifier<bool>>{};
-  final _founderNotifiers = <String, ValueNotifier<bool>>{};
 
   void _fetch() {
-    SiresRepository.fetchAllSireSummaries()
+    MaresRepository.fetchAllMareSummaries()
       .then((result) => setState(() {
         _summaries = result;
         for (final s in _summaries) {
           _historicalNotifiers[s.name] = ValueNotifier(s.isHistorical ?? false);
-          _founderNotifiers[s.name] = ValueNotifier(s.isFounder ?? false);
         }
       }));
   }
 
-  int _sortColumn = 1;
+  int _sortColumn = 0;
   bool _sortAscending = false;
 
   void _onSort(int column, bool asc) {
@@ -49,48 +38,40 @@ class _SiresPageState extends State<SiresPage> {
     });
   }
 
-  int _compareSires(SireSummary a, SireSummary b) {
+  int _compareMares(MareSummary a, MareSummary b) {
     int d = _sortAscending ? -1 : 1;
-    if (_sortColumn == 1 || a.fatherName == b.fatherName) {
-      return a.name.compareTo(b.name) * d;
+    if (_sortColumn == 1) {
+      if (a.fatherName != b.fatherName) {
+        return (a.fatherName?.compareTo(b.fatherName ?? '') ?? 1) * d;
+      }
     }
-    else if (a.fatherName == null) {
-      return d;
+    if (_sortColumn == 2) {
+      if (a.motherName != b.motherName) {
+        return (a.motherName?.compareTo(b.motherName ?? '') ?? 1) * d;
+      }
     }
-    else if (b.fatherName == null) {
-      return -d;
-    }
-    else {
-      return a.fatherName!.compareTo(b.fatherName!) * d;
-    }
+    return a.name.compareTo(b.name) * d;
   }
 
-  final _changedFather = <String, String>{};
-  final _changedHistorical = <String, bool>{};
-  final _changedFounder = <String, bool>{};
+  final _changedFather = <String,String>{};
+  final _changedMother = <String,String>{};
+  final _changedHistorical = <String,bool>{};
 
   void _applyUpdate() {
-    final changedData = <SireRaw>{};
-    for (SireSummary s in _summaries) {
+    final changedData = <MareRaw>{};
+    for (MareSummary s in _summaries) {
       final father = _changedFather.containsKey(s.name) ? _changedFather[s.name] : null;
+      final mother = _changedMother.containsKey(s.name) ? _changedMother[s.name] : null;
       final isHistorical = _changedHistorical.containsKey(s.name) ? _changedHistorical[s.name] : null;
-      final isFounder = _changedFounder.containsKey(s.name) ? _changedFounder[s.name] : null;
-      if (father != null || isHistorical != null || isFounder != null) {
+      if (father != null || mother != null || isHistorical != null) {
         changedData.add(
-          SireRaw.fromSummary(s, father: father, isHistorical: isHistorical, isFounder: isFounder),
+          MareRaw.fromSummary(s, father: father, mother: mother, isHistorical: isHistorical),
         );
       }
     }
-    // debugPrint(changedData.map((s) => '${s.name}, ${s.father}, ${s.isHistorical}').join('\n'));
-    SiresRepository.updateSires(
+    MaresRepository.updateMares(
       changedData,
     ).then((_) {
-      _fetch();
-    });
-  }
-
-  void _cleanupFictionalSires() {
-    SiresRepository.cleanupFictionalSiresWithoutDescendants().then((_) {
       _fetch();
     });
   }
@@ -105,17 +86,17 @@ class _SiresPageState extends State<SiresPage> {
   Widget build(BuildContext context) {
     final columns = <DataColumn>[
       DataColumn(
-        label: Text('系統'),
-        columnWidth: FixedColumnWidth(100),
-        headingRowAlignment: MainAxisAlignment.center,
-      ),
-      DataColumn(
         label: Text(' 名前  '),
         columnWidth: FixedColumnWidth(240),
         onSort: _onSort,
       ),
       DataColumn(
         label: Text(' 父  '),
+        columnWidth: FixedColumnWidth(240),
+        onSort: _onSort,
+      ),
+      DataColumn(
+        label: Text(' 母  '),
         columnWidth: FixedColumnWidth(240),
         onSort: _onSort,
       ),
@@ -132,14 +113,8 @@ class _SiresPageState extends State<SiresPage> {
           children: [
             ElevatedButton(
               style: elevatedButtonStyleSecond,
-              onPressed: exportSireCsvAction,
-              child: const Text('種牡馬CSVエクスポート'),
-            ),
-            const SizedBox(width: 16),
-            ElevatedButton(
-              style: elevatedButtonStyleThird,
-              onPressed: _cleanupFictionalSires,
-              child: const Text('架空種牡馬クリーンアップ'),
+              onPressed: exportMareCsvAction,
+              child: const Text('繁殖牝馬CSVエクスポート'),
             ),
             const SizedBox(width: 16),
             ElevatedButton(
@@ -161,22 +136,8 @@ class _SiresPageState extends State<SiresPage> {
           child: SingleChildScrollView(
             child: DataTable(
               columns: columns,
-              rows: (_summaries..sort(_compareSires)).map((s) => DataRow(
+              rows: (_summaries..sort(_compareMares)).map((s) => DataRow(
                 cells: <DataCell>[
-                  DataCell(
-                    ValueListenableBuilder(
-                      valueListenable: _founderNotifiers[s.name]!,
-                      builder: (ctx, v, child) => Checkbox(
-                        value: v,
-                        onChanged: (value) {
-                          if (value != null) {
-                            _changedFounder[s.name] = value;
-                            _founderNotifiers[s.name]!.value = value;
-                          }
-                        },
-                      ),
-                    ),
-                  ),
                   DataCell(
                     Text(
                       s.name,
@@ -194,6 +155,14 @@ class _SiresPageState extends State<SiresPage> {
                     ),
                   ),
                   DataCell(
+                    TextField(
+                      controller: TextEditingController(
+                        text: s.motherName ?? '',
+                      ),
+                      onChanged: (value) => _changedMother[s.name] = value,
+                    ),
+                  ),
+                  DataCell(
                     ValueListenableBuilder(
                       valueListenable: _historicalNotifiers[s.name]!,
                       builder: (ctx, v, child) => Checkbox(
@@ -207,8 +176,8 @@ class _SiresPageState extends State<SiresPage> {
                       ),
                     ),
                   ),
-                ]
-              )).toList(),
+                ],
+              )).toList(growable: false),
               headingRowHeight: 0,
             ),
           ),

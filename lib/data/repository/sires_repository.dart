@@ -1,6 +1,7 @@
 import '../db/app_database.dart';
 import '../db/dao/sires_dao.dart';
 import '../db/dao/sire_stats_dao.dart';
+import '../entity/mare_raw.dart';
 import '../entity/sire_raw.dart';
 import '../entity/sire_summary.dart';
 import '../entity/lineage_summary.dart';
@@ -13,13 +14,27 @@ class SiresRepository {
 
   static Future<void> importFromMap(List<Map<String,String>> rawData) async {
     final data = rawData
-      .where((e) => e.containsKey('種牡馬'))
+      .where((e) => e.containsKey('名前'))
       .map((d) => SireRaw(
-        d['種牡馬']!, d['父'], (d['史実']?.isNotEmpty ?? false),
+        d['名前']!, d['父'], (d['史実']?.isNotEmpty ?? false), (d['系統']?.isNotEmpty ?? false),
       ));
     if (data.isNotEmpty) {
       await _siresDao.upsertList(data);
     }
+  }
+
+  static Future<List<List<String>>> exportToMap({ bool historical = false }) async {
+    final data = await SiresRepository.fetchAllSireSummaries();
+    return <List<String>>[
+      ["名前","父","史実","系統"],
+      ...data.where((s) => !historical || (s.isHistorical ?? false))
+        .map((s) => [
+          s.name,
+          s.fatherName ?? '',
+          s.isHistorical == true ? '○' : '',
+          s.isFounder == true ? '○' : '',
+        ])
+    ];
   }
 
   static Future<void> updateSires(Iterable<SireRaw> rawData) {
@@ -30,8 +45,20 @@ class SiresRepository {
     return _siresDao.findByName(name);
   }
 
-  static Future<List<SireSummary>> fetchAllSireSummaries() {
-    return _siresDao.fetchAllSummaries();
+  static Future<SireSummary?> fetchSireSummary(int sireId) {
+    return _sireStatsDao.fetchSireSummary(sireId);
+  }
+
+  static Future<List<SireSummary>> fetchLineageSires(int founderId) {
+    return _sireStatsDao.fetchLineageSires(founderId);
+  }
+
+  static Future<List<MareRaw>> fetchLineageMares(int founderId) {
+    return _sireStatsDao.fetchLineageMares(founderId);
+  }
+
+  static Future<List<SireSummary>> fetchAllSireSummaries([int? beginYear, int? endYear]) {
+    return _sireStatsDao.fetchAllSireSummaries(beginYear, endYear);
   }
 
   static Future<List<LineageSummary>> fetchAllLineageSummaries([int? beginYear, int? endYear]) {
@@ -44,6 +71,10 @@ class SiresRepository {
 
   static Future<List<ParentStats>> fetchAllLineageStats([int? beginYear, int? endYear]) {
     return _sireStatsDao.fetchAllLineageStats(beginYear, endYear);
+  }
+
+  static Future<List<String>> findBelongingLineages(int sireId) {
+    return _sireStatsDao.findBelongingLineages(sireId);
   }
 
   static Future<void> cleanupFictionalSiresWithoutDescendants() {

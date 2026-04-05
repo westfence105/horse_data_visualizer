@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'mares_page.dart';
 import 'top_page.dart';
 import 'sires_page.dart';
 import 'stats_page.dart';
@@ -22,6 +23,7 @@ class _MainFrameState extends State<MainFrame> {
     const GraphPage(),
     const StatsPage(),
     const SiresPage(),
+    const MaresPage(),
   ];
 
   @override
@@ -54,6 +56,10 @@ class _MainFrameState extends State<MainFrame> {
           ),
           BottomNavigationBarItem(
             label: '種牡馬マスタ',
+            icon: Icon(Icons.list),
+          ),
+          BottomNavigationBarItem(
+            label: '繁殖牝馬マスタ',
             icon: Icon(Icons.list),
           ),
         ],

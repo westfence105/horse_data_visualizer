@@ -1,7 +1,7 @@
 import 'dart:math';
 
 import 'package:drift/drift.dart';
-import 'package:flutter/rendering.dart';
+import '../../entity/mare_raw.dart';
 import '../../entity/owned_horse_data.dart';
 import '../app_database.dart';
 import '../tables.dart';
@@ -17,6 +17,42 @@ part 'sire_stats_dao.g.dart';
 class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
   SireStatsDao(super.db);
 
+  Future<SireSummary?> fetchSireSummary(int sireId) async {
+    final rows = await customSelect(
+      '''
+      SELECT
+        s.id,
+        s.name,
+        s.father_id,
+        f.name          AS father_name,
+        COUNT(h.sex)    AS child_count,
+        COUNT(h.rating) AS own_count,
+        s.is_historical,
+        s.is_founder
+      FROM sires AS s
+      LEFT JOIN sires AS f
+        ON s.father_id = f.id
+      LEFT JOIN horses AS h
+        ON h.father_id = s.id
+      WHERE s.id = :sireId
+      GROUP BY
+        s.id,
+        s.name,
+        s.father_id,
+        father_name
+      ORDER BY child_count DESC;
+      ''',
+      variables: [Variable(sireId)],
+    ).get();
+
+    if (rows.isEmpty) {
+      return null;
+    }
+    else {
+      return SireSummary.fromRow(rows.first);
+    }
+  }
+
   Future<List<SireSummary>> fetchAllSireSummaries([int? beginYear, int? endYear]) async {
     final rows = await customSelect(
       '''
@@ -24,8 +60,11 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
         s.id,
         s.name,
         s.father_id,
-        f.name       AS father_name,
-        COUNT(h.sex) AS child_count
+        f.name          AS father_name,
+        COUNT(h.sex)    AS child_count,
+        COUNT(h.rating) AS own_count,
+        s.is_historical,
+        s.is_founder
       FROM sires AS s
       LEFT JOIN sires AS f
         ON s.father_id = f.id
@@ -41,13 +80,7 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
       '''
     ).get();
 
-    return rows.map((r) => SireSummary(
-      id: r.read('id'),
-      name: r.read('name'),
-      fatherId: r.read('father_id'),
-      fatherName: r.read('father_name'),
-      childCount: r.read('child_count'),
-    )).toList();
+    return rows.map(SireSummary.fromRow).toList();
   }
 
   Future<List<ParentStats>> fetchAllSireStats([int? beginYear, int? endYear]) async {
@@ -59,8 +92,8 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
     final rows = await customSelect(
       '''
       SELECT
-        s.name          AS sire_name,
-        COUNT(*)        AS child_count,
+        s.name          AS name,
+        COUNT(h.sex)    AS child_count,
         AVG(h.sex)      AS sex,
         AVG(h.rating01) AS rating01,
         AVG(h.rating02) AS rating02,
@@ -82,22 +115,7 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
       ''',
       variables: [Variable(debut)],
     ).get();
-    return rows.map((r) => ParentStats(
-      name: r.read('sire_name'),
-      childCount: r.read('child_count'),
-      sex: r.read('sex'),
-      rating01: r.read('rating01'),
-      rating02: r.read('rating02'),
-      rating03: r.read('rating03'),
-      rating04: r.read('rating04'),
-      rating05: r.read('rating05'),
-      growth:   r.read('growth'),
-      surface:  r.read('surface'),
-      distance: r.read('distance'),
-      rating:   r.read('rating'),
-      ownCount: r.read('own_count'),
-      foalCount: r.read('foal_count'),
-    )).toList(growable: false);
+    return rows.map(ParentStats.fromRow).toList(growable: false);
   }
 
   static const _withRecursiveLineage =
@@ -110,8 +128,14 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
         p.id    AS progenitor_id,
         p.name  AS progenitor_name,
         f.is_founder AS is_founder_line,
-        COUNT(ds.id) AS direct_sire_count,
-        COUNT(dh.sex) AS direct_child_count,
+        (
+          SELECT COUNT(ds.id)
+          FROM sires ds WHERE f.id = ds.father_id
+        ) AS direct_sire_count,
+        (
+          SELECT COUNT(dh.sex)
+          FROM horses dh WHERE f.id = dh.father_id
+        ) AS direct_child_count,
         0 AS depth
       FROM sires f
         LEFT JOIN sires p ON p.id = f.father_id
@@ -146,6 +170,21 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
     )
   ''';
 
+  int _lineageSummaryComparator(a, b) {
+    if (a.sireCount != b.sireCount) {
+      return b.sireCount - a.sireCount;
+    }
+    else if (a.depth != b.depth) {
+      return a.depth - b.depth;
+    }
+    else if (a.descendantCount != b.descendantCount) {
+      return b.descendantCount - a.descendantCount;
+    }
+    else {
+      return a.lineageName.compareTo(b.lineageName);
+    }
+  }
+
   Future<List<LineageSummary>> fetchAllLineageSummaries([int? beginYear, int? endYear]) async {
     final rows = await customSelect(
       '''
@@ -172,49 +211,10 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
       '''
     ).get();
 
-    final result = <int,LineageSummary>{};
-    for (final r in _filterVerboseLineages(rows)) {
-      final lineageName = r.read<String>('lineage_name');
-      final founderId = r.read<int>('founder_id');
-      final progenitorId = r.read<int?>('progenitor_id');
-      final progenitorName = r.read<String?>('progenitor_name');
-      final sireCount = r.read<int>('sire_count');
-      final descendantCount = r.read<int>('descendant_count');
-      final ownDescendantCount = r.read<int>('own_descendant_count');
-      final directChildCount = r.read<int>('direct_child_count');
-      final depth = r.read<int>('depth');
-      final maxDepth = r.read<int>('max_depth');
-      final isFounderLine = r.read<bool>('is_founder_line');
-      result[founderId] = LineageSummary(
-        lineageName: lineageName,
-        founderId: founderId,
-        sireCount: sireCount,
-        descendantCount: descendantCount,
-        ownDescendantCount: ownDescendantCount,
-        directChildCount: directChildCount,
-        progenitorId: progenitorId,
-        progenitorName: progenitorName,
-        depth: depth,
-        maxDepth: maxDepth,
-        isFounderLine: isFounderLine,
-      );
-    }
-    return result.values.toList()..sort(
-      (a, b) {
-        if (a.sireCount != b.sireCount) {
-          return b.sireCount - a.sireCount;
-        }
-        else if (a.depth != b.depth) {
-          return a.depth - b.depth;
-        }
-        else if (a.descendantCount != b.descendantCount) {
-          return b.descendantCount - a.descendantCount;
-        }
-        else {
-          return a.lineageName.compareTo(b.lineageName);
-        }
-      }
-    );
+    return _filterVerboseLineages(rows)
+      .map(LineageSummary.fromRow)
+      .toList(growable: false)
+      ..sort(_lineageSummaryComparator);
   }
 
   Future<List<ParentStats>> fetchAllLineageStats([int? beginYear, int? endYear]) async {
@@ -228,13 +228,14 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
       $_withRecursiveLineage
 
       SELECT
-        l.lineage_name,
+        l.lineage_name AS name,
         l.founder_id,
         l.progenitor_id,
         l.direct_child_count,
         l.is_founder_line,
         d.depth,
-        COUNT(*)        AS descendant_count,
+        COUNT(h.sex)    AS child_count,
+        COUNT(h.sex)    AS descendant_count,
         AVG(h.sex)      AS sex,
         AVG(h.rating01) AS rating01,
         AVG(h.rating02) AS rating02,
@@ -257,22 +258,9 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
       variables: [Variable(debut)],
     ).get();
 
-    return _filterVerboseLineages(rows).map((r) => ParentStats(
-      name: r.read('lineage_name'),
-      childCount: r.read('descendant_count'),
-      sex: r.read('sex'),
-      rating01: r.read('rating01'),
-      rating02: r.read('rating02'),
-      rating03: r.read('rating03'),
-      rating04: r.read('rating04'),
-      rating05: r.read('rating05'),
-      growth:   r.read('growth'),
-      surface:  r.read('surface'),
-      distance: r.read('distance'),
-      rating:   r.read('rating'),
-      ownCount: r.read('own_count'),
-      foalCount: r.read('foal_count'),
-    )).toList(growable: false);
+    return _filterVerboseLineages(rows)
+      .map(ParentStats.fromRow)
+      .toList(growable: false);
   }
 
   List<QueryRow> _filterVerboseLineages(Iterable<QueryRow> rows) {
@@ -280,7 +268,8 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
     for (final r in rows) {
       data[r.read<int>('founder_id')] = r;
     }
-    for (final e in data.values.toList()..sort((a, b) => b.read<int>('depth') - a.read<int>('depth'))) {
+    int comparator(a, b) => b.read<int>('depth') - a.read<int>('depth');
+    for (final e in data.values.toList()..sort(comparator)) {
       QueryRow s = e;
       QueryRow? f;
       while (s.read<int?>('progenitor_id') != null && data.containsKey(s.read<int>('progenitor_id'))) {
@@ -323,7 +312,49 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
         s = p;
       }
     }
-    return data.values.toList(growable: false);
+    return data.values.toList(growable: false)..sort(comparator);
+  }
+
+  Future<List<String>> findBelongingLineages(int sireId) async {
+    final rows = await customSelect(
+      '''
+      $_withRecursiveLineage,
+
+      target_lineages AS (
+        SELECT
+          l.id,
+          l.founder_id
+        FROM lineage l
+        WHERE l.id = :sireId
+        GROUP BY
+          l.founder_id
+      )
+
+      SELECT
+        l.id,
+        l.lineage_name,
+        l.founder_id,
+        l.progenitor_id,
+        l.direct_child_count,
+        l.is_founder_line,
+        d.depth,
+        COUNT(h.sex) AS descendant_count
+      FROM lineage l
+      LEFT JOIN horses h ON h.father_id = l.id
+      LEFT JOIN depths d ON l.founder_id = d.id
+      WHERE l.founder_id IN (
+        SELECT founder_id FROM target_lineages
+      )
+      GROUP BY
+        l.founder_id
+      ''',
+      variables: [Variable(sireId)],
+    ).get();
+
+    return _filterVerboseLineages(rows)
+      .reversed
+      .map((r) => r.read<String>('lineage_name'))
+      .toList(growable: false);
   }
 
   static const _withRecursiveTargetLineage =
@@ -357,7 +388,8 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
       SELECT
         s.id,
         s.name,
-        l.lineage_name,
+        s.father_id,
+        l.lineage_name AS father_name,
         l.depth,
         COUNT(h.sex) AS child_count
       FROM horses AS h
@@ -375,13 +407,31 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
       variables: [Variable(founderId)],
     ).get();
 
-    return rows.map((r) => SireSummary(
-      id: r.read('id'),
-      name: r.read('name'),
-      fatherId: founderId,
-      fatherName: r.read('lineage_name'),
-      childCount: r.read('child_count'),
-    )).toList();
+    return rows.map(SireSummary.fromRow).toList();
+  }
+
+  Future<List<MareRaw>> fetchLineageMares(int founderId) async {
+    final rows = await customSelect(
+      '''
+      $_withRecursiveTargetLineage
+
+      SELECT
+        h.name,
+        s.name AS father_name,
+        m.name AS mother_name,
+        h.is_historical
+      FROM mares AS h
+      INNER JOIN lineage l
+        ON l.id = h.father_id
+      LEFT JOIN sires s
+        ON h.father_id = s.id
+      LEFT JOIN mares m
+        ON h.mother_id = m.id
+      ''',
+      variables: [Variable(founderId)],
+    ).get();
+
+    return rows.map(MareRaw.fromRow).toList();
   }
 
   Future<List<OwnedHorseData>> fetchLineageOwnedHorseData(int founderId) async {
@@ -420,18 +470,7 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
       variables: [Variable(founderId)],
     ).get();
 
-    return rows.map((r) => OwnedHorseData(
-      birthYear: r.read('birth_year'),
-      name: r.read('name'),
-      fatherName: r.read('father_name'),
-      motherName: r.read('mother_name'),
-      sex: r.read('sex'),
-      growth: r.read('growth'),
-      surface: r.read('surface'),
-      distance: r.read('distance'),
-      rating: r.read('rating'),
-      breeding: r.read('breeding'),
-    )).toList(growable: false);
+    return rows.map(OwnedHorseData.fromRow).toList(growable: false);
   }
 
   Future<HorseStatusDistribution?> fetchHorseStatusDistribution(int founderId, String key, [int? beginYear, int? endYear]) async {

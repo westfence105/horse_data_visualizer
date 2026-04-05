@@ -1,3 +1,5 @@
+import 'package:drift/drift.dart';
+
 class ParentStats {
   final String name;
   final int childCount;
@@ -32,4 +34,21 @@ class ParentStats {
     required this.ownCount,
     required this.foalCount,
   });
+
+  ParentStats.fromRow(QueryRow r) : this(
+    name: r.read('name'),
+    childCount: r.read('child_count'),
+    sex: r.read('sex'),
+    rating01: r.read('rating01'),
+    rating02: r.read('rating02'),
+    rating03: r.read('rating03'),
+    rating04: r.read('rating04'),
+    rating05: r.read('rating05'),
+    growth:   r.read('growth'),
+    surface:  r.read('surface'),
+    distance: r.read('distance'),
+    rating:   r.read('rating'),
+    ownCount: r.read('own_count'),
+    foalCount: r.read('foal_count'),
+  );
 }

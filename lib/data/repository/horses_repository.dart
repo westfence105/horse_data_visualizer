@@ -6,7 +6,6 @@ import '../db/dao/sire_stats_dao.dart';
 import '../entity/horse_status_distribution.dart';
 import '../entity/lineage_summary.dart';
 import '../entity/owned_horse_data.dart';
-import '../entity/sire_summary.dart';
 
 class HorsesRepository {
   static AppDb get db => AppDb.instance;
@@ -102,10 +101,6 @@ class HorsesRepository {
 
   static Future<List<OwnedHorseData>> fetchLineageOwnedHorseData(int founderId) {
     return _sireStatsDao.fetchLineageOwnedHorseData(founderId);
-  }
-
-  static Future<List<SireSummary>> fetchLineageSires(int founderId) {
-    return _sireStatsDao.fetchLineageSires(founderId);
   }
 
   static Future<HorseStatusDistribution?> fetchHorseStatusDistribution(int founderId, String key, [int? beginYear, int? endYear]) {

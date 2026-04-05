@@ -1,4 +1,5 @@
 import 'package:drift/drift.dart';
+import '../../entity/mare_summary.dart';
 import '../app_database.dart';
 import '../tables.dart';
 import '../../../data/entity/parent_stats.dart';
@@ -10,6 +11,67 @@ part 'mare_stats_dao.g.dart';
 class MareStatsDao extends DatabaseAccessor<AppDb> with _$MareStatsDaoMixin {
   MareStatsDao(super.db);
 
+  Future<MareSummary?> fetchMareSummary(int mareId) async {
+    final rows = await customSelect(
+      '''
+      SELECT
+        h.id,
+        h.name,
+        h.father_id,
+        f.name AS father_name,
+        h.mother_id,
+        m.name AS mother_name,
+        h.is_historical,
+        COUNT(c.sex) AS child_count,
+        COUNT(c.rating) AS own_count
+      FROM mares AS h
+      LEFT JOIN sires AS f
+        ON h.father_id = f.id
+      LEFT JOIN mares AS m
+        ON h.mother_id = m.id
+      LEFT JOIN horses AS c
+        ON c.mother_id = h.id
+      WHERE h.id = :mareId
+      GROUP BY h.id, h.name, h.father_id, f.name, h.mother_id, m.name, h.is_historical
+      ''',
+      variables: [Variable(mareId)]
+    ).get();
+
+    if (rows.isEmpty) {
+      return null;
+    }
+    else {
+      return MareSummary.fromRow(rows.first);
+    }
+  }
+
+  Future<List<MareSummary>> fetchAllMareSummaries() async {
+    final rows = await customSelect(
+      '''
+      SELECT
+        h.id,
+        h.name,
+        h.father_id,
+        f.name AS father_name,
+        h.mother_id,
+        m.name AS mother_name,
+        h.is_historical,
+        COUNT(c.sex) AS child_count,
+        COUNT(c.rating) AS own_count
+      FROM mares AS h
+      LEFT JOIN sires AS f
+        ON h.father_id = f.id
+      LEFT JOIN mares AS m
+        ON h.mother_id = m.id
+      LEFT JOIN horses AS c
+        ON c.mother_id = h.id
+      GROUP BY h.id, h.name, h.father_id, f.name, h.mother_id, m.name, h.is_historical
+      '''
+    ).get();
+
+    return rows.map(MareSummary.fromRow).toList();
+  }
+
   Future<List<ParentStats>> fetchAllMareStats([int? beginYear, int? endYear]) async {
     final q = selectOnly(horses)
                 ..addColumns([horses.birthYear.max()])
@@ -19,8 +81,8 @@ class MareStatsDao extends DatabaseAccessor<AppDb> with _$MareStatsDaoMixin {
     final rows = await customSelect(
       '''
       SELECT
-        m.name          AS mare_name,
-        COUNT(*)        AS child_count,
+        m.name          AS name,
+        COUNT(h.sex)    AS child_count,
         AVG(h.sex)      AS sex,
         AVG(h.rating01) AS rating01,
         AVG(h.rating02) AS rating02,
@@ -42,21 +104,6 @@ class MareStatsDao extends DatabaseAccessor<AppDb> with _$MareStatsDaoMixin {
       ''',
       variables: [Variable(debut)],
     ).get();
-    return rows.map((r) => ParentStats(
-      name: r.read('mare_name'),
-      childCount: r.read('child_count'),
-      sex: r.read('sex'),
-      rating01: r.read('rating01'),
-      rating02: r.read('rating02'),
-      rating03: r.read('rating03'),
-      rating04: r.read('rating04'),
-      rating05: r.read('rating05'),
-      growth:   r.read('growth'),
-      surface:  r.read('surface'),
-      distance: r.read('distance'),
-      rating:   r.read('rating'),
-      ownCount: r.read('own_count'),
-      foalCount: r.read('foal_count'),
-    )).toList(growable: false);
+    return rows.map(ParentStats.fromRow).toList(growable: false);
   }
 }

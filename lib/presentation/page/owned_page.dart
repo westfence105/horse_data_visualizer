@@ -2,6 +2,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 import '../../data/entity/lineage_summary.dart';
+import '../../data/entity/mare_raw.dart';
 import '../../data/entity/owned_horse_data.dart';
 import '../../data/entity/sire_summary.dart';
 import '../../data/entity/mare_summary.dart';
@@ -24,6 +25,10 @@ class _OwnedPageState extends State<OwnedPage> {
   List<MareSummary> _mareSummaries = [];
   List<LineageSummary> _lineageSummaries = [];
   Map<int,Map<int,List<OwnedHorseData>>> _childrenData = {};
+  List<MareRaw> _mareData = [];
+  List<String> _lineages = [];
+
+  final _mainScrollController = ScrollController();
 
   AggregationMode _aggMode = AggregationMode.sire;
 
@@ -65,18 +70,36 @@ class _OwnedPageState extends State<OwnedPage> {
   }
 
   void _fetchChildrenData() {
+    _lineages = [];
+    _mareData = [];
+    _mainScrollController.jumpTo(0);
     Future<List<OwnedHorseData>> future;
     if (_selectedParent == null) {
       return;
     }
     else if (_aggMode == AggregationMode.sire) {
       future = HorsesRepository.fetchOwnedHorseData(_selectedParent, null);
+      SiresRepository.fetchSireSummary(_selectedParent!).then((s) async {
+        if (s?.fatherId != null) {
+          _lineages = await SiresRepository.findBelongingLineages(s!.fatherId!);
+        }
+      });
     }
     else if (_aggMode == AggregationMode.mare){
       future = HorsesRepository.fetchOwnedHorseData(null, _selectedParent);
+      MaresRepository.fetchMareSummary(_selectedParent!).then((s) async {
+        if (s?.fatherId != null) {
+          _lineages = await SiresRepository.findBelongingLineages(s!.fatherId!);
+        }
+      });
     }
     else {
       future = HorsesRepository.fetchLineageOwnedHorseData(_selectedParent!);
+      SiresRepository.fetchLineageMares(_selectedParent!).then((result) {
+        setState(() {
+          _mareData = result;
+        });
+      });
     }
     future.then((result) => setState(() {
       _childrenData = {};
@@ -113,18 +136,21 @@ class _OwnedPageState extends State<OwnedPage> {
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.start,
-            spacing: 64,
             children: [
               AggregationModeSelector(
                 aggregationMode: _aggMode,
                 onChanged: (value) => setState(() {
                   if (value != null) {
                     _aggMode = value;
+                    _selectedParent = null;
+                    _lineages = [];
+                    _mareData = [];
                     _childrenData = {};
                     _fetch();
                   }
                 }),
               ),
+              SizedBox(width: 64),
               Builder(
                 builder: (ctx) {
                   String? parentName;
@@ -147,6 +173,9 @@ class _OwnedPageState extends State<OwnedPage> {
                   }
                 },
               ),
+              SizedBox(width: 16),
+              if (_lineages.isNotEmpty)
+                Text('(${_lineages.join(' - ')})'),
             ],
           ),
           const SizedBox(height: 16),
@@ -191,6 +220,7 @@ class _OwnedPageState extends State<OwnedPage> {
                 ),
                 Expanded(
                   child: SingleChildScrollView(
+                    controller: _mainScrollController,
                     child: ConstrainedBox(
                       constraints: BoxConstraints(
                         minHeight: MediaQuery.of(context).size.height * 0.9,
@@ -201,7 +231,7 @@ class _OwnedPageState extends State<OwnedPage> {
                           for (int i = 4; i >= 0; --i)
                             if (_childrenData[i]?[1]?.isNotEmpty == true || _childrenData[i]?[-1]?.isNotEmpty == true)
                               Container(
-                                padding: EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                                padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                                 child: Row(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
@@ -209,7 +239,30 @@ class _OwnedPageState extends State<OwnedPage> {
                                     _buildChildList(_childrenData[i]?[-1] ?? []),
                                   ],
                                 ),
-                              )
+                              ),
+                          if (_mareData.isNotEmpty)
+                            Divider(),
+                          if (_mareData.isNotEmpty)
+                            Container(
+                              width: 750,
+                              padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                              child: GridView.builder(
+                                shrinkWrap: true,
+                                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 2,
+                                  childAspectRatio: 12,
+                                ),
+                                itemCount: _mareData.length,
+                                itemBuilder: (ctx, i) {
+                                  final m = _mareData[i];
+                                  return _createNameText(
+                                    mark: '◆',
+                                    name: m.name,
+                                    suffix: '[${m.father}]',
+                                    color: Colors.red,
+                                  );
+                                }),
+                            ),
                         ],
                       ),
                     ),
@@ -227,65 +280,71 @@ class _OwnedPageState extends State<OwnedPage> {
     const ratings = {
       4: '◎', 3: '○', 2: '▲', 1: '△', 0: '×',
     };
-    return Expanded(
+    return SizedBox(
+      width: 360,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        spacing: 5,
+        spacing: 10,
         children: horses.where((r) => r.name.isNotEmpty)
           .map<Widget>((r) {
             final pair = (_aggMode == AggregationMode.sire) ? r.motherName : r.fatherName;
-            final styleBase = TextStyle(
-              fontSize: 16,
+            return _createNameText(
+              mark: ratings[r.rating],
+              name: r.name,
+              suffix: '(${r.birthYear}) [$pair]',
               color: (r.sex == 1) ? 
                 Color(0xff000080) : 
                 Color(0xffff0000),
-            );
-            return RichText(
-              text: TextSpan(
-                children: [
-                  TextSpan(
-                    text: ratings[r.rating],
-                    style: styleBase,
-                  ),
-                  const TextSpan(text: ' '),
-                  TextSpan(
-                    text: r.name,
-                    style: styleBase.copyWith(
-                      fontWeight: FontWeight.bold,
-                      decoration: r.breeding ?
-                        TextDecoration.underline : null,
-                    ),
-                    recognizer: r.breeding ? (TapGestureRecognizer()..onTap = () {
-                      Future<int> id;
-                      if (r.sex == 1) {
-                        id = SiresRepository.findByName(r.name);
-                      }
-                      else {
-                        id = MaresRepository.findByName(r.name);
-                      }
-                      id.then((value) =>
-                        setState(() {
-                          _aggMode = (r.sex == 1) ? AggregationMode.sire : AggregationMode.mare;
-                          _selectedParent = value;
-                          _fetchChildrenData();
-                        })
-                      );
-                    }) : null,
-                  ),
-                  const TextSpan(text: ' '),
-                  TextSpan(
-                    text: '(${r.birthYear})',
-                    style: styleBase,
-                  ),
-                  const TextSpan(text: ' '),
-                  TextSpan(
-                    text: '[$pair]',
-                    style: styleBase,
-                  ),
-                ],
-              ),
+              onTap: r.breeding ? () {
+                Future<int> id;
+                if (r.sex == 1) {
+                  id = SiresRepository.findByName(r.name);
+                }
+                else {
+                  id = MaresRepository.findByName(r.name);
+                }
+                id.then((value) =>
+                  setState(() {
+                    _aggMode = (r.sex == 1) ? AggregationMode.sire : AggregationMode.mare;
+                    _selectedParent = value;
+                    _fetchChildrenData();
+                  })
+                );
+              } : null,
             );
           }).toList(growable: false),
+      ),
+    );
+  }
+
+  Widget _createNameText({String? mark, required String name, required String suffix, Color color = Colors.black, void Function()? onTap}) {
+    final styleBase = TextStyle(
+      fontSize: 16,
+      color: color,
+    );
+    return RichText(
+      text: TextSpan(
+        children: [
+          TextSpan(
+            text: mark ?? ' ',
+            style: styleBase,
+          ),
+          const TextSpan(text: ' '),
+          TextSpan(
+            text: name,
+            style: styleBase.copyWith(
+              fontWeight: FontWeight.bold,
+              decoration: onTap != null ?
+                TextDecoration.underline : null,
+            ),
+            recognizer: (onTap != null) ? (TapGestureRecognizer()..onTap = onTap) : null,
+          ),
+          const TextSpan(text: ' '),
+          TextSpan(
+            text: suffix,
+            style: styleBase,
+          ),
+        ],
       ),
     );
   }
