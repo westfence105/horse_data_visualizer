@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
 import '../../entity/mare_summary.dart';
+import '../../repository/horses_repository.dart';
 import '../app_database.dart';
 import '../tables.dart';
 import '../../../data/entity/parent_stats.dart';
@@ -12,6 +13,7 @@ class MareStatsDao extends DatabaseAccessor<AppDb> with _$MareStatsDaoMixin {
   MareStatsDao(super.db);
 
   Future<List<MareSummary>> _fetchMareSummaries(String? whereStr) async {
+    final debut = await HorsesRepository.getLatestDebutGeneration();
     final rows = await customSelect(
       '''
       WITH $bloodmaresTable
@@ -26,7 +28,14 @@ class MareStatsDao extends DatabaseAccessor<AppDb> with _$MareStatsDaoMixin {
         h.is_historical,
         h.child_count,
         h.own_count,
-        COUNT(cm.id) AS mare_count
+        COUNT(cm.id) AS mare_count,
+        (
+          SELECT
+            COUNT(sex)
+          FROM horses c
+          WHERE c.mother_id = h.id
+            AND c.birth_year > :debut
+        ) AS foal_count
       FROM bloodmares AS h
       LEFT JOIN sires s
         ON s.id = h.father_id
@@ -44,6 +53,7 @@ class MareStatsDao extends DatabaseAccessor<AppDb> with _$MareStatsDaoMixin {
         m.name,
         h.is_historical
       ''',
+      variables: [Variable(debut)],
     ).get();
 
     return rows.map(MareSummary.fromRow).toList(growable: false);

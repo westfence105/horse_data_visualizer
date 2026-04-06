@@ -1,9 +1,9 @@
 import 'package:drift/drift.dart';
 
-int _reverse(Map<int,String> map, String? str)
-  => map.entries.where((e) => e.value == str).firstOrNull?.key ?? 0;
+int? _reverse(Map<int,String> map, String? str)
+  => map.entries.where((e) => e.value == str).firstOrNull?.key;
 
-const _sexMap = {1:'牡', 2:'牝'};
+const _sexMap = {1:'牡', -1:'牝'};
 const _ratingMap = {4:'◎', 3:'○', 2:'▲', 1:'△', 0:'-'};
 const _growthMap = {0:'早熟', 1:'早め', 2:'遅め', 3:'覚醒', 4:'晩成'};
 const _surfaceMap = {1:'芝', -1:'ダート', 0:'万能'};
@@ -112,14 +112,14 @@ class HorseData {
   HorseData.fromMap(Map<String,String> d) : rawData = HorseRaw(
     birthYear: int.tryParse(d['生年'] ?? '1900') ?? 1900,
     name: d['名前'],
-    sex: _reverse(_sexMap, d['性別']),
+    sex: _reverse(_sexMap, d['性別']) ?? 0,
     fatherName: d['父'] ?? '',
     motherName: d['母'] ?? '',
-    rating01: _reverse(_ratingMap, d['秘書']),
-    rating02: _reverse(_ratingMap, d['牧場長']),
-    rating03: _reverse(_ratingMap, d['河童木']),
-    rating04: _reverse(_ratingMap, d['長峰']),
-    rating05: _reverse(_ratingMap, d['美香']),
+    rating01: _reverse(_ratingMap, d['秘書'])   ?? 0,
+    rating02: _reverse(_ratingMap, d['牧場長']) ?? 0,
+    rating03: _reverse(_ratingMap, d['河童木']) ?? 0,
+    rating04: _reverse(_ratingMap, d['長峰'])   ?? 0,
+    rating05: _reverse(_ratingMap, d['美香'])   ?? 0,
     growth: _reverse(_growthMap, d['成長型']),
     surface: _reverse(_surfaceMap, d['馬場']),
     distance: _reverse(_distanceMap, d['距離']),

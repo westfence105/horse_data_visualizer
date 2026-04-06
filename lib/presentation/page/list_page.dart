@@ -54,7 +54,7 @@ class _ListPageState extends State<ListPage> {
           .where((e) => (e.ownCount ?? 0) + (e.mareCount ?? 0) > 0).toList()
           ..sort(_compareSires);
         _mareSummaries = result[1].cast<MareSummary>()
-          .where((e) => (e.ownCount ?? 0) > 0).toList()
+          .where((e) => (e.ownCount ?? 0) + (e.foalCount ?? 0) > 0).toList()
           ..sort(_compareMares);
         _lineageSummaries = result[2].cast<LineageSummary>()
           .where((e) => e.ownDescendantCount > 0).toList();
@@ -75,12 +75,7 @@ class _ListPageState extends State<ListPage> {
   }
 
   int _compareMares(MareSummary a, MareSummary b) {
-    if (a.childCount != null && b.childCount != null && a.childCount != b.childCount) {
-      return b.childCount! - a.childCount!;
-    }
-    else {
-      return a.name.compareTo(b.name);
-    }
+    return a.name.compareTo(b.name);
   }
 
   void _fetchChildrenData() {
@@ -123,7 +118,7 @@ class _ListPageState extends State<ListPage> {
       _childrenData = {};
       for (final r in result) {
         final p = (_childrenData[r.rating] ??= _SexPair([],[]));
-        if (r.sex > 0) {
+        if (r.sex == 1) {
           p.male.add(r);
         }
         else {
@@ -287,15 +282,7 @@ class _ListPageState extends State<ListPage> {
                                   ],
                                 ),
                               ),
-                          if (_mareData.isNotEmpty)
-                            Divider(),
-                          if (_mareData.isNotEmpty)
-                            Container(
-                              width: 750,
-                              padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                              child: _buildMareGrid(_mareData),
-                            ),
-                          if (_foalData.isNotEmpty)
+                          if (_foalData.isNotEmpty && _childrenData.isNotEmpty)
                             Divider(),
                           for (final i in _foalData.keys.toList()..sort())
                             Container(
@@ -306,6 +293,14 @@ class _ListPageState extends State<ListPage> {
                                   (r) => (r != null) ? _buildFoalList(r) : const SizedBox(width: 360),
                                 ).toList(),
                               ),
+                            ),
+                          if (_mareData.isNotEmpty && (_childrenData.isNotEmpty || _foalData.isNotEmpty))
+                            Divider(),
+                          if (_mareData.isNotEmpty)
+                            Container(
+                              width: 750,
+                              padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                              child: _buildMareGrid(_mareData),
                             ),
                         ],
                       ),
