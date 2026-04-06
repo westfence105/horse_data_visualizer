@@ -6,6 +6,7 @@ import '../../repository/sires_repository.dart';
 import '../app_database.dart';
 import '../tables.dart';
 import '../../entity/owned_horse_data.dart';
+import 'dao_util.dart';
 
 part 'horses_dao.g.dart';
 
@@ -69,27 +70,6 @@ class HorsesDao extends DatabaseAccessor<AppDb> with _$HorsesDaoMixin {
     return r.read(db.horses.birthYear.max());
   }
 
-  String _whereParent(int? fatherId, int? motherId) {
-    String whereStr;
-    if (fatherId == null) {
-      if (motherId == null) {
-        return 'h.sex IS NOT NULL';
-      }
-      else {
-        whereStr = 'h.mother_id = $motherId';
-      }
-    }
-    else {
-      if (motherId == null) {
-        whereStr = 'h.father_id = $fatherId';
-      }
-      else {
-        whereStr = 'h.father_id = $fatherId AND h.mother_id = $motherId';
-      }
-    }
-    return whereStr;
-  }
-
   Future<List<HorseData>> fetchAll() async {
     final rows = await customSelect(
       '''
@@ -117,6 +97,7 @@ class HorsesDao extends DatabaseAccessor<AppDb> with _$HorsesDaoMixin {
   }
 
   Future<List<OwnedHorseData>> fetchOwnedHorseData(int? fatherId, int? motherId) async {
+    final wp = whereParent(fatherId, motherId);
     final rows = await customSelect(
       '''
       SELECT
@@ -135,7 +116,7 @@ class HorsesDao extends DatabaseAccessor<AppDb> with _$HorsesDaoMixin {
       LEFT JOIN mares AS m ON h.name = m.name
       LEFT JOIN sires AS f ON h.father_id = f.id
       LEFT JOIN mares AS b ON h.mother_id = b.id
-      WHERE ${_whereParent(fatherId, motherId)} AND h.rating IS NOT NULL
+      WHERE h.rating IS NOT NULL ${wp != null ? 'AND $wp' : ''}
       GROUP BY
         h.birth_year,
         h.name,
@@ -161,6 +142,7 @@ class HorsesDao extends DatabaseAccessor<AppDb> with _$HorsesDaoMixin {
 
   Future<List<FoalData>> fetchFoalData(int? fatherId, int? motherId) async {
     final debut = await getDebutGeneration();
+    final wp = whereParent(fatherId, motherId);
     final rows = await customSelect(
       '''
       SELECT
@@ -177,7 +159,7 @@ class HorsesDao extends DatabaseAccessor<AppDb> with _$HorsesDaoMixin {
       FROM horses AS h
       LEFT JOIN sires AS f ON h.father_id = f.id
       LEFT JOIN mares AS b ON h.mother_id = b.id
-      WHERE ${_whereParent(fatherId, motherId)} AND h.birth_year > :debut
+      WHERE h.birth_year > :debut ${wp != null ? 'AND $wp' : ''}
       GROUP BY
         h.birth_year,
         h.name,

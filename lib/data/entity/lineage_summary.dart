@@ -9,6 +9,7 @@ class LineageSummary {
   final int descendantCount;
   final int ownDescendantCount;
   final int directChildCount;
+  final int mareCount;
   final int depth;
   final int maxDepth;
   final bool isFounderLine;
@@ -20,6 +21,7 @@ class LineageSummary {
     required this.descendantCount,
     required this.ownDescendantCount,
     required this.directChildCount,
+    required this.mareCount,
     required this.depth,
     required this.maxDepth,
     required this.isFounderLine,
@@ -34,6 +36,7 @@ class LineageSummary {
         descendantCount: r.read<int>('descendant_count'),
         ownDescendantCount: r.read<int>('own_descendant_count'),
         directChildCount: r.read<int>('direct_child_count'),
+        mareCount: r.read<int>('mare_count'),
         progenitorId: r.read<int?>('progenitor_id'),
         progenitorName: r.read<String?>('progenitor_name'),
         depth: r.read<int>('depth'),

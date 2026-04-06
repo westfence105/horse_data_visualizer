@@ -2,7 +2,7 @@ import 'dart:math';
 
 import 'package:drift/drift.dart';
 import '../../entity/foal_data.dart';
-import '../../entity/mare_raw.dart';
+import '../../entity/mare_summary.dart';
 import '../../entity/owned_horse_data.dart';
 import '../app_database.dart';
 import '../tables.dart';
@@ -21,6 +21,8 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
   Future<SireSummary?> fetchSireSummary(int sireId) async {
     final rows = await customSelect(
       '''
+      WITH $bloodmaresTable
+
       SELECT
         s.id,
         s.name,
@@ -28,6 +30,7 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
         f.name          AS father_name,
         COUNT(h.sex)    AS child_count,
         COUNT(h.rating) AS own_count,
+        COUNT(cm.id)    AS mare_count,
         s.is_historical,
         s.is_founder
       FROM sires AS s
@@ -35,6 +38,8 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
         ON s.father_id = f.id
       LEFT JOIN horses AS h
         ON h.father_id = s.id
+      LEFT JOIN bloodmares cm
+        ON cm.father_id = s.id AND cm.child_count > 0
       WHERE s.id = :sireId
       GROUP BY
         s.id,
@@ -55,8 +60,11 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
   }
 
   Future<List<SireSummary>> fetchAllSireSummaries([int? beginYear, int? endYear]) async {
+    final yr = yearRange('h.birth_year', beginYear, endYear);
     final rows = await customSelect(
       '''
+      WITH $bloodmaresTable
+
       SELECT
         s.id,
         s.name,
@@ -64,6 +72,7 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
         f.name          AS father_name,
         COUNT(h.sex)    AS child_count,
         COUNT(h.rating) AS own_count,
+        COUNT(cm.id)    AS mare_count,
         s.is_historical,
         s.is_founder
       FROM sires AS s
@@ -71,7 +80,9 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
         ON s.father_id = f.id
       LEFT JOIN horses AS h
         ON h.father_id = s.id
-        ${yearRange('h.birth_year', beginYear, endYear, false)}
+        ${yr != null ? 'AND $yr' : ''}
+      LEFT JOIN bloodmares cm
+        ON cm.father_id = s.id AND cm.child_count > 0
       GROUP BY
         s.id,
         s.name,
@@ -114,7 +125,7 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
       FROM horses AS h
       JOIN sires AS s
         ON h.father_id = s.id
-      ${yearRange('h.birth_year', beginYear, endYear)}
+      ${whereStr([yearRange('h.birth_year', beginYear, endYear)])}
       GROUP BY s.id
       ORDER BY child_count DESC
       ''',
@@ -193,7 +204,7 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
   Future<List<LineageSummary>> fetchAllLineageSummaries([int? beginYear, int? endYear]) async {
     final rows = await customSelect(
       '''
-      $_withRecursiveLineage
+      $_withRecursiveLineage, $bloodmaresTable, $stallionsTable
 
       SELECT 
         l.lineage_name,
@@ -203,15 +214,25 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
         l.is_founder_line,
         l.direct_child_count,
         d.depth,
-        d.founder_id AS root_id,
-        COUNT(DISTINCT l.id) AS sire_count,
-        COUNT(h.sex) AS descendant_count,
-        COUNT(h.rating) AS own_descendant_count,
-        MAX(l.depth) AS max_depth
-      FROM horses h
-      LEFT JOIN lineage l ON l.id = h.father_id
-      LEFT JOIN depths d ON l.founder_id = d.id
-      ${yearRange('h.birth_year', beginYear, endYear)}
+        d.founder_id          AS root_id,
+        COUNT(h.sex)          AS descendant_count,
+        COUNT(h.rating)       AS own_descendant_count,
+        COUNT(DISTINCT s.id)  AS sire_count,
+        COUNT(DISTINCT cm.id) AS mare_count,
+        COUNT(dcm.id)         AS direct_mare_count,
+        MAX(l.depth)          AS max_depth
+      FROM lineage l
+      LEFT JOIN depths d
+        ON d.id = l.founder_id
+      LEFT JOIN horses h
+        ON h.father_id = l.id
+      LEFT JOIN stallions s
+        ON s.id = l.id AND s.child_count > 0
+      LEFT JOIN bloodmares cm
+        ON cm.father_id = l.id AND cm.child_count > 0
+      LEFT JOIN bloodmares dcm
+        ON dcm.father_id = l.founder_id AND dcm.child_count > 0
+      ${whereStr([yearRange('h.birth_year', beginYear, endYear)])}
       GROUP BY l.founder_id
       '''
     ).get();
@@ -230,7 +251,7 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
     final debut = r.read<int>(horses.birthYear.max());
     final rows = await customSelect(
       '''
-      $_withRecursiveLineage
+      $_withRecursiveLineage, $bloodmaresTable
 
       SELECT
         l.lineage_name AS name,
@@ -239,8 +260,10 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
         l.direct_child_count,
         l.is_founder_line,
         d.depth,
-        COUNT(h.sex)    AS child_count,
         COUNT(h.sex)    AS descendant_count,
+        COUNT(h.sex)    AS child_count,
+        COUNT(DISTINCT cm.id)  AS mare_count,
+        COUNT(dcm.id)   AS direct_mare_count,
         AVG(h.sex)      AS sex,
         AVG(h.rating01) AS rating01,
         AVG(h.rating02) AS rating02,
@@ -256,7 +279,11 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
       FROM horses AS h
       LEFT JOIN lineage AS l ON l.id = h.father_id
       LEFT JOIN depths d ON l.founder_id = d.id
-      ${yearRange('h.birth_year', beginYear, endYear)}
+      LEFT JOIN bloodmares cm
+        ON cm.father_id = l.id AND cm.child_count > 0
+      LEFT JOIN bloodmares dcm
+        ON dcm.father_id = l.founder_id AND cm.child_count > 0
+      ${whereStr([yearRange('h.birth_year', beginYear, endYear)])}
       GROUP BY l.founder_id
       ORDER BY descendant_count DESC
       ''',
@@ -268,62 +295,10 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
       .toList(growable: false);
   }
 
-  List<QueryRow> _filterVerboseLineages(Iterable<QueryRow> rows) {
-    final data = <int, QueryRow>{};
-    for (final r in rows) {
-      data[r.read<int>('founder_id')] = r;
-    }
-    int comparator(a, b) => b.read<int>('depth') - a.read<int>('depth');
-    for (final e in data.values.toList()..sort(comparator)) {
-      QueryRow s = e;
-      QueryRow? f;
-      while (s.read<int?>('progenitor_id') != null && data.containsKey(s.read<int>('progenitor_id'))) {
-        QueryRow p = data[s.read<int>('progenitor_id')]!;
-        if (f == null) {
-          if (s.read<bool>('is_founder_line')) {
-            f = s;
-          }
-          else {
-            // 最も近い始祖系統を取得
-            QueryRow s2 = s;
-            while (s2.read<int?>('progenitor_id') != null && data.containsKey(s2.read<int>('progenitor_id'))) {
-              QueryRow p2 = data[s2.read<int>('progenitor_id')]!;
-              if (p2.read<bool>('is_founder_line') || p2.read<int?>('progenitor_id') == null) {
-                f = p2;
-                break;
-              }
-              else {
-                s2 = p2;
-              }
-            }
-          }
-        }
-        if (s.read<int>('descendant_count') == p.read<int>('descendant_count')) {
-          // 1本道
-          if (!s.read<bool>('is_founder_line') && s.read<int>('descendant_count') == f?.read<int>('descendant_count')) {
-            if (s.read<int>('direct_child_count') == 0) {
-              data.remove(s.read<int>('founder_id'));
-            }
-          }
-          else {
-            if (p.read<int>('direct_child_count') == 0) {
-              data.remove(p.read<int>('founder_id'));
-            }
-          }
-        }
-        else {
-          f = null;
-        }
-        s = p;
-      }
-    }
-    return data.values.toList(growable: false)..sort(comparator);
-  }
-
   Future<List<String>> findBelongingLineages(int sireId) async {
     final rows = await customSelect(
       '''
-      $_withRecursiveLineage,
+      $_withRecursiveLineage, $bloodmaresTable,
 
       target_lineages AS (
         SELECT
@@ -343,10 +318,16 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
         l.direct_child_count,
         l.is_founder_line,
         d.depth,
-        COUNT(h.sex) AS descendant_count
+        COUNT(DISTINCT cm.id) AS mare_count,
+        COUNT(h.sex)  AS descendant_count,
+        COUNT(dcm.id) AS direct_mare_count
       FROM lineage l
       LEFT JOIN horses h ON h.father_id = l.id
       LEFT JOIN depths d ON l.founder_id = d.id
+      LEFT JOIN bloodmares cm
+        ON cm.father_id = l.id AND cm.child_count > 0
+      LEFT JOIN bloodmares dcm
+        ON dcm.father_id = l.founder_id AND cm.child_count > 0
       WHERE l.founder_id IN (
         SELECT founder_id FROM target_lineages
       )
@@ -386,9 +367,10 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
     ''';
 
   Future<List<SireSummary>> fetchLineageSires(int founderId, [int? beginYear, int? endYear]) async {
+    final yr = yearRange('h.birth_year', beginYear, endYear);
     final rows = await customSelect(
       '''
-      $_withRecursiveTargetLineage
+      $_withRecursiveTargetLineage, $bloodmaresTable
 
       SELECT
         s.id,
@@ -396,13 +378,17 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
         s.father_id,
         l.lineage_name AS father_name,
         l.depth,
-        COUNT(h.sex) AS child_count
-      FROM horses AS h
-      INNER JOIN lineage l
+        COUNT(h.sex)    AS child_count,
+        COUNT(h.rating) AS own_count,
+        COUNT(cm.id)    AS mare_count
+      FROM lineage AS l
+      LEFT JOIN horses h
         ON l.id = h.father_id
+        ${yr != null ? 'AND $yr' : ''}
       LEFT JOIN sires AS s
-        ON h.father_id = s.id
-      ${yearRange('h.birth_year', beginYear, endYear)}
+        ON l.id = s.id
+      LEFT JOIN bloodmares cm
+        ON cm.father_id = s.id AND cm.child_count > 0
       GROUP BY
         s.id,
         s.name,
@@ -415,28 +401,46 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
     return rows.map(SireSummary.fromRow).toList();
   }
 
-  Future<List<MareRaw>> fetchLineageMares(int founderId) async {
+  Future<List<MareSummary>> fetchLineageMares(int founderId) async {
     final rows = await customSelect(
       '''
-      $_withRecursiveTargetLineage
+      $_withRecursiveTargetLineage, $bloodmaresTable
 
       SELECT
+        h.id,
         h.name,
+        h.father_id,
+        h.mother_id,
         s.name AS father_name,
         m.name AS mother_name,
-        h.is_historical
+        h.is_historical,
+        COUNT(c.sex) AS child_count,
+        COUNT(c.rating) AS own_count,
+        COUNT(cm.id) AS mare_count
       FROM mares AS h
       INNER JOIN lineage l
         ON l.id = h.father_id
       LEFT JOIN sires s
-        ON h.father_id = s.id
+        ON s.id = h.father_id
       LEFT JOIN mares m
-        ON h.mother_id = m.id
+        ON m.id = h.mother_id
+      LEFT JOIN horses c
+        ON c.mother_id = h.id
+      LEFT JOIN bloodmares cm
+        ON cm.mother_id = h.id AND cm.child_count > 0
+      GROUP BY
+        h.id,
+        h.name,
+        h.father_id,
+        h.mother_id,
+        s.name,
+        m.name,
+        h.is_historical
       ''',
       variables: [Variable(founderId)],
     ).get();
 
-    return rows.map(MareRaw.fromRow).toList();
+    return rows.map(MareSummary.fromRow).toList();
   }
 
   Future<List<OwnedHorseData>> fetchLineageOwnedHorseData(int founderId) async {
@@ -534,7 +538,7 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
         COUNT(*) AS count
       FROM horses
       INNER JOIN lineage l ON l.id = father_id
-      ${yearRange('birth_year', beginYear, endYear)}
+      ${whereStr([yearRange('birth_year', beginYear, endYear)])}
       GROUP BY l.lineage_name, value
       ORDER BY value
       ''',
@@ -570,11 +574,11 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
       $_withRecursiveTargetLineage
       SELECT
         l.lineage_name,
-        birth_year,
-        COUNT(*) AS count
-      FROM horses
+        h.birth_year,
+        COUNT(h.sex) AS count
+      FROM horses h
       INNER JOIN lineage l ON l.id = father_id
-      ${yearRange('birth_year', beginYear, endYear)}
+      ${whereStr([yearRange('birth_year', beginYear, endYear)])}
       GROUP BY l.lineage_name, birth_year
       ORDER BY birth_year
       ''',
@@ -616,7 +620,7 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
         AVG(sex) AS ratio
       FROM horses
       INNER JOIN lineage l ON l.id = father_id
-      ${yearRange('birth_year', beginYear, endYear)}
+      ${whereStr([yearRange('birth_year', beginYear, endYear)])}
       GROUP BY l.lineage_name, birth_year
       ORDER BY birth_year
       ''',
@@ -648,3 +652,84 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
     }
   }
 }
+
+class _LineageDataForFilter {
+  final QueryRow row;
+  final int  founderId;
+  final int? progenitorId;
+  final int  depth;
+  final bool isFounder;
+  final int  descendantCount;
+  final int  mareCount;
+  final int  directChildCount;
+  final int  directMareCount;
+  int get descendantAndMareCount => descendantCount + mareCount;
+  int get directChildAndMareCount => directChildCount + directMareCount;
+
+  _LineageDataForFilter(QueryRow r)
+    : founderId = r.read('founder_id'),
+      progenitorId = r.read('progenitor_id'),
+      depth = r.read('depth'),
+      isFounder = r.read('is_founder_line'),
+      descendantCount = r.read('descendant_count'),
+      mareCount = r.read('mare_count'),
+      directChildCount = r.read('direct_child_count'),
+      directMareCount = r.read('direct_mare_count'),
+      row = r;
+}
+
+  List<QueryRow> _filterVerboseLineages(Iterable<QueryRow> rows) {
+    final data = <int, _LineageDataForFilter>{};
+    for (final r in rows) {
+      final d = _LineageDataForFilter(r);
+      if (d.descendantAndMareCount == 0) {
+        continue;
+      }
+      data[d.founderId] = d;
+    }
+    int comparator(a, b) => b.depth - a.depth;
+    for (final e in data.values.toList()..sort(comparator)) {
+      _LineageDataForFilter s = e;
+      _LineageDataForFilter? f;
+      while (s.progenitorId != null && data.containsKey(s.progenitorId)) {
+        _LineageDataForFilter p = data[s.progenitorId]!;
+        if (f == null) {
+          if (s.isFounder) {
+            f = s;
+          }
+          else {
+            // 最も近い始祖系統を取得
+            _LineageDataForFilter s2 = s;
+            while (s2.progenitorId != null && data.containsKey(s2.progenitorId)) {
+              _LineageDataForFilter p2 = data[s2.progenitorId]!;
+              if (p2.isFounder || p2.progenitorId == null) {
+                f = p2;
+                break;
+              }
+              else {
+                s2 = p2;
+              }
+            }
+          }
+        }
+        if (s.descendantCount == p.descendantCount) {
+          // 1本道
+          if (!s.isFounder && s.descendantCount == f?.descendantCount) {
+            if (s.directChildCount == 0 && s.founderId != e.founderId) {
+              data.remove(s.founderId);
+            }
+          }
+          else {
+            if (p.directChildCount == 0) {
+              data.remove(p.founderId);
+            }
+          }
+        }
+        else {
+          f = null;
+        }
+        s = p;
+      }
+    }
+    return (data.values.toList()..sort(comparator)).map((e) => e.row).toList(growable: false);
+  }

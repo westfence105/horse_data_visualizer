@@ -9,6 +9,7 @@ class MareSummary {
   final String? motherName;
   final int? childCount;
   final int? ownCount;
+  final int? mareCount;
   final bool? isHistorical;
 
   const MareSummary({
@@ -20,6 +21,7 @@ class MareSummary {
       this.motherId,
       this.childCount,
       this.ownCount,
+      this.mareCount,
       this.isHistorical,
     });
 
@@ -32,6 +34,7 @@ class MareSummary {
     motherName: r.read('mother_name'),
     childCount: r.read('child_count'),
     ownCount: r.read('own_count'),
+    mareCount: r.read('mare_count'),
     isHistorical: r.read('is_historical'),
   );
 }

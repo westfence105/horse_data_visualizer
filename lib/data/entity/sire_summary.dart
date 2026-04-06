@@ -7,6 +7,7 @@ class SireSummary {
   final String? fatherName;
   final int? childCount;
   final int? ownCount;
+  final int? mareCount;
   final bool? isHistorical;
   final bool? isFounder;
 
@@ -19,6 +20,7 @@ class SireSummary {
       this.isHistorical,
       this.isFounder,
       this.ownCount,
+      this.mareCount,
     });
   
   SireSummary.fromRow(QueryRow r) : this(
@@ -30,5 +32,6 @@ class SireSummary {
       isHistorical: r.read('is_historical'),
       isFounder: r.read('is_founder'),
       ownCount: r.read('own_count'),
+      mareCount: r.read('mare_count'),
   );
 }

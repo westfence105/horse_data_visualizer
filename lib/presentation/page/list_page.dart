@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 
 import '../../data/entity/foal_data.dart';
 import '../../data/entity/lineage_summary.dart';
-import '../../data/entity/mare_raw.dart';
 import '../../data/entity/owned_horse_data.dart';
 import '../../data/entity/sire_summary.dart';
 import '../../data/entity/mare_summary.dart';
@@ -38,7 +37,7 @@ class _ListPageState extends State<ListPage> {
   
   Map<int, _SexPair<List<OwnedHorseData>>> _childrenData = {};
   Map<int, _SexPair<List<FoalData>>> _foalData = {};
-  List<MareRaw> _mareData = [];
+  List<MareSummary> _mareData = [];
 
   final _mainScrollController = ScrollController();
 
@@ -52,7 +51,7 @@ class _ListPageState extends State<ListPage> {
     ]).then((result) {
       setState(() {
         _sireSummaries = result[0].cast<SireSummary>()
-          .where((e) => (e.ownCount ?? 0) > 0).toList()
+          .where((e) => (e.ownCount ?? 0) + (e.mareCount ?? 0) > 0).toList()
           ..sort(_compareSires);
         _mareSummaries = result[1].cast<MareSummary>()
           .where((e) => (e.ownCount ?? 0) > 0).toList()
@@ -66,6 +65,9 @@ class _ListPageState extends State<ListPage> {
   int _compareSires(SireSummary a, SireSummary b) {
     if (a.childCount != null && b.childCount != null && a.childCount != b.childCount) {
       return b.childCount! - a.childCount!;
+    }
+    else if (a.mareCount != null && b.mareCount != null && a.mareCount != b.mareCount) {
+      return b.mareCount! - a.mareCount!;
     }
     else {
       return a.name.compareTo(b.name);
@@ -87,13 +89,15 @@ class _ListPageState extends State<ListPage> {
     _foalData = {};
     _mainScrollController.jumpTo(0);
     Future<List<OwnedHorseData>> future;
-    Future<List<FoalData>>? foalFuture;
+    Future<List<FoalData>> foalFuture;
+    Future<List<MareSummary>> mareFuture;
     if (_selectedParent == null) {
       return;
     }
     else if (_aggMode == AggregationMode.sire) {
       future = HorsesRepository.fetchOwnedHorseData(_selectedParent, null);
       foalFuture = HorsesRepository.fetchFoalData(_selectedParent, null);
+      mareFuture = MaresRepository.fetchMareSummaries(fatherId: _selectedParent);
       SiresRepository.fetchSireSummary(_selectedParent!).then((s) async {
         if (s?.fatherId != null) {
           _lineages = await SiresRepository.findBelongingLineages(s!.fatherId!);
@@ -103,6 +107,7 @@ class _ListPageState extends State<ListPage> {
     else if (_aggMode == AggregationMode.mare){
       future = HorsesRepository.fetchOwnedHorseData(null, _selectedParent);
       foalFuture = HorsesRepository.fetchFoalData(null, _selectedParent);
+      mareFuture = MaresRepository.fetchMareSummaries(motherId: _selectedParent);
       MaresRepository.fetchMareSummary(_selectedParent!).then((s) async {
         if (s?.fatherId != null) {
           _lineages = await SiresRepository.findBelongingLineages(s!.fatherId!);
@@ -112,11 +117,7 @@ class _ListPageState extends State<ListPage> {
     else {
       future = HorsesRepository.fetchLineageOwnedHorseData(_selectedParent!);
       foalFuture = SiresRepository.fetchLineageFoalData(_selectedParent!);
-      SiresRepository.fetchLineageMares(_selectedParent!).then((result) {
-        setState(() {
-          _mareData = result;
-        });
-      });
+      mareFuture = SiresRepository.fetchLineageMares(_selectedParent!);
     }
     future.then((result) => setState(() {
       _childrenData = {};
@@ -141,6 +142,11 @@ class _ListPageState extends State<ListPage> {
             f.female.add(r);
           }
         }
+      });
+    });
+    mareFuture.then((result) {
+      setState(() {
+        _mareData = result.where((m) => (m.childCount ?? 0) > 0).toList(growable: false);
       });
     });
   }
@@ -374,7 +380,7 @@ class _ListPageState extends State<ListPage> {
     );
   }
 
-  Widget _buildMareGrid(List<MareRaw> mareData)
+  Widget _buildMareGrid(List<MareSummary> mareData)
     => GridView.builder(
       shrinkWrap: true,
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -387,7 +393,7 @@ class _ListPageState extends State<ListPage> {
         return _createNameText(
           mark: '◆',
           name: m.name,
-          suffix: '[${m.father}]',
+          suffix: '[${m.fatherName}]',
           color: Colors.red,
         );
       },

@@ -40,17 +40,30 @@ class _MaresPageState extends State<MaresPage> {
 
   int _compareMares(MareSummary a, MareSummary b) {
     int d = _sortAscending ? -1 : 1;
-    if (_sortColumn == 1) {
-      if (a.fatherName != b.fatherName) {
-        return (a.fatherName?.compareTo(b.fatherName ?? '') ?? 1) * d;
+    switch (_sortColumn) {
+      case 0: {
+        return a.name.compareTo(b.name) * d;
       }
-    }
-    if (_sortColumn == 2) {
-      if (a.motherName != b.motherName) {
-        return (a.motherName?.compareTo(b.motherName ?? '') ?? 1) * d;
+      case 1: {
+        if (a.fatherName != b.fatherName) {
+          return ((a.fatherName ?? '').compareTo(b.fatherName ?? '')) * d;
+        }
+        if (a.motherName != b.motherName) {
+          return ((a.motherName ?? '').compareTo(b.motherName ?? '')) * d;
+        }
+        return a.name.compareTo(b.name) * d;
       }
+      case 2: {
+        if (a.motherName != b.motherName) {
+          return ((a.motherName ?? '').compareTo(b.motherName ?? '')) * d;
+        }
+        if (a.fatherName != b.fatherName) {
+          return ((a.fatherName ?? '').compareTo(b.fatherName ?? '')) * d;
+        }
+        return a.name.compareTo(b.name) * d;
+      }
+      default: return 0;
     }
-    return a.name.compareTo(b.name) * d;
   }
 
   final _changedFather = <String,String>{};

@@ -47,8 +47,12 @@ class MaresRepository {
     return _mareStatsDao.fetchMareSummary(mareId);
   }
 
+  static Future<List<MareSummary>> fetchMareSummaries({ int? fatherId, int? motherId }) {
+    return _mareStatsDao.fetchMareSummaries(fatherId: fatherId, motherId: motherId);
+  }
+
   static Future<List<MareSummary>> fetchAllMareSummaries() {
-    return _mareStatsDao.fetchAllMareSummaries();
+    return _mareStatsDao.fetchMareSummaries();
   }
 
   static Future<List<ParentStats>> fetchAllMareStats([int? beginYear, int? endYear]) {

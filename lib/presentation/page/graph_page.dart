@@ -79,7 +79,7 @@ class _GraphPageState extends State<GraphPage> {
 
   void _fetchSummaries() {
     SiresRepository.fetchAllLineageSummaries(_beginYear, _endYear).then((value) => setState(() {
-      _lineages = value;
+      _lineages = value.where((e) => e.descendantCount > 0).toList();
     }));
   }
 
@@ -99,8 +99,9 @@ class _GraphPageState extends State<GraphPage> {
         setState(() {
           _spots = {};
           _meters = {};
-          for(int i = 0; i < value.length; ++i) {
-            final s = value[i];
+          final sires = value.where((s) => s.childCount! > 0).toList();
+          for(int i = 0; i < sires.length; ++i) {
+            final s = sires[i];
             _spots![i] = s.childCount?.toDouble() ?? 0;
             _meters![i] = s.name;
           }
@@ -310,7 +311,7 @@ class _GraphPageState extends State<GraphPage> {
     if (_chartType == null) {
       return SizedBox.shrink();
     }
-    double? maxX = _meters?.keys.reduce(max).toDouble();
+    double? maxX = (_meters?.isNotEmpty == true) ? _meters?.keys.reduce(max).toDouble() : null;
     double? minX;
     double? maxY;
     double? minY;

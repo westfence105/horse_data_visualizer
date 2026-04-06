@@ -11,65 +11,50 @@ part 'mare_stats_dao.g.dart';
 class MareStatsDao extends DatabaseAccessor<AppDb> with _$MareStatsDaoMixin {
   MareStatsDao(super.db);
 
-  Future<MareSummary?> fetchMareSummary(int mareId) async {
+  Future<List<MareSummary>> _fetchMareSummaries(String? whereStr) async {
     final rows = await customSelect(
       '''
+      WITH $bloodmaresTable
+
       SELECT
         h.id,
         h.name,
         h.father_id,
-        f.name AS father_name,
         h.mother_id,
+        s.name AS father_name,
         m.name AS mother_name,
         h.is_historical,
-        COUNT(c.sex) AS child_count,
-        COUNT(c.rating) AS own_count
-      FROM mares AS h
-      LEFT JOIN sires AS f
-        ON h.father_id = f.id
-      LEFT JOIN mares AS m
-        ON h.mother_id = m.id
-      LEFT JOIN horses AS c
-        ON c.mother_id = h.id
-      WHERE h.id = :mareId
-      GROUP BY h.id, h.name, h.father_id, f.name, h.mother_id, m.name, h.is_historical
+        h.child_count,
+        h.own_count,
+        COUNT(cm.id) AS mare_count
+      FROM bloodmares AS h
+      LEFT JOIN sires s
+        ON s.id = h.father_id
+      LEFT JOIN mares m
+        ON m.id = h.mother_id
+      LEFT JOIN bloodmares cm
+        ON cm.mother_id = h.id AND cm.child_count > 0
+      ${(whereStr != null) ? 'WHERE $whereStr' : ''}
+      GROUP BY
+        h.id,
+        h.name,
+        h.father_id,
+        h.mother_id,
+        s.name,
+        m.name,
+        h.is_historical
       ''',
-      variables: [Variable(mareId)]
     ).get();
 
-    if (rows.isEmpty) {
-      return null;
-    }
-    else {
-      return MareSummary.fromRow(rows.first);
-    }
+    return rows.map(MareSummary.fromRow).toList(growable: false);
   }
 
-  Future<List<MareSummary>> fetchAllMareSummaries() async {
-    final rows = await customSelect(
-      '''
-      SELECT
-        h.id,
-        h.name,
-        h.father_id,
-        f.name AS father_name,
-        h.mother_id,
-        m.name AS mother_name,
-        h.is_historical,
-        COUNT(c.sex) AS child_count,
-        COUNT(c.rating) AS own_count
-      FROM mares AS h
-      LEFT JOIN sires AS f
-        ON h.father_id = f.id
-      LEFT JOIN mares AS m
-        ON h.mother_id = m.id
-      LEFT JOIN horses AS c
-        ON c.mother_id = h.id
-      GROUP BY h.id, h.name, h.father_id, f.name, h.mother_id, m.name, h.is_historical
-      '''
-    ).get();
-
-    return rows.map(MareSummary.fromRow).toList();
+  Future<MareSummary?> fetchMareSummary(int mareId) async {
+    return (await _fetchMareSummaries('h.id = $mareId')).firstOrNull;
+  }
+  
+  Future<List<MareSummary>> fetchMareSummaries({ int? fatherId, int? motherId }) async {
+    return await _fetchMareSummaries(whereParent(fatherId, motherId));
   }
 
   Future<List<ParentStats>> fetchAllMareStats([int? beginYear, int? endYear]) async {
@@ -98,7 +83,7 @@ class MareStatsDao extends DatabaseAccessor<AppDb> with _$MareStatsDaoMixin {
       FROM horses AS h
       JOIN mares AS m
         ON h.mother_id = m.id
-      ${yearRange('h.birth_year', beginYear, endYear)}
+      ${whereStr([yearRange('h.birth_year', beginYear, endYear)])}
       GROUP BY m.id
       ORDER BY child_count DESC
       ''',
