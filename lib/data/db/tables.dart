@@ -33,7 +33,7 @@ class Mares extends Table {
 class Horses extends Table {
   IntColumn get birthYear => integer()();
   TextColumn get name => text().nullable()();
-  IntColumn get sex => integer()();
+  IntColumn get sex => integer().nullable()();
   IntColumn get fatherId => integer()
     .customConstraint('NOT NULL REFERENCES sires(id)')();
   IntColumn get motherId => integer()

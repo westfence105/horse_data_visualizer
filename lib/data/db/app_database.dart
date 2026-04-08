@@ -54,7 +54,7 @@ class AppDb extends _$AppDb {
   final Future<File> dbPath;
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -83,6 +83,9 @@ class AppDb extends _$AppDb {
         await m.addColumn(horses, horses.explosionPower);
         await m.addColumn(horses, horses.retireYear);
         await m.addColumn(horses, horses.isHistorical);
+      }
+      if (from < 6) {
+        await m.alterTable(TableMigration(horses));
       }
     }
   );

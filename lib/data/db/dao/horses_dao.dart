@@ -33,7 +33,7 @@ class HorsesDao extends DatabaseAccessor<AppDb> with _$HorsesDaoMixin {
       HorsesCompanion.insert(
         birthYear: d.birthYear,
         name: Value(d.name?.trim()),
-        sex:       d.sex,
+        sex:       Value(d.sex),
         fatherId:  await SiresRepository.findByName(d.fatherName),
         motherId:  await MaresRepository.findByName(d.motherName),
         rating01:  d.rating01,

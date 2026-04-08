@@ -17,6 +17,7 @@ class SiresPage extends StatefulWidget {
 class _SiresPageState extends State<SiresPage> {
   List<SireSummary> _summaries = [];
   
+  final _fatherTextControllers = <String,TextEditingController>{};
   final _historicalNotifiers = <String, ValueNotifier<bool>>{};
   final _lineageStatusNotifiers = <String,ValueNotifier<int>>{};
 
@@ -24,7 +25,9 @@ class _SiresPageState extends State<SiresPage> {
     SiresRepository.fetchAllSireSummaries()
       .then((result) => setState(() {
         _summaries = result;
+        _summaries.sort(_compareSires);
         for (final s in _summaries) {
+          _fatherTextControllers[s.name] = TextEditingController(text: s.fatherName ?? '');
           _historicalNotifiers[s.name] = ValueNotifier(s.isHistorical ?? false);
           _lineageStatusNotifiers[s.name] = ValueNotifier(s.lineageStatus ?? 0);
         }
@@ -38,6 +41,7 @@ class _SiresPageState extends State<SiresPage> {
     setState(() {
       _sortColumn = column;
       _sortAscending = asc;
+      _summaries.sort(_compareSires);
     });
   }
 
@@ -153,7 +157,7 @@ class _SiresPageState extends State<SiresPage> {
           child: SingleChildScrollView(
             child: DataTable(
               columns: columns,
-              rows: (_summaries..sort(_compareSires)).map((s) => DataRow(
+              rows: _summaries.map((s) => DataRow(
                 cells: <DataCell>[
                   DataCell(
                     ValueListenableBuilder(
@@ -170,30 +174,6 @@ class _SiresPageState extends State<SiresPage> {
                           ),
                         ],
                       ),
-                      // builder: (ctx, v, child) => GestureDetector(
-                      //   child: Row(
-                      //     mainAxisAlignment: MainAxisAlignment.center,
-                      //     children: [Text(['-','○','◎'][v])],
-                      //   ),
-                      //   onTap: () {
-                      //     _lineageStatusNotifiers[s.name]!.value = (v < 2) ? v + 1 : 0;
-                      //   },
-                      // ),
-                      // builder: (ctx, v, child) => DropdownButton<int>(
-                        // items: ['','○','◎'].asMap().entries.map(
-                        //   (e) => DropdownMenuItem(
-                        //     value: e.key,
-                        //     child: Text(e.value),
-                        //   ),
-                        // ).toList(growable: false),
-                        // value: v,
-                        // onChanged: (value) {
-                        //   if (value != null) {
-                        //     _changedLineage[s.name] = value;
-                        //     _lineageStatusNotifiers[s.name]!.value = value;
-                        //   }
-                        // }
-                      // ),
                     ),
                   ),
                   DataCell(
@@ -206,9 +186,7 @@ class _SiresPageState extends State<SiresPage> {
                   ),
                   DataCell(
                     TextField(
-                      controller: TextEditingController(
-                        text: s.fatherName ?? '',
-                      ),
+                      controller: _fatherTextControllers[s.name],
                       onChanged: (value) => _changedFather[s.name] = value,
                     ),
                   ),

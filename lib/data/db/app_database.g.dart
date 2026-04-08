@@ -1005,9 +1005,9 @@ class $HorsesTable extends Horses with TableInfo<$HorsesTable, Horse> {
   late final GeneratedColumn<int> sex = GeneratedColumn<int>(
     'sex',
     aliasedName,
-    false,
+    true,
     type: DriftSqlType.int,
-    requiredDuringInsert: true,
+    requiredDuringInsert: false,
   );
   static const VerificationMeta _fatherIdMeta = const VerificationMeta(
     'fatherId',
@@ -1228,8 +1228,6 @@ class $HorsesTable extends Horses with TableInfo<$HorsesTable, Horse> {
         _sexMeta,
         sex.isAcceptableOrUnknown(data['sex']!, _sexMeta),
       );
-    } else if (isInserting) {
-      context.missing(_sexMeta);
     }
     if (data.containsKey('father_id')) {
       context.handle(
@@ -1361,7 +1359,7 @@ class $HorsesTable extends Horses with TableInfo<$HorsesTable, Horse> {
       sex: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}sex'],
-      )!,
+      ),
       fatherId: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}father_id'],
@@ -1434,7 +1432,7 @@ class $HorsesTable extends Horses with TableInfo<$HorsesTable, Horse> {
 class Horse extends DataClass implements Insertable<Horse> {
   final int birthYear;
   final String? name;
-  final int sex;
+  final int? sex;
   final int fatherId;
   final int motherId;
   final int rating01;
@@ -1453,7 +1451,7 @@ class Horse extends DataClass implements Insertable<Horse> {
   const Horse({
     required this.birthYear,
     this.name,
-    required this.sex,
+    this.sex,
     required this.fatherId,
     required this.motherId,
     required this.rating01,
@@ -1477,7 +1475,9 @@ class Horse extends DataClass implements Insertable<Horse> {
     if (!nullToAbsent || name != null) {
       map['name'] = Variable<String>(name);
     }
-    map['sex'] = Variable<int>(sex);
+    if (!nullToAbsent || sex != null) {
+      map['sex'] = Variable<int>(sex);
+    }
     map['father_id'] = Variable<int>(fatherId);
     map['mother_id'] = Variable<int>(motherId);
     map['rating01'] = Variable<int>(rating01);
@@ -1514,7 +1514,7 @@ class Horse extends DataClass implements Insertable<Horse> {
     return HorsesCompanion(
       birthYear: Value(birthYear),
       name: name == null && nullToAbsent ? const Value.absent() : Value(name),
-      sex: Value(sex),
+      sex: sex == null && nullToAbsent ? const Value.absent() : Value(sex),
       fatherId: Value(fatherId),
       motherId: Value(motherId),
       rating01: Value(rating01),
@@ -1555,7 +1555,7 @@ class Horse extends DataClass implements Insertable<Horse> {
     return Horse(
       birthYear: serializer.fromJson<int>(json['birthYear']),
       name: serializer.fromJson<String?>(json['name']),
-      sex: serializer.fromJson<int>(json['sex']),
+      sex: serializer.fromJson<int?>(json['sex']),
       fatherId: serializer.fromJson<int>(json['fatherId']),
       motherId: serializer.fromJson<int>(json['motherId']),
       rating01: serializer.fromJson<int>(json['rating01']),
@@ -1579,7 +1579,7 @@ class Horse extends DataClass implements Insertable<Horse> {
     return <String, dynamic>{
       'birthYear': serializer.toJson<int>(birthYear),
       'name': serializer.toJson<String?>(name),
-      'sex': serializer.toJson<int>(sex),
+      'sex': serializer.toJson<int?>(sex),
       'fatherId': serializer.toJson<int>(fatherId),
       'motherId': serializer.toJson<int>(motherId),
       'rating01': serializer.toJson<int>(rating01),
@@ -1601,7 +1601,7 @@ class Horse extends DataClass implements Insertable<Horse> {
   Horse copyWith({
     int? birthYear,
     Value<String?> name = const Value.absent(),
-    int? sex,
+    Value<int?> sex = const Value.absent(),
     int? fatherId,
     int? motherId,
     int? rating01,
@@ -1620,7 +1620,7 @@ class Horse extends DataClass implements Insertable<Horse> {
   }) => Horse(
     birthYear: birthYear ?? this.birthYear,
     name: name.present ? name.value : this.name,
-    sex: sex ?? this.sex,
+    sex: sex.present ? sex.value : this.sex,
     fatherId: fatherId ?? this.fatherId,
     motherId: motherId ?? this.motherId,
     rating01: rating01 ?? this.rating01,
@@ -1743,7 +1743,7 @@ class Horse extends DataClass implements Insertable<Horse> {
 class HorsesCompanion extends UpdateCompanion<Horse> {
   final Value<int> birthYear;
   final Value<String?> name;
-  final Value<int> sex;
+  final Value<int?> sex;
   final Value<int> fatherId;
   final Value<int> motherId;
   final Value<int> rating01;
@@ -1784,7 +1784,7 @@ class HorsesCompanion extends UpdateCompanion<Horse> {
   HorsesCompanion.insert({
     required int birthYear,
     this.name = const Value.absent(),
-    required int sex,
+    this.sex = const Value.absent(),
     required int fatherId,
     required int motherId,
     required int rating01,
@@ -1802,7 +1802,6 @@ class HorsesCompanion extends UpdateCompanion<Horse> {
     this.isHistorical = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : birthYear = Value(birthYear),
-       sex = Value(sex),
        fatherId = Value(fatherId),
        motherId = Value(motherId),
        rating01 = Value(rating01),
@@ -1857,7 +1856,7 @@ class HorsesCompanion extends UpdateCompanion<Horse> {
   HorsesCompanion copyWith({
     Value<int>? birthYear,
     Value<String?>? name,
-    Value<int>? sex,
+    Value<int?>? sex,
     Value<int>? fatherId,
     Value<int>? motherId,
     Value<int>? rating01,
@@ -2872,7 +2871,7 @@ typedef $$HorsesTableCreateCompanionBuilder =
     HorsesCompanion Function({
       required int birthYear,
       Value<String?> name,
-      required int sex,
+      Value<int?> sex,
       required int fatherId,
       required int motherId,
       required int rating01,
@@ -2894,7 +2893,7 @@ typedef $$HorsesTableUpdateCompanionBuilder =
     HorsesCompanion Function({
       Value<int> birthYear,
       Value<String?> name,
-      Value<int> sex,
+      Value<int?> sex,
       Value<int> fatherId,
       Value<int> motherId,
       Value<int> rating01,
@@ -3365,7 +3364,7 @@ class $$HorsesTableTableManager
               ({
                 Value<int> birthYear = const Value.absent(),
                 Value<String?> name = const Value.absent(),
-                Value<int> sex = const Value.absent(),
+                Value<int?> sex = const Value.absent(),
                 Value<int> fatherId = const Value.absent(),
                 Value<int> motherId = const Value.absent(),
                 Value<int> rating01 = const Value.absent(),
@@ -3407,7 +3406,7 @@ class $$HorsesTableTableManager
               ({
                 required int birthYear,
                 Value<String?> name = const Value.absent(),
-                required int sex,
+                Value<int?> sex = const Value.absent(),
                 required int fatherId,
                 required int motherId,
                 required int rating01,
