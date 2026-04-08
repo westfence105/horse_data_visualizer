@@ -69,6 +69,18 @@ class $SiresTable extends Sires with TableInfo<$SiresTable, Sire> {
     ),
     defaultValue: Constant(false),
   );
+  static const VerificationMeta _lineageStatusMeta = const VerificationMeta(
+    'lineageStatus',
+  );
+  @override
+  late final GeneratedColumn<int> lineageStatus = GeneratedColumn<int>(
+    'lineage_status',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: Constant(0),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -76,6 +88,7 @@ class $SiresTable extends Sires with TableInfo<$SiresTable, Sire> {
     fatherId,
     isHistorical,
     isFounder,
+    lineageStatus,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -121,6 +134,15 @@ class $SiresTable extends Sires with TableInfo<$SiresTable, Sire> {
         isFounder.isAcceptableOrUnknown(data['is_founder']!, _isFounderMeta),
       );
     }
+    if (data.containsKey('lineage_status')) {
+      context.handle(
+        _lineageStatusMeta,
+        lineageStatus.isAcceptableOrUnknown(
+          data['lineage_status']!,
+          _lineageStatusMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -150,6 +172,10 @@ class $SiresTable extends Sires with TableInfo<$SiresTable, Sire> {
         DriftSqlType.bool,
         data['${effectivePrefix}is_founder'],
       )!,
+      lineageStatus: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}lineage_status'],
+      )!,
     );
   }
 
@@ -165,12 +191,14 @@ class Sire extends DataClass implements Insertable<Sire> {
   final int? fatherId;
   final bool isHistorical;
   final bool isFounder;
+  final int lineageStatus;
   const Sire({
     required this.id,
     required this.name,
     this.fatherId,
     required this.isHistorical,
     required this.isFounder,
+    required this.lineageStatus,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -182,6 +210,7 @@ class Sire extends DataClass implements Insertable<Sire> {
     }
     map['is_historical'] = Variable<bool>(isHistorical);
     map['is_founder'] = Variable<bool>(isFounder);
+    map['lineage_status'] = Variable<int>(lineageStatus);
     return map;
   }
 
@@ -194,6 +223,7 @@ class Sire extends DataClass implements Insertable<Sire> {
           : Value(fatherId),
       isHistorical: Value(isHistorical),
       isFounder: Value(isFounder),
+      lineageStatus: Value(lineageStatus),
     );
   }
 
@@ -208,6 +238,7 @@ class Sire extends DataClass implements Insertable<Sire> {
       fatherId: serializer.fromJson<int?>(json['fatherId']),
       isHistorical: serializer.fromJson<bool>(json['isHistorical']),
       isFounder: serializer.fromJson<bool>(json['isFounder']),
+      lineageStatus: serializer.fromJson<int>(json['lineageStatus']),
     );
   }
   @override
@@ -219,6 +250,7 @@ class Sire extends DataClass implements Insertable<Sire> {
       'fatherId': serializer.toJson<int?>(fatherId),
       'isHistorical': serializer.toJson<bool>(isHistorical),
       'isFounder': serializer.toJson<bool>(isFounder),
+      'lineageStatus': serializer.toJson<int>(lineageStatus),
     };
   }
 
@@ -228,12 +260,14 @@ class Sire extends DataClass implements Insertable<Sire> {
     Value<int?> fatherId = const Value.absent(),
     bool? isHistorical,
     bool? isFounder,
+    int? lineageStatus,
   }) => Sire(
     id: id ?? this.id,
     name: name ?? this.name,
     fatherId: fatherId.present ? fatherId.value : this.fatherId,
     isHistorical: isHistorical ?? this.isHistorical,
     isFounder: isFounder ?? this.isFounder,
+    lineageStatus: lineageStatus ?? this.lineageStatus,
   );
   Sire copyWithCompanion(SiresCompanion data) {
     return Sire(
@@ -244,6 +278,9 @@ class Sire extends DataClass implements Insertable<Sire> {
           ? data.isHistorical.value
           : this.isHistorical,
       isFounder: data.isFounder.present ? data.isFounder.value : this.isFounder,
+      lineageStatus: data.lineageStatus.present
+          ? data.lineageStatus.value
+          : this.lineageStatus,
     );
   }
 
@@ -254,13 +291,15 @@ class Sire extends DataClass implements Insertable<Sire> {
           ..write('name: $name, ')
           ..write('fatherId: $fatherId, ')
           ..write('isHistorical: $isHistorical, ')
-          ..write('isFounder: $isFounder')
+          ..write('isFounder: $isFounder, ')
+          ..write('lineageStatus: $lineageStatus')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, name, fatherId, isHistorical, isFounder);
+  int get hashCode =>
+      Object.hash(id, name, fatherId, isHistorical, isFounder, lineageStatus);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -269,7 +308,8 @@ class Sire extends DataClass implements Insertable<Sire> {
           other.name == this.name &&
           other.fatherId == this.fatherId &&
           other.isHistorical == this.isHistorical &&
-          other.isFounder == this.isFounder);
+          other.isFounder == this.isFounder &&
+          other.lineageStatus == this.lineageStatus);
 }
 
 class SiresCompanion extends UpdateCompanion<Sire> {
@@ -278,12 +318,14 @@ class SiresCompanion extends UpdateCompanion<Sire> {
   final Value<int?> fatherId;
   final Value<bool> isHistorical;
   final Value<bool> isFounder;
+  final Value<int> lineageStatus;
   const SiresCompanion({
     this.id = const Value.absent(),
     this.name = const Value.absent(),
     this.fatherId = const Value.absent(),
     this.isHistorical = const Value.absent(),
     this.isFounder = const Value.absent(),
+    this.lineageStatus = const Value.absent(),
   });
   SiresCompanion.insert({
     this.id = const Value.absent(),
@@ -291,6 +333,7 @@ class SiresCompanion extends UpdateCompanion<Sire> {
     this.fatherId = const Value.absent(),
     this.isHistorical = const Value.absent(),
     this.isFounder = const Value.absent(),
+    this.lineageStatus = const Value.absent(),
   }) : name = Value(name);
   static Insertable<Sire> custom({
     Expression<int>? id,
@@ -298,6 +341,7 @@ class SiresCompanion extends UpdateCompanion<Sire> {
     Expression<int>? fatherId,
     Expression<bool>? isHistorical,
     Expression<bool>? isFounder,
+    Expression<int>? lineageStatus,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -305,6 +349,7 @@ class SiresCompanion extends UpdateCompanion<Sire> {
       if (fatherId != null) 'father_id': fatherId,
       if (isHistorical != null) 'is_historical': isHistorical,
       if (isFounder != null) 'is_founder': isFounder,
+      if (lineageStatus != null) 'lineage_status': lineageStatus,
     });
   }
 
@@ -314,6 +359,7 @@ class SiresCompanion extends UpdateCompanion<Sire> {
     Value<int?>? fatherId,
     Value<bool>? isHistorical,
     Value<bool>? isFounder,
+    Value<int>? lineageStatus,
   }) {
     return SiresCompanion(
       id: id ?? this.id,
@@ -321,6 +367,7 @@ class SiresCompanion extends UpdateCompanion<Sire> {
       fatherId: fatherId ?? this.fatherId,
       isHistorical: isHistorical ?? this.isHistorical,
       isFounder: isFounder ?? this.isFounder,
+      lineageStatus: lineageStatus ?? this.lineageStatus,
     );
   }
 
@@ -342,6 +389,9 @@ class SiresCompanion extends UpdateCompanion<Sire> {
     if (isFounder.present) {
       map['is_founder'] = Variable<bool>(isFounder.value);
     }
+    if (lineageStatus.present) {
+      map['lineage_status'] = Variable<int>(lineageStatus.value);
+    }
     return map;
   }
 
@@ -352,7 +402,8 @@ class SiresCompanion extends UpdateCompanion<Sire> {
           ..write('name: $name, ')
           ..write('fatherId: $fatherId, ')
           ..write('isHistorical: $isHistorical, ')
-          ..write('isFounder: $isFounder')
+          ..write('isFounder: $isFounder, ')
+          ..write('lineageStatus: $lineageStatus')
           ..write(')'))
         .toString();
   }
@@ -421,6 +472,56 @@ class $MaresTable extends Mares with TableInfo<$MaresTable, Mare> {
     ),
     defaultValue: Constant(true),
   );
+  static const VerificationMeta _isFounderMeta = const VerificationMeta(
+    'isFounder',
+  );
+  @override
+  late final GeneratedColumn<bool> isFounder = GeneratedColumn<bool>(
+    'is_founder',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_founder" IN (0, 1))',
+    ),
+    defaultValue: Constant(false),
+  );
+  static const VerificationMeta _isGradeWinnerMeta = const VerificationMeta(
+    'isGradeWinner',
+  );
+  @override
+  late final GeneratedColumn<bool> isGradeWinner = GeneratedColumn<bool>(
+    'is_grade_winner',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_grade_winner" IN (0, 1))',
+    ),
+    defaultValue: Constant(false),
+  );
+  static const VerificationMeta _farmMeta = const VerificationMeta('farm');
+  @override
+  late final GeneratedColumn<int> farm = GeneratedColumn<int>(
+    'farm',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _breedingPolicyMeta = const VerificationMeta(
+    'breedingPolicy',
+  );
+  @override
+  late final GeneratedColumn<int> breedingPolicy = GeneratedColumn<int>(
+    'breeding_policy',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -428,6 +529,10 @@ class $MaresTable extends Mares with TableInfo<$MaresTable, Mare> {
     fatherId,
     motherId,
     isHistorical,
+    isFounder,
+    isGradeWinner,
+    farm,
+    breedingPolicy,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -473,6 +578,36 @@ class $MaresTable extends Mares with TableInfo<$MaresTable, Mare> {
         ),
       );
     }
+    if (data.containsKey('is_founder')) {
+      context.handle(
+        _isFounderMeta,
+        isFounder.isAcceptableOrUnknown(data['is_founder']!, _isFounderMeta),
+      );
+    }
+    if (data.containsKey('is_grade_winner')) {
+      context.handle(
+        _isGradeWinnerMeta,
+        isGradeWinner.isAcceptableOrUnknown(
+          data['is_grade_winner']!,
+          _isGradeWinnerMeta,
+        ),
+      );
+    }
+    if (data.containsKey('farm')) {
+      context.handle(
+        _farmMeta,
+        farm.isAcceptableOrUnknown(data['farm']!, _farmMeta),
+      );
+    }
+    if (data.containsKey('breeding_policy')) {
+      context.handle(
+        _breedingPolicyMeta,
+        breedingPolicy.isAcceptableOrUnknown(
+          data['breeding_policy']!,
+          _breedingPolicyMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -502,6 +637,22 @@ class $MaresTable extends Mares with TableInfo<$MaresTable, Mare> {
         DriftSqlType.bool,
         data['${effectivePrefix}is_historical'],
       )!,
+      isFounder: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_founder'],
+      )!,
+      isGradeWinner: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_grade_winner'],
+      )!,
+      farm: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}farm'],
+      ),
+      breedingPolicy: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}breeding_policy'],
+      ),
     );
   }
 
@@ -517,12 +668,20 @@ class Mare extends DataClass implements Insertable<Mare> {
   final int? fatherId;
   final int? motherId;
   final bool isHistorical;
+  final bool isFounder;
+  final bool isGradeWinner;
+  final int? farm;
+  final int? breedingPolicy;
   const Mare({
     required this.id,
     required this.name,
     this.fatherId,
     this.motherId,
     required this.isHistorical,
+    required this.isFounder,
+    required this.isGradeWinner,
+    this.farm,
+    this.breedingPolicy,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -536,6 +695,14 @@ class Mare extends DataClass implements Insertable<Mare> {
       map['mother_id'] = Variable<int>(motherId);
     }
     map['is_historical'] = Variable<bool>(isHistorical);
+    map['is_founder'] = Variable<bool>(isFounder);
+    map['is_grade_winner'] = Variable<bool>(isGradeWinner);
+    if (!nullToAbsent || farm != null) {
+      map['farm'] = Variable<int>(farm);
+    }
+    if (!nullToAbsent || breedingPolicy != null) {
+      map['breeding_policy'] = Variable<int>(breedingPolicy);
+    }
     return map;
   }
 
@@ -550,6 +717,12 @@ class Mare extends DataClass implements Insertable<Mare> {
           ? const Value.absent()
           : Value(motherId),
       isHistorical: Value(isHistorical),
+      isFounder: Value(isFounder),
+      isGradeWinner: Value(isGradeWinner),
+      farm: farm == null && nullToAbsent ? const Value.absent() : Value(farm),
+      breedingPolicy: breedingPolicy == null && nullToAbsent
+          ? const Value.absent()
+          : Value(breedingPolicy),
     );
   }
 
@@ -564,6 +737,10 @@ class Mare extends DataClass implements Insertable<Mare> {
       fatherId: serializer.fromJson<int?>(json['fatherId']),
       motherId: serializer.fromJson<int?>(json['motherId']),
       isHistorical: serializer.fromJson<bool>(json['isHistorical']),
+      isFounder: serializer.fromJson<bool>(json['isFounder']),
+      isGradeWinner: serializer.fromJson<bool>(json['isGradeWinner']),
+      farm: serializer.fromJson<int?>(json['farm']),
+      breedingPolicy: serializer.fromJson<int?>(json['breedingPolicy']),
     );
   }
   @override
@@ -575,6 +752,10 @@ class Mare extends DataClass implements Insertable<Mare> {
       'fatherId': serializer.toJson<int?>(fatherId),
       'motherId': serializer.toJson<int?>(motherId),
       'isHistorical': serializer.toJson<bool>(isHistorical),
+      'isFounder': serializer.toJson<bool>(isFounder),
+      'isGradeWinner': serializer.toJson<bool>(isGradeWinner),
+      'farm': serializer.toJson<int?>(farm),
+      'breedingPolicy': serializer.toJson<int?>(breedingPolicy),
     };
   }
 
@@ -584,12 +765,22 @@ class Mare extends DataClass implements Insertable<Mare> {
     Value<int?> fatherId = const Value.absent(),
     Value<int?> motherId = const Value.absent(),
     bool? isHistorical,
+    bool? isFounder,
+    bool? isGradeWinner,
+    Value<int?> farm = const Value.absent(),
+    Value<int?> breedingPolicy = const Value.absent(),
   }) => Mare(
     id: id ?? this.id,
     name: name ?? this.name,
     fatherId: fatherId.present ? fatherId.value : this.fatherId,
     motherId: motherId.present ? motherId.value : this.motherId,
     isHistorical: isHistorical ?? this.isHistorical,
+    isFounder: isFounder ?? this.isFounder,
+    isGradeWinner: isGradeWinner ?? this.isGradeWinner,
+    farm: farm.present ? farm.value : this.farm,
+    breedingPolicy: breedingPolicy.present
+        ? breedingPolicy.value
+        : this.breedingPolicy,
   );
   Mare copyWithCompanion(MaresCompanion data) {
     return Mare(
@@ -600,6 +791,14 @@ class Mare extends DataClass implements Insertable<Mare> {
       isHistorical: data.isHistorical.present
           ? data.isHistorical.value
           : this.isHistorical,
+      isFounder: data.isFounder.present ? data.isFounder.value : this.isFounder,
+      isGradeWinner: data.isGradeWinner.present
+          ? data.isGradeWinner.value
+          : this.isGradeWinner,
+      farm: data.farm.present ? data.farm.value : this.farm,
+      breedingPolicy: data.breedingPolicy.present
+          ? data.breedingPolicy.value
+          : this.breedingPolicy,
     );
   }
 
@@ -610,13 +809,27 @@ class Mare extends DataClass implements Insertable<Mare> {
           ..write('name: $name, ')
           ..write('fatherId: $fatherId, ')
           ..write('motherId: $motherId, ')
-          ..write('isHistorical: $isHistorical')
+          ..write('isHistorical: $isHistorical, ')
+          ..write('isFounder: $isFounder, ')
+          ..write('isGradeWinner: $isGradeWinner, ')
+          ..write('farm: $farm, ')
+          ..write('breedingPolicy: $breedingPolicy')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, name, fatherId, motherId, isHistorical);
+  int get hashCode => Object.hash(
+    id,
+    name,
+    fatherId,
+    motherId,
+    isHistorical,
+    isFounder,
+    isGradeWinner,
+    farm,
+    breedingPolicy,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -625,7 +838,11 @@ class Mare extends DataClass implements Insertable<Mare> {
           other.name == this.name &&
           other.fatherId == this.fatherId &&
           other.motherId == this.motherId &&
-          other.isHistorical == this.isHistorical);
+          other.isHistorical == this.isHistorical &&
+          other.isFounder == this.isFounder &&
+          other.isGradeWinner == this.isGradeWinner &&
+          other.farm == this.farm &&
+          other.breedingPolicy == this.breedingPolicy);
 }
 
 class MaresCompanion extends UpdateCompanion<Mare> {
@@ -634,12 +851,20 @@ class MaresCompanion extends UpdateCompanion<Mare> {
   final Value<int?> fatherId;
   final Value<int?> motherId;
   final Value<bool> isHistorical;
+  final Value<bool> isFounder;
+  final Value<bool> isGradeWinner;
+  final Value<int?> farm;
+  final Value<int?> breedingPolicy;
   const MaresCompanion({
     this.id = const Value.absent(),
     this.name = const Value.absent(),
     this.fatherId = const Value.absent(),
     this.motherId = const Value.absent(),
     this.isHistorical = const Value.absent(),
+    this.isFounder = const Value.absent(),
+    this.isGradeWinner = const Value.absent(),
+    this.farm = const Value.absent(),
+    this.breedingPolicy = const Value.absent(),
   });
   MaresCompanion.insert({
     this.id = const Value.absent(),
@@ -647,6 +872,10 @@ class MaresCompanion extends UpdateCompanion<Mare> {
     this.fatherId = const Value.absent(),
     this.motherId = const Value.absent(),
     this.isHistorical = const Value.absent(),
+    this.isFounder = const Value.absent(),
+    this.isGradeWinner = const Value.absent(),
+    this.farm = const Value.absent(),
+    this.breedingPolicy = const Value.absent(),
   }) : name = Value(name);
   static Insertable<Mare> custom({
     Expression<int>? id,
@@ -654,6 +883,10 @@ class MaresCompanion extends UpdateCompanion<Mare> {
     Expression<int>? fatherId,
     Expression<int>? motherId,
     Expression<bool>? isHistorical,
+    Expression<bool>? isFounder,
+    Expression<bool>? isGradeWinner,
+    Expression<int>? farm,
+    Expression<int>? breedingPolicy,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -661,6 +894,10 @@ class MaresCompanion extends UpdateCompanion<Mare> {
       if (fatherId != null) 'father_id': fatherId,
       if (motherId != null) 'mother_id': motherId,
       if (isHistorical != null) 'is_historical': isHistorical,
+      if (isFounder != null) 'is_founder': isFounder,
+      if (isGradeWinner != null) 'is_grade_winner': isGradeWinner,
+      if (farm != null) 'farm': farm,
+      if (breedingPolicy != null) 'breeding_policy': breedingPolicy,
     });
   }
 
@@ -670,6 +907,10 @@ class MaresCompanion extends UpdateCompanion<Mare> {
     Value<int?>? fatherId,
     Value<int?>? motherId,
     Value<bool>? isHistorical,
+    Value<bool>? isFounder,
+    Value<bool>? isGradeWinner,
+    Value<int?>? farm,
+    Value<int?>? breedingPolicy,
   }) {
     return MaresCompanion(
       id: id ?? this.id,
@@ -677,6 +918,10 @@ class MaresCompanion extends UpdateCompanion<Mare> {
       fatherId: fatherId ?? this.fatherId,
       motherId: motherId ?? this.motherId,
       isHistorical: isHistorical ?? this.isHistorical,
+      isFounder: isFounder ?? this.isFounder,
+      isGradeWinner: isGradeWinner ?? this.isGradeWinner,
+      farm: farm ?? this.farm,
+      breedingPolicy: breedingPolicy ?? this.breedingPolicy,
     );
   }
 
@@ -698,6 +943,18 @@ class MaresCompanion extends UpdateCompanion<Mare> {
     if (isHistorical.present) {
       map['is_historical'] = Variable<bool>(isHistorical.value);
     }
+    if (isFounder.present) {
+      map['is_founder'] = Variable<bool>(isFounder.value);
+    }
+    if (isGradeWinner.present) {
+      map['is_grade_winner'] = Variable<bool>(isGradeWinner.value);
+    }
+    if (farm.present) {
+      map['farm'] = Variable<int>(farm.value);
+    }
+    if (breedingPolicy.present) {
+      map['breeding_policy'] = Variable<int>(breedingPolicy.value);
+    }
     return map;
   }
 
@@ -708,7 +965,11 @@ class MaresCompanion extends UpdateCompanion<Mare> {
           ..write('name: $name, ')
           ..write('fatherId: $fatherId, ')
           ..write('motherId: $motherId, ')
-          ..write('isHistorical: $isHistorical')
+          ..write('isHistorical: $isHistorical, ')
+          ..write('isFounder: $isFounder, ')
+          ..write('isGradeWinner: $isGradeWinner, ')
+          ..write('farm: $farm, ')
+          ..write('breedingPolicy: $breedingPolicy')
           ..write(')'))
         .toString();
   }
@@ -867,6 +1128,54 @@ class $HorsesTable extends Horses with TableInfo<$HorsesTable, Horse> {
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _matingRankMeta = const VerificationMeta(
+    'matingRank',
+  );
+  @override
+  late final GeneratedColumn<int> matingRank = GeneratedColumn<int>(
+    'mating_rank',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _explosionPowerMeta = const VerificationMeta(
+    'explosionPower',
+  );
+  @override
+  late final GeneratedColumn<int> explosionPower = GeneratedColumn<int>(
+    'explosion_power',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _retireYearMeta = const VerificationMeta(
+    'retireYear',
+  );
+  @override
+  late final GeneratedColumn<int> retireYear = GeneratedColumn<int>(
+    'retire_year',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _isHistoricalMeta = const VerificationMeta(
+    'isHistorical',
+  );
+  @override
+  late final GeneratedColumn<bool> isHistorical = GeneratedColumn<bool>(
+    'is_historical',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_historical" IN (0, 1))',
+    ),
+    defaultValue: Constant(true),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     birthYear,
@@ -883,6 +1192,10 @@ class $HorsesTable extends Horses with TableInfo<$HorsesTable, Horse> {
     surface,
     distance,
     rating,
+    matingRank,
+    explosionPower,
+    retireYear,
+    isHistorical,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -998,6 +1311,36 @@ class $HorsesTable extends Horses with TableInfo<$HorsesTable, Horse> {
         rating.isAcceptableOrUnknown(data['rating']!, _ratingMeta),
       );
     }
+    if (data.containsKey('mating_rank')) {
+      context.handle(
+        _matingRankMeta,
+        matingRank.isAcceptableOrUnknown(data['mating_rank']!, _matingRankMeta),
+      );
+    }
+    if (data.containsKey('explosion_power')) {
+      context.handle(
+        _explosionPowerMeta,
+        explosionPower.isAcceptableOrUnknown(
+          data['explosion_power']!,
+          _explosionPowerMeta,
+        ),
+      );
+    }
+    if (data.containsKey('retire_year')) {
+      context.handle(
+        _retireYearMeta,
+        retireYear.isAcceptableOrUnknown(data['retire_year']!, _retireYearMeta),
+      );
+    }
+    if (data.containsKey('is_historical')) {
+      context.handle(
+        _isHistoricalMeta,
+        isHistorical.isAcceptableOrUnknown(
+          data['is_historical']!,
+          _isHistoricalMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -1063,6 +1406,22 @@ class $HorsesTable extends Horses with TableInfo<$HorsesTable, Horse> {
         DriftSqlType.int,
         data['${effectivePrefix}rating'],
       ),
+      matingRank: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}mating_rank'],
+      ),
+      explosionPower: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}explosion_power'],
+      ),
+      retireYear: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}retire_year'],
+      ),
+      isHistorical: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_historical'],
+      )!,
     );
   }
 
@@ -1087,6 +1446,10 @@ class Horse extends DataClass implements Insertable<Horse> {
   final int? surface;
   final int? distance;
   final int? rating;
+  final int? matingRank;
+  final int? explosionPower;
+  final int? retireYear;
+  final bool isHistorical;
   const Horse({
     required this.birthYear,
     this.name,
@@ -1102,6 +1465,10 @@ class Horse extends DataClass implements Insertable<Horse> {
     this.surface,
     this.distance,
     this.rating,
+    this.matingRank,
+    this.explosionPower,
+    this.retireYear,
+    required this.isHistorical,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1130,6 +1497,16 @@ class Horse extends DataClass implements Insertable<Horse> {
     if (!nullToAbsent || rating != null) {
       map['rating'] = Variable<int>(rating);
     }
+    if (!nullToAbsent || matingRank != null) {
+      map['mating_rank'] = Variable<int>(matingRank);
+    }
+    if (!nullToAbsent || explosionPower != null) {
+      map['explosion_power'] = Variable<int>(explosionPower);
+    }
+    if (!nullToAbsent || retireYear != null) {
+      map['retire_year'] = Variable<int>(retireYear);
+    }
+    map['is_historical'] = Variable<bool>(isHistorical);
     return map;
   }
 
@@ -1157,6 +1534,16 @@ class Horse extends DataClass implements Insertable<Horse> {
       rating: rating == null && nullToAbsent
           ? const Value.absent()
           : Value(rating),
+      matingRank: matingRank == null && nullToAbsent
+          ? const Value.absent()
+          : Value(matingRank),
+      explosionPower: explosionPower == null && nullToAbsent
+          ? const Value.absent()
+          : Value(explosionPower),
+      retireYear: retireYear == null && nullToAbsent
+          ? const Value.absent()
+          : Value(retireYear),
+      isHistorical: Value(isHistorical),
     );
   }
 
@@ -1180,6 +1567,10 @@ class Horse extends DataClass implements Insertable<Horse> {
       surface: serializer.fromJson<int?>(json['surface']),
       distance: serializer.fromJson<int?>(json['distance']),
       rating: serializer.fromJson<int?>(json['rating']),
+      matingRank: serializer.fromJson<int?>(json['matingRank']),
+      explosionPower: serializer.fromJson<int?>(json['explosionPower']),
+      retireYear: serializer.fromJson<int?>(json['retireYear']),
+      isHistorical: serializer.fromJson<bool>(json['isHistorical']),
     );
   }
   @override
@@ -1200,6 +1591,10 @@ class Horse extends DataClass implements Insertable<Horse> {
       'surface': serializer.toJson<int?>(surface),
       'distance': serializer.toJson<int?>(distance),
       'rating': serializer.toJson<int?>(rating),
+      'matingRank': serializer.toJson<int?>(matingRank),
+      'explosionPower': serializer.toJson<int?>(explosionPower),
+      'retireYear': serializer.toJson<int?>(retireYear),
+      'isHistorical': serializer.toJson<bool>(isHistorical),
     };
   }
 
@@ -1218,6 +1613,10 @@ class Horse extends DataClass implements Insertable<Horse> {
     Value<int?> surface = const Value.absent(),
     Value<int?> distance = const Value.absent(),
     Value<int?> rating = const Value.absent(),
+    Value<int?> matingRank = const Value.absent(),
+    Value<int?> explosionPower = const Value.absent(),
+    Value<int?> retireYear = const Value.absent(),
+    bool? isHistorical,
   }) => Horse(
     birthYear: birthYear ?? this.birthYear,
     name: name.present ? name.value : this.name,
@@ -1233,6 +1632,12 @@ class Horse extends DataClass implements Insertable<Horse> {
     surface: surface.present ? surface.value : this.surface,
     distance: distance.present ? distance.value : this.distance,
     rating: rating.present ? rating.value : this.rating,
+    matingRank: matingRank.present ? matingRank.value : this.matingRank,
+    explosionPower: explosionPower.present
+        ? explosionPower.value
+        : this.explosionPower,
+    retireYear: retireYear.present ? retireYear.value : this.retireYear,
+    isHistorical: isHistorical ?? this.isHistorical,
   );
   Horse copyWithCompanion(HorsesCompanion data) {
     return Horse(
@@ -1250,6 +1655,18 @@ class Horse extends DataClass implements Insertable<Horse> {
       surface: data.surface.present ? data.surface.value : this.surface,
       distance: data.distance.present ? data.distance.value : this.distance,
       rating: data.rating.present ? data.rating.value : this.rating,
+      matingRank: data.matingRank.present
+          ? data.matingRank.value
+          : this.matingRank,
+      explosionPower: data.explosionPower.present
+          ? data.explosionPower.value
+          : this.explosionPower,
+      retireYear: data.retireYear.present
+          ? data.retireYear.value
+          : this.retireYear,
+      isHistorical: data.isHistorical.present
+          ? data.isHistorical.value
+          : this.isHistorical,
     );
   }
 
@@ -1269,7 +1686,11 @@ class Horse extends DataClass implements Insertable<Horse> {
           ..write('growth: $growth, ')
           ..write('surface: $surface, ')
           ..write('distance: $distance, ')
-          ..write('rating: $rating')
+          ..write('rating: $rating, ')
+          ..write('matingRank: $matingRank, ')
+          ..write('explosionPower: $explosionPower, ')
+          ..write('retireYear: $retireYear, ')
+          ..write('isHistorical: $isHistorical')
           ..write(')'))
         .toString();
   }
@@ -1290,6 +1711,10 @@ class Horse extends DataClass implements Insertable<Horse> {
     surface,
     distance,
     rating,
+    matingRank,
+    explosionPower,
+    retireYear,
+    isHistorical,
   );
   @override
   bool operator ==(Object other) =>
@@ -1308,7 +1733,11 @@ class Horse extends DataClass implements Insertable<Horse> {
           other.growth == this.growth &&
           other.surface == this.surface &&
           other.distance == this.distance &&
-          other.rating == this.rating);
+          other.rating == this.rating &&
+          other.matingRank == this.matingRank &&
+          other.explosionPower == this.explosionPower &&
+          other.retireYear == this.retireYear &&
+          other.isHistorical == this.isHistorical);
 }
 
 class HorsesCompanion extends UpdateCompanion<Horse> {
@@ -1326,6 +1755,10 @@ class HorsesCompanion extends UpdateCompanion<Horse> {
   final Value<int?> surface;
   final Value<int?> distance;
   final Value<int?> rating;
+  final Value<int?> matingRank;
+  final Value<int?> explosionPower;
+  final Value<int?> retireYear;
+  final Value<bool> isHistorical;
   final Value<int> rowid;
   const HorsesCompanion({
     this.birthYear = const Value.absent(),
@@ -1342,6 +1775,10 @@ class HorsesCompanion extends UpdateCompanion<Horse> {
     this.surface = const Value.absent(),
     this.distance = const Value.absent(),
     this.rating = const Value.absent(),
+    this.matingRank = const Value.absent(),
+    this.explosionPower = const Value.absent(),
+    this.retireYear = const Value.absent(),
+    this.isHistorical = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   HorsesCompanion.insert({
@@ -1359,6 +1796,10 @@ class HorsesCompanion extends UpdateCompanion<Horse> {
     this.surface = const Value.absent(),
     this.distance = const Value.absent(),
     this.rating = const Value.absent(),
+    this.matingRank = const Value.absent(),
+    this.explosionPower = const Value.absent(),
+    this.retireYear = const Value.absent(),
+    this.isHistorical = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : birthYear = Value(birthYear),
        sex = Value(sex),
@@ -1384,6 +1825,10 @@ class HorsesCompanion extends UpdateCompanion<Horse> {
     Expression<int>? surface,
     Expression<int>? distance,
     Expression<int>? rating,
+    Expression<int>? matingRank,
+    Expression<int>? explosionPower,
+    Expression<int>? retireYear,
+    Expression<bool>? isHistorical,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -1401,6 +1846,10 @@ class HorsesCompanion extends UpdateCompanion<Horse> {
       if (surface != null) 'surface': surface,
       if (distance != null) 'distance': distance,
       if (rating != null) 'rating': rating,
+      if (matingRank != null) 'mating_rank': matingRank,
+      if (explosionPower != null) 'explosion_power': explosionPower,
+      if (retireYear != null) 'retire_year': retireYear,
+      if (isHistorical != null) 'is_historical': isHistorical,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -1420,6 +1869,10 @@ class HorsesCompanion extends UpdateCompanion<Horse> {
     Value<int?>? surface,
     Value<int?>? distance,
     Value<int?>? rating,
+    Value<int?>? matingRank,
+    Value<int?>? explosionPower,
+    Value<int?>? retireYear,
+    Value<bool>? isHistorical,
     Value<int>? rowid,
   }) {
     return HorsesCompanion(
@@ -1437,6 +1890,10 @@ class HorsesCompanion extends UpdateCompanion<Horse> {
       surface: surface ?? this.surface,
       distance: distance ?? this.distance,
       rating: rating ?? this.rating,
+      matingRank: matingRank ?? this.matingRank,
+      explosionPower: explosionPower ?? this.explosionPower,
+      retireYear: retireYear ?? this.retireYear,
+      isHistorical: isHistorical ?? this.isHistorical,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -1486,6 +1943,18 @@ class HorsesCompanion extends UpdateCompanion<Horse> {
     if (rating.present) {
       map['rating'] = Variable<int>(rating.value);
     }
+    if (matingRank.present) {
+      map['mating_rank'] = Variable<int>(matingRank.value);
+    }
+    if (explosionPower.present) {
+      map['explosion_power'] = Variable<int>(explosionPower.value);
+    }
+    if (retireYear.present) {
+      map['retire_year'] = Variable<int>(retireYear.value);
+    }
+    if (isHistorical.present) {
+      map['is_historical'] = Variable<bool>(isHistorical.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -1509,6 +1978,10 @@ class HorsesCompanion extends UpdateCompanion<Horse> {
           ..write('surface: $surface, ')
           ..write('distance: $distance, ')
           ..write('rating: $rating, ')
+          ..write('matingRank: $matingRank, ')
+          ..write('explosionPower: $explosionPower, ')
+          ..write('retireYear: $retireYear, ')
+          ..write('isHistorical: $isHistorical, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -1540,6 +2013,7 @@ typedef $$SiresTableCreateCompanionBuilder =
       Value<int?> fatherId,
       Value<bool> isHistorical,
       Value<bool> isFounder,
+      Value<int> lineageStatus,
     });
 typedef $$SiresTableUpdateCompanionBuilder =
     SiresCompanion Function({
@@ -1548,6 +2022,7 @@ typedef $$SiresTableUpdateCompanionBuilder =
       Value<int?> fatherId,
       Value<bool> isHistorical,
       Value<bool> isFounder,
+      Value<int> lineageStatus,
     });
 
 final class $$SiresTableReferences
@@ -1623,6 +2098,11 @@ class $$SiresTableFilterComposer extends Composer<_$AppDb, $SiresTable> {
 
   ColumnFilters<bool> get isFounder => $composableBuilder(
     column: $table.isFounder,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get lineageStatus => $composableBuilder(
+    column: $table.lineageStatus,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -1709,6 +2189,11 @@ class $$SiresTableOrderingComposer extends Composer<_$AppDb, $SiresTable> {
     column: $table.isFounder,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<int> get lineageStatus => $composableBuilder(
+    column: $table.lineageStatus,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$SiresTableAnnotationComposer extends Composer<_$AppDb, $SiresTable> {
@@ -1735,6 +2220,11 @@ class $$SiresTableAnnotationComposer extends Composer<_$AppDb, $SiresTable> {
 
   GeneratedColumn<bool> get isFounder =>
       $composableBuilder(column: $table.isFounder, builder: (column) => column);
+
+  GeneratedColumn<int> get lineageStatus => $composableBuilder(
+    column: $table.lineageStatus,
+    builder: (column) => column,
+  );
 
   Expression<T> maresRefs<T extends Object>(
     Expression<T> Function($$MaresTableAnnotationComposer a) f,
@@ -1820,12 +2310,14 @@ class $$SiresTableTableManager
                 Value<int?> fatherId = const Value.absent(),
                 Value<bool> isHistorical = const Value.absent(),
                 Value<bool> isFounder = const Value.absent(),
+                Value<int> lineageStatus = const Value.absent(),
               }) => SiresCompanion(
                 id: id,
                 name: name,
                 fatherId: fatherId,
                 isHistorical: isHistorical,
                 isFounder: isFounder,
+                lineageStatus: lineageStatus,
               ),
           createCompanionCallback:
               ({
@@ -1834,12 +2326,14 @@ class $$SiresTableTableManager
                 Value<int?> fatherId = const Value.absent(),
                 Value<bool> isHistorical = const Value.absent(),
                 Value<bool> isFounder = const Value.absent(),
+                Value<int> lineageStatus = const Value.absent(),
               }) => SiresCompanion.insert(
                 id: id,
                 name: name,
                 fatherId: fatherId,
                 isHistorical: isHistorical,
                 isFounder: isFounder,
+                lineageStatus: lineageStatus,
               ),
           withReferenceMapper: (p0) => p0
               .map(
@@ -1910,6 +2404,10 @@ typedef $$MaresTableCreateCompanionBuilder =
       Value<int?> fatherId,
       Value<int?> motherId,
       Value<bool> isHistorical,
+      Value<bool> isFounder,
+      Value<bool> isGradeWinner,
+      Value<int?> farm,
+      Value<int?> breedingPolicy,
     });
 typedef $$MaresTableUpdateCompanionBuilder =
     MaresCompanion Function({
@@ -1918,6 +2416,10 @@ typedef $$MaresTableUpdateCompanionBuilder =
       Value<int?> fatherId,
       Value<int?> motherId,
       Value<bool> isHistorical,
+      Value<bool> isFounder,
+      Value<bool> isGradeWinner,
+      Value<int?> farm,
+      Value<int?> breedingPolicy,
     });
 
 final class $$MaresTableReferences
@@ -1987,6 +2489,26 @@ class $$MaresTableFilterComposer extends Composer<_$AppDb, $MaresTable> {
 
   ColumnFilters<bool> get isHistorical => $composableBuilder(
     column: $table.isHistorical,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isFounder => $composableBuilder(
+    column: $table.isFounder,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isGradeWinner => $composableBuilder(
+    column: $table.isGradeWinner,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get farm => $composableBuilder(
+    column: $table.farm,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get breedingPolicy => $composableBuilder(
+    column: $table.breedingPolicy,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -2067,6 +2589,26 @@ class $$MaresTableOrderingComposer extends Composer<_$AppDb, $MaresTable> {
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get isFounder => $composableBuilder(
+    column: $table.isFounder,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isGradeWinner => $composableBuilder(
+    column: $table.isGradeWinner,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get farm => $composableBuilder(
+    column: $table.farm,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get breedingPolicy => $composableBuilder(
+    column: $table.breedingPolicy,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$SiresTableOrderingComposer get fatherId {
     final $$SiresTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -2110,6 +2652,22 @@ class $$MaresTableAnnotationComposer extends Composer<_$AppDb, $MaresTable> {
 
   GeneratedColumn<bool> get isHistorical => $composableBuilder(
     column: $table.isHistorical,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isFounder =>
+      $composableBuilder(column: $table.isFounder, builder: (column) => column);
+
+  GeneratedColumn<bool> get isGradeWinner => $composableBuilder(
+    column: $table.isGradeWinner,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get farm =>
+      $composableBuilder(column: $table.farm, builder: (column) => column);
+
+  GeneratedColumn<int> get breedingPolicy => $composableBuilder(
+    column: $table.breedingPolicy,
     builder: (column) => column,
   );
 
@@ -2195,12 +2753,20 @@ class $$MaresTableTableManager
                 Value<int?> fatherId = const Value.absent(),
                 Value<int?> motherId = const Value.absent(),
                 Value<bool> isHistorical = const Value.absent(),
+                Value<bool> isFounder = const Value.absent(),
+                Value<bool> isGradeWinner = const Value.absent(),
+                Value<int?> farm = const Value.absent(),
+                Value<int?> breedingPolicy = const Value.absent(),
               }) => MaresCompanion(
                 id: id,
                 name: name,
                 fatherId: fatherId,
                 motherId: motherId,
                 isHistorical: isHistorical,
+                isFounder: isFounder,
+                isGradeWinner: isGradeWinner,
+                farm: farm,
+                breedingPolicy: breedingPolicy,
               ),
           createCompanionCallback:
               ({
@@ -2209,12 +2775,20 @@ class $$MaresTableTableManager
                 Value<int?> fatherId = const Value.absent(),
                 Value<int?> motherId = const Value.absent(),
                 Value<bool> isHistorical = const Value.absent(),
+                Value<bool> isFounder = const Value.absent(),
+                Value<bool> isGradeWinner = const Value.absent(),
+                Value<int?> farm = const Value.absent(),
+                Value<int?> breedingPolicy = const Value.absent(),
               }) => MaresCompanion.insert(
                 id: id,
                 name: name,
                 fatherId: fatherId,
                 motherId: motherId,
                 isHistorical: isHistorical,
+                isFounder: isFounder,
+                isGradeWinner: isGradeWinner,
+                farm: farm,
+                breedingPolicy: breedingPolicy,
               ),
           withReferenceMapper: (p0) => p0
               .map(
@@ -2310,6 +2884,10 @@ typedef $$HorsesTableCreateCompanionBuilder =
       Value<int?> surface,
       Value<int?> distance,
       Value<int?> rating,
+      Value<int?> matingRank,
+      Value<int?> explosionPower,
+      Value<int?> retireYear,
+      Value<bool> isHistorical,
       Value<int> rowid,
     });
 typedef $$HorsesTableUpdateCompanionBuilder =
@@ -2328,6 +2906,10 @@ typedef $$HorsesTableUpdateCompanionBuilder =
       Value<int?> surface,
       Value<int?> distance,
       Value<int?> rating,
+      Value<int?> matingRank,
+      Value<int?> explosionPower,
+      Value<int?> retireYear,
+      Value<bool> isHistorical,
       Value<int> rowid,
     });
 
@@ -2437,6 +3019,26 @@ class $$HorsesTableFilterComposer extends Composer<_$AppDb, $HorsesTable> {
 
   ColumnFilters<int> get rating => $composableBuilder(
     column: $table.rating,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get matingRank => $composableBuilder(
+    column: $table.matingRank,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get explosionPower => $composableBuilder(
+    column: $table.explosionPower,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get retireYear => $composableBuilder(
+    column: $table.retireYear,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isHistorical => $composableBuilder(
+    column: $table.isHistorical,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -2555,6 +3157,26 @@ class $$HorsesTableOrderingComposer extends Composer<_$AppDb, $HorsesTable> {
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get matingRank => $composableBuilder(
+    column: $table.matingRank,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get explosionPower => $composableBuilder(
+    column: $table.explosionPower,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get retireYear => $composableBuilder(
+    column: $table.retireYear,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isHistorical => $composableBuilder(
+    column: $table.isHistorical,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$SiresTableOrderingComposer get fatherId {
     final $$SiresTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -2646,6 +3268,26 @@ class $$HorsesTableAnnotationComposer extends Composer<_$AppDb, $HorsesTable> {
   GeneratedColumn<int> get rating =>
       $composableBuilder(column: $table.rating, builder: (column) => column);
 
+  GeneratedColumn<int> get matingRank => $composableBuilder(
+    column: $table.matingRank,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get explosionPower => $composableBuilder(
+    column: $table.explosionPower,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get retireYear => $composableBuilder(
+    column: $table.retireYear,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isHistorical => $composableBuilder(
+    column: $table.isHistorical,
+    builder: (column) => column,
+  );
+
   $$SiresTableAnnotationComposer get fatherId {
     final $$SiresTableAnnotationComposer composer = $composerBuilder(
       composer: this,
@@ -2735,6 +3377,10 @@ class $$HorsesTableTableManager
                 Value<int?> surface = const Value.absent(),
                 Value<int?> distance = const Value.absent(),
                 Value<int?> rating = const Value.absent(),
+                Value<int?> matingRank = const Value.absent(),
+                Value<int?> explosionPower = const Value.absent(),
+                Value<int?> retireYear = const Value.absent(),
+                Value<bool> isHistorical = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => HorsesCompanion(
                 birthYear: birthYear,
@@ -2751,6 +3397,10 @@ class $$HorsesTableTableManager
                 surface: surface,
                 distance: distance,
                 rating: rating,
+                matingRank: matingRank,
+                explosionPower: explosionPower,
+                retireYear: retireYear,
+                isHistorical: isHistorical,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -2769,6 +3419,10 @@ class $$HorsesTableTableManager
                 Value<int?> surface = const Value.absent(),
                 Value<int?> distance = const Value.absent(),
                 Value<int?> rating = const Value.absent(),
+                Value<int?> matingRank = const Value.absent(),
+                Value<int?> explosionPower = const Value.absent(),
+                Value<int?> retireYear = const Value.absent(),
+                Value<bool> isHistorical = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => HorsesCompanion.insert(
                 birthYear: birthYear,
@@ -2785,6 +3439,10 @@ class $$HorsesTableTableManager
                 surface: surface,
                 distance: distance,
                 rating: rating,
+                matingRank: matingRank,
+                explosionPower: explosionPower,
+                retireYear: retireYear,
+                isHistorical: isHistorical,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

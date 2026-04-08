@@ -12,6 +12,10 @@ class MareSummary {
   final int? foalCount;
   final int? mareCount;
   final bool? isHistorical;
+  final bool? isFounder;
+  final bool? isGradeWinner;
+  final int? farm;
+  final int? breedingPolicy;
 
   const MareSummary({
     required this.id,
@@ -25,6 +29,10 @@ class MareSummary {
       this.foalCount,
       this.mareCount,
       this.isHistorical,
+      this.isFounder,
+      this.isGradeWinner,
+      this.farm,
+      this.breedingPolicy,
     });
 
   MareSummary.fromRow(QueryRow r) : this(
@@ -39,5 +47,9 @@ class MareSummary {
     foalCount: r.read('foal_count'),
     mareCount: r.read('mare_count'),
     isHistorical: r.read('is_historical'),
+    isFounder: r.read('is_founder'),
+    isGradeWinner: r.read('is_grade_winner'),
+    farm: r.read('farm'),
+    breedingPolicy: r.read('breeding_policy'),
   );
 }

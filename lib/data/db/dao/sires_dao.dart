@@ -9,16 +9,16 @@ part 'sires_dao.g.dart';
 class SiresDao extends DatabaseAccessor<AppDb> with _$SiresDaoMixin {
   SiresDao(super.db);
 
-  Future<void> upsert(String name, [String? father, bool? isHistorical, bool? isFounder]) async {
+  Future<void> upsert(String name, {String? father, bool? isHistorical, bool? isFounder, lineageStatus}) async {
     await db.transaction(() async {
-      await _upsert(name.trim(), father?.trim(), isHistorical, isFounder);
+      await _upsert(name.trim(), father?.trim(), isHistorical, isFounder, lineageStatus);
     });
   }
 
   Future<void> upsertList(Iterable<SireRaw> rawData) async {
     await db.transaction(() async {
       for (SireRaw d in rawData) {
-        await _upsert(d.name.trim(), d.father?.trim(), d.isHistorical, d.isFounder);
+        await _upsert(d.name.trim(), d.father?.trim(), d.isHistorical, d.isFounder, d.lineageStatus);
       }
     });
   }
@@ -46,7 +46,7 @@ class SiresDao extends DatabaseAccessor<AppDb> with _$SiresDaoMixin {
     return (await _findByName(name)).id;
   }
 
-  Future<void> _upsert(String name, String? father, bool? isHistorical, bool? isFounder) async {
+  Future<void> _upsert(String name, String? father, bool? isHistorical, bool? isFounder, int? lineageStatus) async {
     if (name == father) {
       // 自己参照の禁止
       return;
@@ -61,21 +61,24 @@ class SiresDao extends DatabaseAccessor<AppDb> with _$SiresDaoMixin {
 
     isHistorical ??= r.isHistorical;
     isFounder ??= r.isFounder;
+    lineageStatus ??= r.lineageStatus;
 
     await customInsert(
       '''
-      INSERT INTO sires(name, father_id, is_historical, is_founder)
-      VALUES(:name, :fatherId, :isHistorical, :isFounder)
+      INSERT INTO sires(name, father_id, is_historical, is_founder, lineage_status)
+      VALUES(:name, :fatherId, :isHistorical, :isFounder, :lineageStatus)
       ON CONFLICT(name) DO UPDATE
         SET father_id = excluded.father_id,
             is_historical = excluded.is_historical,
-            is_founder = excluded.is_founder
+            is_founder = excluded.is_founder,
+            lineage_status = excluded.lineage_status
       ''',
       variables: [
         Variable<String>(name),
         Variable<int>(fatherId),
         Variable<bool>(isHistorical),
         Variable<bool>(isFounder),
+        Variable<int>(lineageStatus),
       ],
       updates: {db.sires},
     );
@@ -88,7 +91,8 @@ class SiresDao extends DatabaseAccessor<AppDb> with _$SiresDaoMixin {
         s.name,
         f.name AS father_name,
         s.is_historical,
-        s.is_founder
+        s.is_founder,
+        s.lineage_status
       FROM sires s
       LEFT JOIN sires f ON f.id = s.father_id
       '''

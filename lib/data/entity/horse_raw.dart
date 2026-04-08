@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:drift/drift.dart';
 
 int? _reverse(Map<int,String> map, String? str)
@@ -8,6 +10,8 @@ const _ratingMap = {4:'◎', 3:'○', 2:'▲', 1:'△', 0:'-'};
 const _growthMap = {0:'早熟', 1:'早め', 2:'遅め', 3:'覚醒', 4:'晩成'};
 const _surfaceMap = {1:'芝', -1:'ダート', 0:'万能'};
 const _distanceMap = {0:'短距離', 1:'マイル', 2:'中距離', 3:'クラシック', 4:'長距離'};
+final mateRankRegex = RegExp('([SA-D])([0-9]+)');
+const _matingRanks = <String>['','S','A','B','C','D'];
 
 class HorseRaw {
   final int birthYear;
@@ -24,6 +28,10 @@ class HorseRaw {
   final int? surface;
   final int? distance;
   final int? rating;
+  final int? matingRank;
+  final int? explosionPower;
+  final int? retireYear;
+  final bool? isHistorical;
 
   const HorseRaw({
     required this.birthYear,
@@ -40,6 +48,10 @@ class HorseRaw {
     this.surface,
     this.distance,
     this.rating,
+    this.matingRank,
+    this.explosionPower,
+    this.retireYear,
+    this.isHistorical,
   });
 
   HorseRaw.fromRow(QueryRow r) : this(
@@ -57,6 +69,10 @@ class HorseRaw {
     surface: r.read('surface'),
     distance: r.read('distance'),
     rating: r.read('rating'),
+    matingRank: r.read('mating_rank'),
+    explosionPower: r.read('explosion_power'),
+    retireYear: r.read('retire_year'),
+    isHistorical: r.read('is_historical'),
   );
 }
 
@@ -100,7 +116,7 @@ class HorseData {
   static bool checkMap(Map<String,String> d) {
       if (d.containsKey('名前') && d['名前']?.trim().startsWith('☆') == true) {
         // 史実馬
-        return false;
+        // return false;
       }
       final birthYear = d.containsKey('生年') ? int.tryParse(d['生年']!) : null;
       final father = d['父']?.trim();
@@ -109,9 +125,13 @@ class HorseData {
       return (birthYear != null && father?.isNotEmpty == true && mother?.isNotEmpty == true && sex?.isNotEmpty == true);
   }
 
+  static String? _prepareName(String? name)
+      => (name?.startsWith('☆') == true) ?
+          name!.substring(1) : name;
+
   HorseData.fromMap(Map<String,String> d) : rawData = HorseRaw(
     birthYear: int.tryParse(d['生年'] ?? '1900') ?? 1900,
-    name: d['名前'],
+    name: _prepareName(d['名前']),
     sex: _reverse(_sexMap, d['性別']) ?? 0,
     fatherName: d['父'] ?? '',
     motherName: d['母'] ?? '',
@@ -124,14 +144,19 @@ class HorseData {
     surface: _reverse(_surfaceMap, d['馬場']),
     distance: _reverse(_distanceMap, d['距離']),
     rating: _reverse(_ratingMap, d['評価']),
+    matingRank: max(_matingRanks.indexOf(mateRankRegex.firstMatch(d['配合'] ?? '')?.group(1) ?? ''), 0),
+    explosionPower: int.tryParse((mateRankRegex.firstMatch(d['配合'] ?? ''))?.group(2) ?? '0'),
+    retireYear: int.tryParse(d['引退年'] ?? ''),
+    isHistorical: d['名前']?.startsWith('☆') == true
   );
 
   Map<String,String> toMap() => {
     '生年': birthYear.toString(),
-    '名前': name ?? '',
+    '名前': '${(isHistorical == true) ? '☆' : ''}${name ?? ''}',
     '性別': sex,
     '父': fatherName,
     '母': motherName,
+    '配合': mating ?? '',
     '秘書': rating01,
     '牧場長': rating02,
     '河童木': rating03,
@@ -141,6 +166,7 @@ class HorseData {
     '馬場': surface ?? '',
     '距離': distance ?? '',
     '評価': rating ?? '',
+    '引退年': retireYear ?? '',
   };
 
   HorseData.fromRow(QueryRow r) : rawData = HorseRaw.fromRow(r);
@@ -159,4 +185,17 @@ class HorseData {
   String? get surface  => _surfaceMap[rawData.surface];
   String? get distance => _distanceMap[rawData.distance];
   String? get rating   => _ratingMap[rawData.rating];
+  String? get mating {
+    if (rawData.isHistorical == true) {
+      return '☆';
+    }
+    else if (rawData.matingRank == null || rawData.explosionPower == null) {
+      return null;
+    }
+    else {
+      return '${_matingRanks[rawData.matingRank!]}${rawData.explosionPower}';
+    }
+  }
+  String? get retireYear => rawData.retireYear?.toString();
+  bool? get isHistorical => rawData.isHistorical;
 }

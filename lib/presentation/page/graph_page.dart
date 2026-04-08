@@ -217,14 +217,28 @@ class _GraphPageState extends State<GraphPage> {
                   itemBuilder: (ctx, i) {
                     final lineage = _lineages[i];
                     final selected = _selectedLineage == lineage.founderId;
-                    final isRoot = lineage.progenitorId == null;
+                    FontWeight? fontWeight;
+                    TextDecoration? textDecoration;
+                    if (lineage.progenitorId == null) {
+                      fontWeight = FontWeight.w800;
+                    }
+                    else if (lineage.lineageStatus == 2) {
+                      fontWeight = FontWeight.w800;
+                    }
+                    else if (lineage.lineageStatus == 1) {
+                      fontWeight = FontWeight.w700;
+                    }
+                    else {
+                      fontWeight = FontWeight.w400;
+                    }
                     return ListTile(
                       title: Text(
                         lineage.lineageName,
-                        style: isRoot ?
-                        DefaultTextStyle.of(context).style.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ) : null,
+                        style: TextStyle(
+                          fontWeight: fontWeight,
+                          decoration: textDecoration,
+                          color: selected ? Colors.blueAccent : Colors.black,
+                        ),
                       ),
                       selected: selected,
                       selectedColor: Colors.blueAccent,

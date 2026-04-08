@@ -33,6 +33,10 @@ bloodmares AS (
     h.father_id,
     h.mother_id,
     h.is_historical,
+    h.is_founder,
+    h.is_grade_winner,
+    h.farm,
+    h.breeding_policy,
     COUNT(c.sex)    AS child_count,
     COUNT(c.rating) AS own_count
   FROM mares h
@@ -43,7 +47,72 @@ bloodmares AS (
     h.name,
     h.father_id,
     h.mother_id,
-    h.is_historical
+    h.is_historical,
+    h.is_founder,
+    h.is_grade_winner,
+    h.farm,
+    h.breeding_policy
+)
+''';
+
+const sireLineTable =
+'''
+RECURSIVE major_line AS (
+  SELECT
+    id   AS founder_id,
+    name AS lineage_name,
+    id   AS sire_id
+  FROM sires
+  WHERE lineage_status = 2
+
+  UNION ALL
+
+  SELECT
+    l.founder_id,
+    l.lineage_name,
+    s.id AS sire_id
+  FROM sires s
+  INNER JOIN major_line l ON s.father_id = l.sire_id
+  WHERE s.lineage_status < 2
+),
+minor_line AS (
+  SELECT
+    id   AS founder_id,
+    name AS lineage_name,
+    id   AS sire_id
+  FROM sires
+  WHERE lineage_status >= 1
+
+  UNION ALL
+
+  SELECT
+    l.founder_id,
+    l.lineage_name,
+    s.id AS sire_id
+  FROM sires s
+  INNER JOIN minor_line l ON s.father_id = l.sire_id
+  WHERE s.lineage_status < 1
+)
+''';
+
+const familiesTable =
+'''
+RECURSIVE families AS (
+  SELECT
+    id    AS founder_id,
+    name  AS family_name,
+    id    AS mare_id
+  FROM mares
+  WHERE is_founder = TRUE
+
+  UNION ALL
+
+  SELECT
+    f.founder_id,
+    f.family_name,
+    h.id AS mare_id
+  FROM mares h
+  INNER JOIN families f ON h.mother_id = f.mare_id
 )
 ''';
 

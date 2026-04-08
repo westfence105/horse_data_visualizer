@@ -21,7 +21,7 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
   Future<SireSummary?> fetchSireSummary(int sireId) async {
     final rows = await customSelect(
       '''
-      WITH $bloodmaresTable
+      WITH $sireLineTable, $bloodmaresTable
 
       SELECT
         s.id,
@@ -32,12 +32,19 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
         COUNT(h.rating) AS own_count,
         COUNT(cm.id)    AS mare_count,
         s.is_historical,
-        s.is_founder
+        s.is_founder,
+        s.lineage_status,
+        mj.lineage_name AS major_line_name,
+        mn.lineage_name AS minor_line_name
       FROM sires AS s
       LEFT JOIN sires AS f
         ON s.father_id = f.id
       LEFT JOIN horses AS h
         ON h.father_id = s.id
+      LEFT JOIN major_line mj
+        ON mj.sire_id = s.id
+      LEFT JOIN minor_line mn
+        ON mn.sire_id = s.id
       LEFT JOIN bloodmares cm
         ON cm.father_id = s.id AND cm.child_count > 0
       WHERE s.id = :sireId
@@ -63,7 +70,7 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
     final yr = yearRange('h.birth_year', beginYear, endYear);
     final rows = await customSelect(
       '''
-      WITH $bloodmaresTable
+      WITH $sireLineTable,$bloodmaresTable
 
       SELECT
         s.id,
@@ -74,13 +81,20 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
         COUNT(h.rating) AS own_count,
         COUNT(cm.id)    AS mare_count,
         s.is_historical,
-        s.is_founder
+        s.is_founder,
+        s.lineage_status,
+        mj.lineage_name AS major_line_name,
+        mn.lineage_name AS minor_line_name
       FROM sires AS s
       LEFT JOIN sires AS f
         ON s.father_id = f.id
       LEFT JOIN horses AS h
         ON h.father_id = s.id
         ${yr != null ? 'AND $yr' : ''}
+      LEFT JOIN major_line mj
+        ON mj.sire_id = s.id
+      LEFT JOIN minor_line mn
+        ON mn.sire_id = s.id
       LEFT JOIN bloodmares cm
         ON cm.father_id = s.id AND cm.child_count > 0
       GROUP BY
@@ -152,6 +166,7 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
           SELECT COUNT(dh.sex)
           FROM horses dh WHERE f.id = dh.father_id
         ) AS direct_child_count,
+        f.lineage_status,
         0 AS depth
       FROM sires f
         LEFT JOIN sires p ON p.id = f.father_id
@@ -170,6 +185,7 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
         l.is_founder_line,
         l.direct_sire_count,
         l.direct_child_count,
+        l.lineage_status,
         l.depth + 1 AS depth
       FROM sires s
       INNER JOIN lineage l ON l.id = s.father_id
@@ -213,6 +229,7 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
         l.progenitor_name,
         l.is_founder_line,
         l.direct_child_count,
+        l.lineage_status,
         d.depth,
         d.founder_id          AS root_id,
         COUNT(h.sex)          AS descendant_count,

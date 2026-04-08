@@ -54,7 +54,7 @@ class AppDb extends _$AppDb {
   final Future<File> dbPath;
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -72,6 +72,17 @@ class AppDb extends _$AppDb {
       }
       if (from < 4) {
         await m.addColumn(sires, sires.isFounder);
+      }
+      if (from < 5) {
+        await m.addColumn(sires, sires.lineageStatus);
+        await m.addColumn(mares, mares.isFounder);
+        await m.addColumn(mares, mares.isGradeWinner);
+        await m.addColumn(mares, mares.farm);
+        await m.addColumn(mares, mares.breedingPolicy);
+        await m.addColumn(horses, horses.matingRank);
+        await m.addColumn(horses, horses.explosionPower);
+        await m.addColumn(horses, horses.retireYear);
+        await m.addColumn(horses, horses.isHistorical);
       }
     }
   );

@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import '../db/app_database.dart';
 import '../db/dao/sires_dao.dart';
 import '../db/dao/sire_stats_dao.dart';
@@ -13,11 +15,17 @@ class SiresRepository {
   static SiresDao get _siresDao => SiresDao(db);
   static SireStatsDao get _sireStatsDao => SireStatsDao(db);
 
+  static const lineageStatus = <String?>['','○','◎'];
+
   static Future<void> importFromMap(List<Map<String,String>> rawData) async {
+    
     final data = rawData
       .where((e) => e.containsKey('名前'))
       .map((d) => SireRaw(
-        d['名前']!, d['父'], (d['史実']?.isNotEmpty ?? false), (d['系統']?.isNotEmpty ?? false),
+        name: d['名前']!,
+        father: d['父'],
+        isHistorical: (d['史実']?.isNotEmpty ?? false),
+        lineageStatus: max(lineageStatus.indexOf(d['系統']), 0),
       ));
     if (data.isNotEmpty) {
       await _siresDao.upsertList(data);
@@ -33,7 +41,7 @@ class SiresRepository {
           s.name,
           s.father ?? '',
           s.isHistorical == true ? '○' : '',
-          s.isFounder == true ? '○' : '',
+          lineageStatus[s.lineageStatus ?? 0]!,
         ])
     ];
   }

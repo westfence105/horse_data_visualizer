@@ -12,6 +12,7 @@ class LineageSummary {
   final int mareCount;
   final int depth;
   final int maxDepth;
+  final int lineageStatus;
   final bool isFounderLine;
 
   const LineageSummary({
@@ -25,6 +26,7 @@ class LineageSummary {
     required this.depth,
     required this.maxDepth,
     required this.isFounderLine,
+    required this.lineageStatus,
     this.progenitorId,
     this.progenitorName,
   });
@@ -42,6 +44,7 @@ class LineageSummary {
         depth: r.read<int>('depth'),
         maxDepth: r.read<int>('max_depth'),
         isFounderLine: r.read<bool>('is_founder_line'),
+        lineageStatus: r.read<int>('lineage_status'),
   );
 }
 

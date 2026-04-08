@@ -234,18 +234,27 @@ class _ListPageState extends State<ListPage> {
                     itemBuilder: (ctx, i) {
                       final parent = parents[i];
                       final selected = _selectedParent == parent.key;
-                      FontWeight weight = FontWeight.normal;
+                      FontWeight fontWeight = FontWeight.normal;
                       if (_aggMode == AggregationMode.lineage) {
-                        LineageSummary? s = _lineageSummaries[i];
-                        if (s.progenitorId == null) {
-                          weight = FontWeight.bold;
+                        LineageSummary? lineage = _lineageSummaries[i];
+                        if (lineage.progenitorId == null) {
+                          fontWeight = FontWeight.w800;
+                        }
+                        else if (lineage.lineageStatus == 2) {
+                          fontWeight = FontWeight.w800;
+                        }
+                        else if (lineage.lineageStatus == 1) {
+                          fontWeight = FontWeight.w700;
+                        }
+                        else {
+                          fontWeight = FontWeight.w400;
                         }
                       }
                       return ListTile(
                         title: Text(
                           parent.value,
                           style: TextStyle(
-                            fontWeight: weight,
+                            fontWeight: fontWeight,
                           ),
                         ),
                         selected: selected,

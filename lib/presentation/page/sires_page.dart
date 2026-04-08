@@ -5,6 +5,7 @@ import '../../data/entity/sire_summary.dart';
 import '../../data/repository/sires_repository.dart';
 import '../action/file_actions.dart';
 import '../theme/button_style.dart';
+import '../widget/multistate_toggle_button.dart';
 
 class SiresPage extends StatefulWidget {
   const SiresPage({super.key});
@@ -17,7 +18,7 @@ class _SiresPageState extends State<SiresPage> {
   List<SireSummary> _summaries = [];
   
   final _historicalNotifiers = <String, ValueNotifier<bool>>{};
-  final _founderNotifiers = <String, ValueNotifier<bool>>{};
+  final _lineageStatusNotifiers = <String,ValueNotifier<int>>{};
 
   void _fetch() {
     SiresRepository.fetchAllSireSummaries()
@@ -25,7 +26,7 @@ class _SiresPageState extends State<SiresPage> {
         _summaries = result;
         for (final s in _summaries) {
           _historicalNotifiers[s.name] = ValueNotifier(s.isHistorical ?? false);
-          _founderNotifiers[s.name] = ValueNotifier(s.isFounder ?? false);
+          _lineageStatusNotifiers[s.name] = ValueNotifier(s.lineageStatus ?? 0);
         }
       }));
   }
@@ -58,17 +59,17 @@ class _SiresPageState extends State<SiresPage> {
 
   final _changedFather = <String, String>{};
   final _changedHistorical = <String, bool>{};
-  final _changedFounder = <String, bool>{};
+  final _changedLineage = <String,int>{};
 
   void _applyUpdate() {
     final changedData = <SireRaw>{};
     for (SireSummary s in _summaries) {
       final father = _changedFather.containsKey(s.name) ? _changedFather[s.name] : null;
       final isHistorical = _changedHistorical.containsKey(s.name) ? _changedHistorical[s.name] : null;
-      final isFounder = _changedFounder.containsKey(s.name) ? _changedFounder[s.name] : null;
-      if (father != null || isHistorical != null || isFounder != null) {
+      final lineageStatus = _changedLineage.containsKey(s.name) ? _changedLineage[s.name] : null;
+      if (father != null || isHistorical != null || lineageStatus != null) {
         changedData.add(
-          SireRaw.fromSummary(s, father: father, isHistorical: isHistorical, isFounder: isFounder),
+          SireRaw.fromSummary(s, father: father, isHistorical: isHistorical, lineageStatus: lineageStatus),
         );
       }
     }
@@ -156,16 +157,43 @@ class _SiresPageState extends State<SiresPage> {
                 cells: <DataCell>[
                   DataCell(
                     ValueListenableBuilder(
-                      valueListenable: _founderNotifiers[s.name]!,
-                      builder: (ctx, v, child) => Checkbox(
-                        value: v,
-                        onChanged: (value) {
-                          if (value != null) {
-                            _changedFounder[s.name] = value;
-                            _founderNotifiers[s.name]!.value = value;
-                          }
-                        },
+                      valueListenable: _lineageStatusNotifiers[s.name]!,
+                      builder: (context, value, child) => Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          MultistateToggleButton(
+                            values: ['-','○','◎'],
+                            defaultValue: value,
+                            onChange: (v) {
+                              _lineageStatusNotifiers[s.name]!.value = v;
+                            },
+                          ),
+                        ],
                       ),
+                      // builder: (ctx, v, child) => GestureDetector(
+                      //   child: Row(
+                      //     mainAxisAlignment: MainAxisAlignment.center,
+                      //     children: [Text(['-','○','◎'][v])],
+                      //   ),
+                      //   onTap: () {
+                      //     _lineageStatusNotifiers[s.name]!.value = (v < 2) ? v + 1 : 0;
+                      //   },
+                      // ),
+                      // builder: (ctx, v, child) => DropdownButton<int>(
+                        // items: ['','○','◎'].asMap().entries.map(
+                        //   (e) => DropdownMenuItem(
+                        //     value: e.key,
+                        //     child: Text(e.value),
+                        //   ),
+                        // ).toList(growable: false),
+                        // value: v,
+                        // onChanged: (value) {
+                        //   if (value != null) {
+                        //     _changedLineage[s.name] = value;
+                        //     _lineageStatusNotifiers[s.name]!.value = value;
+                        //   }
+                        // }
+                      // ),
                     ),
                   ),
                   DataCell(

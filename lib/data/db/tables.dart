@@ -7,6 +7,7 @@ class Sires extends Table {
     .customConstraint('REFERENCES sires(id)')();
   BoolColumn get isHistorical => boolean().withDefault(Constant(true))();
   BoolColumn get isFounder => boolean().withDefault(Constant(false))();
+  IntColumn get lineageStatus => integer().withDefault(Constant(0))();
 
   @override
   Set<Column<Object>>? get primaryKey => { id };
@@ -20,6 +21,10 @@ class Mares extends Table {
   IntColumn get motherId => integer().nullable()
     .customConstraint('REFERENCES mares(id)')();
   BoolColumn get isHistorical => boolean().withDefault(Constant(true))();
+  BoolColumn get isFounder => boolean().withDefault(Constant(false))();
+  BoolColumn get isGradeWinner => boolean().withDefault(Constant(false))();
+  IntColumn get farm => integer().nullable()();
+  IntColumn get breedingPolicy => integer().nullable()();
 
   @override
   Set<Column<Object>>? get primaryKey => { id };
@@ -42,6 +47,10 @@ class Horses extends Table {
   IntColumn get surface => integer().nullable()();
   IntColumn get distance => integer().nullable()();
   IntColumn get rating => integer().nullable()();
+  IntColumn get matingRank => integer().nullable()();
+  IntColumn get explosionPower => integer().nullable()();
+  IntColumn get retireYear => integer().nullable()();
+  BoolColumn get isHistorical => boolean().withDefault(Constant(true))();
 
   @override
   Set<Column<Object>>? get primaryKey => { birthYear, motherId };

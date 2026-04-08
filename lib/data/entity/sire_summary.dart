@@ -5,6 +5,9 @@ class SireSummary {
   final String name;
   final int? fatherId;
   final String? fatherName;
+  final String? majorLine;
+  final String? minorLine;
+  final int? lineageStatus;
   final int? childCount;
   final int? ownCount;
   final int? mareCount;
@@ -21,6 +24,9 @@ class SireSummary {
       this.isFounder,
       this.ownCount,
       this.mareCount,
+      this.majorLine,
+      this.minorLine,
+      this.lineageStatus,
     });
   
   SireSummary.fromRow(QueryRow r) : this(
@@ -33,5 +39,8 @@ class SireSummary {
       isFounder: r.read('is_founder'),
       ownCount: r.read('own_count'),
       mareCount: r.read('mare_count'),
+      majorLine: r.read('major_line_name'),
+      minorLine: r.read('minor_line_name'),
+      lineageStatus: r.read('lineage_status'),
   );
 }

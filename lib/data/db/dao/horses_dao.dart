@@ -45,6 +45,10 @@ class HorsesDao extends DatabaseAccessor<AppDb> with _$HorsesDaoMixin {
         surface:  Value(d.surface),
         distance: Value(d.distance),
         rating:   Value(d.rating),
+        matingRank: Value(d.matingRank),
+        explosionPower: Value(d.explosionPower),
+        retireYear: Value(d.retireYear),
+        isHistorical: Value(d.isHistorical ?? false),
       ),
       mode: InsertMode.insertOrReplace,
     );
@@ -87,7 +91,11 @@ class HorsesDao extends DatabaseAccessor<AppDb> with _$HorsesDaoMixin {
           h.growth,
           h.surface,
           h.distance,
-          h.rating
+          h.rating,
+          h.mating_rank,
+          h.explosion_power,
+          h.retire_year,
+          h.is_historical
         FROM horses h
         LEFT JOIN sires f ON f.id = h.father_id
         LEFT JOIN mares m ON m.id = h.mother_id
