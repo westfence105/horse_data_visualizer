@@ -53,6 +53,10 @@ class MaresRepository {
     return _maresDao.upsertList(rawData);
   }
 
+  static Future<void> backfillFromHorses() {
+    return _maresDao.backfillFromHorses();
+  }
+
   static Future<int> findByName(String name) {
     return _maresDao.findByName(name);
   }

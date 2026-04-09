@@ -50,6 +50,10 @@ class SiresRepository {
     return _siresDao.upsertList(rawData);
   }
 
+  static Future<void> backfillFromHorses() {
+    return _siresDao.backfillFromHorses();
+  }
+
   static Future<int> findByName(String name) {
     return _siresDao.findByName(name);
   }

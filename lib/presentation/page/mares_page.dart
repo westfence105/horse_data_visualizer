@@ -108,6 +108,48 @@ class _MaresPageState extends State<MaresPage> {
     });
   }
 
+  void _addRecord() {
+    final controller = TextEditingController();
+    showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text("新規追加"),
+        content: SizedBox(
+          width: 240,
+          height: 50,
+          child: Row(
+            children: [
+              Text('名前：'),
+              Expanded(
+                child: TextField(
+                  controller: controller,
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            child: Text("Cancel"),
+            onPressed: () => Navigator.pop(context, false),
+          ),
+          TextButton(
+            child: Text("OK"),
+            onPressed: () => Navigator.pop(context, true),
+          ),
+        ],
+      ),
+    ).then((ret) async {
+      if (ret == true) {
+        await MaresRepository.updateMares([
+          MareRaw(name: controller.text),
+        ]);
+        await MaresRepository.backfillFromHorses();
+        _fetch();
+      }
+    });
+  }
+
   @override
   void initState() {
     super.initState();
@@ -162,6 +204,12 @@ class _MaresPageState extends State<MaresPage> {
               style: elevatedButtonStyleSecond,
               onPressed: exportMareCsvAction,
               child: const Text('繁殖牝馬CSVエクスポート'),
+            ),
+            const SizedBox(width: 16),
+            ElevatedButton(
+              style: elevatedButtonStyleThird,
+              onPressed: _addRecord,
+              child: const Text('新規追加'),
             ),
             const SizedBox(width: 16),
             ElevatedButton(

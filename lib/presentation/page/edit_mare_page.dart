@@ -47,15 +47,21 @@ class _EditMarePageState extends State<EditMarePage> {
         children: [
           ...[1,3,4,2,0].map((i) => Expanded(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
               spacing: 10,
               children: [
-                Text(
-                  MaresRepository.farms[i],
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w500,
-                  ),
+                Row(
+                  children: [
+                    Text(
+                      MaresRepository.farms[i],
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    Expanded(child: SizedBox.shrink()),
+                    if (i > 0)
+                      Text('(${listElements[i].length})')
+                  ],
                 ),
                 SizedBox(
                   height: 400,
