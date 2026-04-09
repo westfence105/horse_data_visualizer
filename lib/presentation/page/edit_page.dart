@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'edit_birth_page.dart';
 import 'edit_debut_page.dart';
 import 'edit_mare_page.dart';
 
@@ -15,11 +16,13 @@ class _EditPageState extends State<EditPage> {
 
   final _pageTitles = [
     '新馬入厩',
+    '誕生',
     '所有繁殖牝馬',
   ];
 
   final _childPages = [
     const EditDebutPage(),
+    const EditBirthPage(),
     const EditMarePage(),
   ];
 

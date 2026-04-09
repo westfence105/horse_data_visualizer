@@ -5,7 +5,7 @@ List<Map<String,String>> parseCsvFile(String content) {
   if (rows.length < 2) {
     return const [];
   }
-  final header = rows.first.map((e) => e?.toString().trim() ?? '').toList();
+  final header = rows.first.map((e) => e.toString().trim()).toList();
   final result = <Map<String,String>>[];
   for (final row in rows.skip(1)) {
     if (row.length < header.length) {

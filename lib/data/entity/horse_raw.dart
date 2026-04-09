@@ -16,7 +16,7 @@ const _matingRanks = <String>['','S','A','B','C','D'];
 class HorseRaw {
   final int birthYear;
   final String? name;
-  final int sex;
+  final int? sex;
   final String fatherName;
   final String motherName;
   final int rating01;
@@ -35,7 +35,6 @@ class HorseRaw {
 
   const HorseRaw({
     required this.birthYear,
-    required this.sex,
     required this.fatherName,
     required this.motherName,
     required this.rating01,
@@ -43,6 +42,7 @@ class HorseRaw {
     required this.rating03,
     required this.rating04,
     required this.rating05,
+    this.sex,
     this.name,
     this.growth,
     this.surface,
@@ -124,7 +124,6 @@ class HorseData {
 
   HorseData({
     required int birthYear,
-    required int sex,
     required String fatherName,
     required String motherName,
     required int rating01,
@@ -132,6 +131,7 @@ class HorseData {
     required int rating03,
     required int rating04,
     required int rating05,
+    int? sex,
     String? name,
     int? growth,
     int? surface,
