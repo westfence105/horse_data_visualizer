@@ -17,6 +17,9 @@ class _MaresPageState extends State<MaresPage> {
   List<MareSummary> _summaries = [];
 
   final _historicalNotifiers = <String, ValueNotifier<bool>>{};
+  final _founderNotifiers = <String, ValueNotifier<bool>>{};
+  final _gradeNotifiers = <String, ValueNotifier<bool>>{};
+  final _farmNotifiers = <String, ValueNotifier<int>>{};
 
   void _fetch() {
     MaresRepository.fetchAllMareSummaries()
@@ -24,6 +27,9 @@ class _MaresPageState extends State<MaresPage> {
         _summaries = result;
         for (final s in _summaries) {
           _historicalNotifiers[s.name] = ValueNotifier(s.isHistorical ?? false);
+          _founderNotifiers[s.name] = ValueNotifier(s.isFounder ?? false);
+          _gradeNotifiers[s.name] = ValueNotifier(s.isGradeWinner ?? false);
+          _farmNotifiers[s.name] = ValueNotifier(s.farm ?? 0);
         }
       }));
   }
@@ -69,6 +75,9 @@ class _MaresPageState extends State<MaresPage> {
   final _changedFather = <String,String>{};
   final _changedMother = <String,String>{};
   final _changedHistorical = <String,bool>{};
+  final _changedGrade = <String,bool>{};
+  final _changedFounder = <String,bool>{};
+  final _changedFarm = <String,int>{};
 
   void _applyUpdate() {
     final changedData = <MareRaw>{};
@@ -76,9 +85,19 @@ class _MaresPageState extends State<MaresPage> {
       final father = _changedFather.containsKey(s.name) ? _changedFather[s.name] : null;
       final mother = _changedMother.containsKey(s.name) ? _changedMother[s.name] : null;
       final isHistorical = _changedHistorical.containsKey(s.name) ? _changedHistorical[s.name] : null;
-      if (father != null || mother != null || isHistorical != null) {
+      final isFounder = _changedFounder.containsKey(s.name) ? _changedFounder[s.name] : null;
+      final isGradeWinner = _changedGrade.containsKey(s.name) ? _changedGrade[s.name] : null;
+      final farm = _changedFarm.containsKey(s.name) ? _changedFarm[s.name] : null;
+      if (father != null || mother != null || isHistorical != null || isFounder != null || isGradeWinner != null || farm != null) {
         changedData.add(
-          MareRaw.fromSummary(s, father: father, mother: mother, isHistorical: isHistorical),
+          MareRaw.fromSummary(s,
+            father: father,
+            mother: mother,
+            isHistorical: isHistorical,
+            isFounder: isFounder,
+            isGradeWinner: isGradeWinner,
+            farm: farm,
+          ),
         );
       }
     }
@@ -100,23 +119,38 @@ class _MaresPageState extends State<MaresPage> {
     final columns = <DataColumn>[
       DataColumn(
         label: Text(' 名前  '),
-        columnWidth: FixedColumnWidth(240),
+        columnWidth: FixedColumnWidth(220),
         onSort: _onSort,
       ),
       DataColumn(
         label: Text(' 父  '),
-        columnWidth: FixedColumnWidth(240),
+        columnWidth: FixedColumnWidth(200),
         onSort: _onSort,
       ),
       DataColumn(
         label: Text(' 母  '),
-        columnWidth: FixedColumnWidth(240),
+        columnWidth: FixedColumnWidth(200),
         onSort: _onSort,
       ),
       DataColumn(
-        label: Text(' 史実'),
+        label: Text('史実'),
+        columnWidth: FixedColumnWidth(80),
+        headingRowAlignment: MainAxisAlignment.center,
+      ),
+      DataColumn(
+        label: Text('重賞'),
+        columnWidth: FixedColumnWidth(80),
+        headingRowAlignment: MainAxisAlignment.center,
+      ),
+      DataColumn(
+        label: Text('牝系'),
+        columnWidth: FixedColumnWidth(80),
+        headingRowAlignment: MainAxisAlignment.center,
+      ),
+      DataColumn(
+        label: Text('牧場    '),
         columnWidth: FixedColumnWidth(100),
-        headingRowAlignment: MainAxisAlignment.start,
+        headingRowAlignment: MainAxisAlignment.center,
       ),
     ];
     return Column(
@@ -140,6 +174,7 @@ class _MaresPageState extends State<MaresPage> {
         ),
         DataTable(
           columns: columns,
+          columnSpacing: 20,
           rows: [],
           dataRowMaxHeight: 0,
           sortColumnIndex: _sortColumn,
@@ -149,6 +184,7 @@ class _MaresPageState extends State<MaresPage> {
           child: SingleChildScrollView(
             child: DataTable(
               columns: columns,
+              columnSpacing: 20,
               rows: (_summaries..sort(_compareMares)).map((s) => DataRow(
                 cells: <DataCell>[
                   DataCell(
@@ -178,15 +214,68 @@ class _MaresPageState extends State<MaresPage> {
                   DataCell(
                     ValueListenableBuilder(
                       valueListenable: _historicalNotifiers[s.name]!,
-                      builder: (ctx, v, child) => Checkbox(
-                        value: v,
-                        onChanged: (value) {
-                          if (value != null) {
-                            _changedHistorical[s.name] = value;
-                            _historicalNotifiers[s.name]!.value = value;
-                          }
-                        },
+                      builder: (ctx, v, child) => Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Checkbox(
+                            value: v,
+                            onChanged: (value) {
+                              if (value != null) {
+                                _changedHistorical[s.name] = value;
+                                _historicalNotifiers[s.name]!.value = value;
+                              }
+                            },
+                          ),
+                        ],
                       ),
+                    ),
+                  ),
+                  DataCell(
+                    ValueListenableBuilder(
+                      valueListenable: _gradeNotifiers[s.name]!,
+                      builder: (ctx, v, child) => Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Checkbox(
+                            value: v,
+                            onChanged: (value) {
+                              if (value != null) {
+                                _changedGrade[s.name] = value;
+                                _gradeNotifiers[s.name]!.value = value;
+                              }
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  DataCell(
+                    ValueListenableBuilder(
+                      valueListenable: _founderNotifiers[s.name]!,
+                      builder: (ctx, v, child) => Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Checkbox(
+                            value: v,
+                            onChanged: (value) {
+                              if (value != null) {
+                                _changedFounder[s.name] = value;
+                                _founderNotifiers[s.name]!.value = value;
+                              }
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  DataCell(
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Expanded(
+                          child: _buildFarmButton(s.name),
+                        ),
+                      ],
                     ),
                   ),
                 ],
@@ -198,4 +287,34 @@ class _MaresPageState extends State<MaresPage> {
       ],
     );
   }
+  
+  Widget _buildFarmButton(String mareName)
+    => ValueListenableBuilder(
+        valueListenable: _farmNotifiers[mareName]!,
+        builder: (ctx, v, c) => DropdownButton<int>(
+          isExpanded: true,
+          items: ['-','日本','クラブ','欧州','米国'].asMap().entries.map((e) {
+            FontWeight fontWeight = (e.key == 0) ? FontWeight.w400 : FontWeight.w600;
+            return DropdownMenuItem(
+              value: e.key,
+              alignment: AlignmentGeometry.center,
+              child: Text(
+                e.value,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: fontWeight,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            );
+          }).toList(growable: false),
+          value: v,
+          onChanged: (value) {
+            if (value != null) {
+              _farmNotifiers[mareName]!.value = value;
+              _changedFarm[mareName] = value;
+            }
+          },
+        ),
+      );
 }

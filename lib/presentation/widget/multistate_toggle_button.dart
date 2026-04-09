@@ -21,10 +21,15 @@ class MultistateToggleButton extends StatelessWidget{
   Widget build(BuildContext context) => ValueListenableBuilder(
     valueListenable: _valueNotifier,
     builder: (context, i, child) => GestureDetector(
-      child: Text(
-        values[i],
-        style: TextStyle(
-          fontSize: fontSize,
+      child: Container(
+        width: fontSize * 1.2,
+        height: fontSize * 1.2,
+        alignment: AlignmentGeometry.center,
+        child: Text(
+          values[i],
+          style: TextStyle(
+            fontSize: fontSize,
+          ),
         ),
       ),
       onTap: () {

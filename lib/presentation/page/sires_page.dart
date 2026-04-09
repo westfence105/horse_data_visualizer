@@ -101,9 +101,9 @@ class _SiresPageState extends State<SiresPage> {
   Widget build(BuildContext context) {
     final columns = <DataColumn>[
       DataColumn(
-        label: Text('系統'),
+        label: Text('系統 '),
         columnWidth: FixedColumnWidth(100),
-        headingRowAlignment: MainAxisAlignment.center,
+        headingRowAlignment: MainAxisAlignment.start,
       ),
       DataColumn(
         label: Text(' 名前  '),
@@ -160,20 +160,9 @@ class _SiresPageState extends State<SiresPage> {
               rows: _summaries.map((s) => DataRow(
                 cells: <DataCell>[
                   DataCell(
-                    ValueListenableBuilder(
-                      valueListenable: _lineageStatusNotifiers[s.name]!,
-                      builder: (context, value, child) => Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          MultistateToggleButton(
-                            values: ['-','○','◎'],
-                            defaultValue: value,
-                            onChange: (v) {
-                              _lineageStatusNotifiers[s.name]!.value = v;
-                            },
-                          ),
-                        ],
-                      ),
+                    Padding(
+                      padding: EdgeInsets.only(left: 2),
+                      child: _buildLineageStatusButton(s.name),
                     ),
                   ),
                   DataCell(
@@ -213,4 +202,36 @@ class _SiresPageState extends State<SiresPage> {
       ],
     );
   }
+
+  Widget _buildLineageStatusButton(String sireName)
+    => ValueListenableBuilder(
+        valueListenable: _lineageStatusNotifiers[sireName]!,
+        builder: (ctx, v, c) => DropdownButton<int>(
+          isExpanded: true,
+          items: [' -','子','親'].asMap().entries.map((e) {
+            FontWeight fontWeight = (e.key == 0) ? FontWeight.w400 : FontWeight.w600;
+            return DropdownMenuItem(
+              value: e.key,
+              child: Padding(
+                padding: EdgeInsets.all(2),
+                child: Text(
+                  e.value,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: fontWeight,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            );
+          }).toList(growable: false),
+          value: v,
+          onChanged: (value) {
+            if (value != null) {
+              _lineageStatusNotifiers[sireName]!.value = value;
+              _changedLineage[sireName] = value;
+            }
+          },
+        ),
+      );
 }
