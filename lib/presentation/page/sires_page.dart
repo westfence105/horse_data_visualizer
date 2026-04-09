@@ -208,20 +208,25 @@ class _SiresPageState extends State<SiresPage> {
         valueListenable: _lineageStatusNotifiers[sireName]!,
         builder: (ctx, v, c) => DropdownButton<int>(
           isExpanded: true,
-          items: [' -','子','親'].asMap().entries.map((e) {
+          items: ['-','子','親'].asMap().entries.map((e) {
             FontWeight fontWeight = (e.key == 0) ? FontWeight.w400 : FontWeight.w600;
             return DropdownMenuItem(
               value: e.key,
-              child: Padding(
-                padding: EdgeInsets.all(2),
-                child: Text(
-                  e.value,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: fontWeight,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Padding(
+                    padding: EdgeInsets.all(2),
+                    child: Text(
+                      e.value,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: fontWeight,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
                   ),
-                  textAlign: TextAlign.center,
-                ),
+                ],
               ),
             );
           }).toList(growable: false),

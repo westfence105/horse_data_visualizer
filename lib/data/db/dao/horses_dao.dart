@@ -29,11 +29,18 @@ class HorsesDao extends DatabaseAccessor<AppDb> with _$HorsesDaoMixin {
   }
 
   Future<void> _upsert(HorseRaw d) async {
+    int? retireYear = d.retireYear;
+    if (retireYear != null) {
+      if (retireYear < d.birthYear + 2 ||
+          retireYear > d.birthYear + 9) {
+        retireYear = null;
+      }
+    }
     await into(db.horses).insert(
       HorsesCompanion.insert(
         birthYear: d.birthYear,
         name: Value(d.name?.trim()),
-        sex:       Value(d.sex),
+        sex:       Value(inlistOrNull(d.sex, [1,-1])),
         fatherId:  await SiresRepository.findByName(d.fatherName),
         motherId:  await MaresRepository.findByName(d.motherName),
         rating01:  d.rating01,
@@ -41,13 +48,13 @@ class HorsesDao extends DatabaseAccessor<AppDb> with _$HorsesDaoMixin {
         rating03:  d.rating03,
         rating04:  d.rating04,
         rating05:  d.rating05,
-        growth:   Value(d.growth),
-        surface:  Value(d.surface),
-        distance: Value(d.distance),
-        rating:   Value(d.rating),
+        growth:   Value(positiveOrNull(d.growth)),
+        surface:  Value(inlistOrNull(d.surface, [1,0,-1])),
+        distance: Value(positiveOrNull(d.distance)),
+        rating:   Value(positiveOrNull(d.rating)),
         matingRank: Value(d.matingRank),
         explosionPower: Value(d.explosionPower),
-        retireYear: Value(d.retireYear),
+        retireYear: Value(retireYear),
         isHistorical: Value(d.isHistorical ?? false),
       ),
       mode: InsertMode.insertOrReplace,
@@ -69,12 +76,25 @@ class HorsesDao extends DatabaseAccessor<AppDb> with _$HorsesDaoMixin {
   Future<int?> getLatestDebutGeneration() async {
     final q = selectOnly(horses)
                 ..addColumns([horses.birthYear.max()])
-                ..where(horses.rating.isNotNull());
+                ..where(horses.rating.isNotNull())
+                ..where(horses.name.isNotNull())
+                ..where(horses.isHistorical.equals(false));
     final r = await q.getSingle();
     return r.read(db.horses.birthYear.max());
   }
 
-  Future<List<HorseData>> fetchAll() async {
+  Future<List<HorseRaw>> fetch({int? beginYear, int? endYear, int? fatherId, int? motherId}) async {
+    final conds = <String>[];
+    final wp = whereParent(fatherId, motherId);
+    if (wp != null) {
+      conds.add(wp);
+    }
+    if (beginYear != null || endYear != null) {
+      final yr = yearRange('h.birth_year', beginYear, endYear);
+      if (yr != null) {
+        conds.add(yr);
+      }
+    }
     final rows = await customSelect(
       '''
         SELECT
@@ -99,9 +119,10 @@ class HorsesDao extends DatabaseAccessor<AppDb> with _$HorsesDaoMixin {
         FROM horses h
         LEFT JOIN sires f ON f.id = h.father_id
         LEFT JOIN mares m ON m.id = h.mother_id
+        ${whereStr(conds)}
       '''
     ).get();
-    return rows.map(HorseData.fromRow).toList(growable: false);
+    return rows.map(HorseRaw.fromRow).toList(growable: false);
   }
 
   Future<List<OwnedHorseData>> fetchOwnedHorseData(int? fatherId, int? motherId) async {

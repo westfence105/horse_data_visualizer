@@ -57,8 +57,8 @@ class _MainFrameState extends State<MainFrame> {
             icon: Icon(Icons.table_chart),
           ),
           BottomNavigationBarItem(
-            label: 'データ入力',
-            icon: Icon(Icons.input),
+            label: 'データ編集',
+            icon: Icon(Icons.edit),
           ),
           BottomNavigationBarItem(
             label: '種牡馬マスタ',

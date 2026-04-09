@@ -34,7 +34,7 @@ class HorsesRepository {
     final result = <List<String>>[];
     final headers = ["生年","名前","父","母","配合","秘書","牧場長","河童木","長峰","美香","成長型","馬場","距離","評価","引退年"];
     result.add(headers);
-    final data = await _horsesDao.fetchAll();
+    final data = await fetchHorseData();
     for (final d in data) {
       final m = d.toMap();
       final row = <String>[];
@@ -56,6 +56,24 @@ class HorsesRepository {
 
   static Future<int?> getLatestDebutGeneration() {
     return _horsesDao.getLatestDebutGeneration();
+  }
+
+  static Future<List<HorseRaw>> fetchHorseRaw({int? beginYear, int? endYear, int? fatherId, int? motherId}) {
+    return _horsesDao.fetch(
+      beginYear: beginYear, endYear: endYear,
+      fatherId: fatherId, motherId: motherId,
+    );
+  }
+
+  static Future<void> updateHorses(Iterable<HorseRaw> data) {
+    return _horsesDao.upsertList(data);
+  }
+
+  static Future<List<HorseData>> fetchHorseData({int? beginYear, int? endYear, int? fatherId, int? motherId}) {
+    return _horsesDao.fetch(
+      beginYear: beginYear, endYear: endYear,
+      fatherId: fatherId, motherId: motherId,
+    ).then((d) => d.map(HorseData.fromRaw).toList(growable: false));
   }
 
   static Future<List<OwnedHorseData>> fetchOwnedHorseData(int? fatherId, int? motherId) {

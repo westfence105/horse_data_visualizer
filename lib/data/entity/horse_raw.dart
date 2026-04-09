@@ -6,7 +6,7 @@ int? _reverse(Map<int,String> map, String? str)
   => map.entries.where((e) => e.value == str).firstOrNull?.key;
 
 const _sexMap = {1:'牡', -1:'牝'};
-const _ratingMap = {4:'◎', 3:'○', 2:'▲', 1:'△', 0:'-'};
+const _ratingMap = {4:'◎', 3:'○', 2:'▲', 1:'△', 0:'×'};
 const _growthMap = {0:'早熟', 1:'早め', 2:'遅め', 3:'覚醒', 4:'晩成'};
 const _surfaceMap = {1:'芝', -1:'ダート', 0:'万能'};
 const _distanceMap = {0:'短距離', 1:'マイル', 2:'中距離', 3:'クラシック', 4:'長距離'};
@@ -73,6 +73,47 @@ class HorseRaw {
     explosionPower: r.read('explosion_power'),
     retireYear: r.read('retire_year'),
     isHistorical: r.read('is_historical'),
+  );
+
+  HorseRaw copyWith({
+    int? birthYear,
+    int? sex,
+    String? fatherName,
+    String? motherName,
+    int? rating01,
+    int? rating02,
+    int? rating03,
+    int? rating04,
+    int? rating05,
+    String? name,
+    int? growth,
+    int? surface,
+    int? distance,
+    int? rating,
+    int? matingRank,
+    int? explosionPower,
+    int? retireYear,
+    bool? isHistorical,
+
+  }) => HorseRaw(
+    birthYear: birthYear ?? this.birthYear,
+    sex: sex ?? this.sex,
+    fatherName: fatherName ?? this.fatherName,
+    motherName: motherName ?? this.motherName,
+    rating01: rating01 ?? this.rating01,
+    rating02: rating02 ?? this.rating02,
+    rating03: rating03 ?? this.rating03,
+    rating04: rating04 ?? this.rating04,
+    rating05: rating05 ?? this.rating05,
+    name: name ?? this.name,
+    growth: growth ?? this.growth,
+    surface: surface ?? this.surface,
+    distance: distance ?? this.distance,
+    rating: rating ?? this.rating,
+    matingRank: matingRank ?? this.matingRank,
+    explosionPower: explosionPower ?? this.explosionPower,
+    retireYear: retireYear ?? this.retireYear,
+    isHistorical: isHistorical ?? this.isHistorical,
   );
 }
 

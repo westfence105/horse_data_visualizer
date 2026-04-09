@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'edit_debut_page.dart';
 import 'edit_mare_page.dart';
 
 class EditPage extends StatefulWidget {
@@ -13,10 +14,12 @@ class _EditPageState extends State<EditPage> {
   int _currentPage = 0;
 
   final _pageTitles = [
+    '新馬入厩',
     '所有繁殖牝馬',
   ];
 
   final _childPages = [
+    const EditDebutPage(),
     const EditMarePage(),
   ];
 

@@ -161,3 +161,9 @@ String? whereParent(int? fatherId, int? motherId) {
   }
   return whereStr;
 }
+
+T? inlistOrNull<T>(T? value, Iterable<T> valueList)
+  => (value != null && valueList.contains(value)) ? value : null;
+
+int? positiveOrNull(int? value)
+  => (value != null && value >= 0) ? value : null;
