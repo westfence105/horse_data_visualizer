@@ -205,7 +205,7 @@ class _MaresPageState extends State<MaresPage> {
               onPressed: exportMareCsvAction,
               child: const Text('繁殖牝馬CSVエクスポート'),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: 24),
             ElevatedButton(
               style: elevatedButtonStyleThird,
               onPressed: _addRecord,

@@ -84,6 +84,48 @@ class _SiresPageState extends State<SiresPage> {
     });
   }
 
+  void _addRecord() {
+    final controller = TextEditingController();
+    showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text("新規追加"),
+        content: SizedBox(
+          width: 240,
+          height: 50,
+          child: Row(
+            children: [
+              Text('名前：'),
+              Expanded(
+                child: TextField(
+                  controller: controller,
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            child: Text("Cancel"),
+            onPressed: () => Navigator.pop(context, false),
+          ),
+          TextButton(
+            child: Text("OK"),
+            onPressed: () => Navigator.pop(context, true),
+          ),
+        ],
+      ),
+    ).then((ret) async {
+      if (ret == true) {
+        await SiresRepository.updateSires([
+          SireRaw(name: controller.text),
+        ]);
+        await SiresRepository.backfillFromHorses();
+        _fetch();
+      }
+    });
+  }
+
   void _cleanupFictionalSires() {
     SiresRepository.cleanupFictionalSiresWithoutDescendants().then((_) {
       _fetch();
@@ -135,6 +177,12 @@ class _SiresPageState extends State<SiresPage> {
               style: elevatedButtonStyleThird,
               onPressed: _cleanupFictionalSires,
               child: const Text('架空種牡馬クリーンアップ'),
+            ),
+            const SizedBox(width: 24),
+            ElevatedButton(
+              style: elevatedButtonStyleThird,
+              onPressed: _addRecord,
+              child: const Text('新規追加'),
             ),
             const SizedBox(width: 16),
             ElevatedButton(
