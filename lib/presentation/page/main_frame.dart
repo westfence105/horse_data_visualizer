@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'edit_page.dart';
+import 'horse_list_page.dart';
 import 'mares_page.dart';
 import 'top_page.dart';
 import 'sires_page.dart';
@@ -23,6 +24,7 @@ class _MainFrameState extends State<MainFrame> {
     const ListPage(),
     const GraphPage(),
     const StatsPage(),
+    const HorseListPage(),
     const EditPage(),
     const SiresPage(),
     const MaresPage(),
@@ -55,6 +57,10 @@ class _MainFrameState extends State<MainFrame> {
           BottomNavigationBarItem(
             label: '集計',
             icon: Icon(Icons.table_chart),
+          ),
+          BottomNavigationBarItem(
+            label: '現役馬リスト',
+            icon: Icon(Icons.view_list),
           ),
           BottomNavigationBarItem(
             label: 'データ編集',
