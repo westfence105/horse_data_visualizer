@@ -4,6 +4,7 @@ import '../db/app_database.dart';
 import '../db/dao/mares_dao.dart';
 import '../db/dao/mare_stats_dao.dart';
 import '../entity/mare_raw.dart';
+import '../entity/mating_data.dart';
 import '../entity/parent_stats.dart';
 import '../entity/mare_summary.dart';
 
@@ -12,7 +13,7 @@ class MaresRepository {
   static MaresDao get _maresDao => MaresDao(db);
   static MareStatsDao get _mareStatsDao => MareStatsDao(db);
   
-  static const farms = ['','日本','クラブ','欧州','米国'];
+  static const farms = ['','日本','欧州','米国','クラブ'];
 
   static Future<void> importFromMap(List<Map<String,String>> rawData) async {
     final data = rawData
@@ -75,5 +76,9 @@ class MaresRepository {
 
   static Future<List<ParentStats>> fetchAllMareStats([int? beginYear, int? endYear]) {
     return _mareStatsDao.fetchAllMareStats(beginYear, endYear);
+  }
+
+  static Future<List<MatingData>> fetchMatingData(int year) {
+    return _mareStatsDao.fetchMatingData(year);
   }
 }

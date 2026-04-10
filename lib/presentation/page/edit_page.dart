@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'edit_birth_page.dart';
 import 'edit_debut_page.dart';
 import 'edit_mare_page.dart';
+import 'edit_mating_page.dart';
 
 class EditPage extends StatefulWidget {
   const EditPage({ super.key });
@@ -17,12 +18,14 @@ class _EditPageState extends State<EditPage> {
   final _pageTitles = [
     '新馬入厩',
     '誕生',
+    '配合',
     '所有繁殖牝馬',
   ];
 
   final _childPages = [
     const EditDebutPage(),
     const EditBirthPage(),
+    const EditMatingPage(),
     const EditMarePage(),
   ];
 

@@ -21,7 +21,7 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
   Future<SireSummary?> fetchSireSummary(int sireId) async {
     final rows = await customSelect(
       '''
-      WITH $sireLineTable, $bloodmaresTable
+      WITH RECURSIVE $sireLineTable, $bloodmaresTable
 
       SELECT
         s.id,
@@ -70,7 +70,7 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
     final yr = yearRange('h.birth_year', beginYear, endYear);
     final rows = await customSelect(
       '''
-      WITH $sireLineTable,$bloodmaresTable
+      WITH RECURSIVE $sireLineTable,$bloodmaresTable
 
       SELECT
         s.id,
@@ -97,6 +97,7 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
         ON mn.sire_id = s.id
       LEFT JOIN bloodmares cm
         ON cm.father_id = s.id AND cm.child_count > 0
+      WHERE s.name != ''
       GROUP BY
         s.id,
         s.name,
@@ -139,7 +140,7 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
       FROM horses AS h
       JOIN sires AS s
         ON h.father_id = s.id
-      ${whereStr([yearRange('h.birth_year', beginYear, endYear)])}
+      ${whereStr([yearRange('h.birth_year', beginYear, endYear),'h.sex IS NOT NULL'])}
       GROUP BY s.id
       ORDER BY child_count DESC
       ''',

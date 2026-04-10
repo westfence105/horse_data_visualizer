@@ -57,7 +57,7 @@ bloodmares AS (
 
 const sireLineTable =
 '''
-RECURSIVE major_line AS (
+major_line AS (
   SELECT
     id   AS founder_id,
     name AS lineage_name,
@@ -97,7 +97,7 @@ minor_line AS (
 
 const familiesTable =
 '''
-RECURSIVE families AS (
+families AS (
   SELECT
     id    AS founder_id,
     name  AS family_name,

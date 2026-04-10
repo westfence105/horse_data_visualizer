@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
 import '../../entity/mare_summary.dart';
+import '../../entity/mating_data.dart';
 import '../../repository/horses_repository.dart';
 import '../app_database.dart';
 import '../tables.dart';
@@ -104,5 +105,48 @@ class MareStatsDao extends DatabaseAccessor<AppDb> with _$MareStatsDaoMixin {
       variables: [Variable(debut)],
     ).get();
     return rows.map(ParentStats.fromRow).toList(growable: false);
+  }
+
+  Future<List<MatingData>> fetchMatingData(int year) async {
+    final rows = await customSelect(
+      '''
+      WITH foals AS (
+        SELECT
+          h.name,
+          h.father_id,
+          s.name AS father_name,
+          h.mother_id,
+          h.mating_rank,
+          h.explosion_power,
+          h.is_historical
+        FROM horses h
+        LEFT join sires s ON s.id = h.father_id
+        WHERE h.birth_year = :year
+      )
+
+      SELECT
+        :year  AS birth_year,
+        h.father_id,
+        h.father_name,
+        m.name AS mother_name,
+        m.farm,
+        h.mating_rank,
+        h.explosion_power,
+        h.is_historical,
+        m.is_grade_winner
+      FROM mares m
+      LEFT JOIN foals h ON h.mother_id = m.id
+      WHERE
+        m.farm > 0 OR
+        (
+          SELECT
+            COUNT(father_id)
+          FROM horses
+          WHERE mother_id = m.id AND birth_year = :year
+        ) > 0
+      ''',
+      variables: [Variable(year)],
+    ).get();
+    return rows.map(MatingData.fromRow).toList(growable: false);
   }
 }

@@ -28,7 +28,12 @@ class _EditBirthPageState extends EditHorsePageStateBase<EditBirthPage> {
 
   @override
   Future<void> onFetchCompleted() async {
-    
+    if (targetYear == maxYear) {
+      enableFilter = false;
+    }
+    else {
+      enableFilter = horses.values.where((d) => d.sex != 0).isNotEmpty;
+    }
   }
 
   @override
@@ -43,14 +48,14 @@ class _EditBirthPageState extends EditHorsePageStateBase<EditBirthPage> {
   List<DataColumn> get columns => <DataColumn>[
     DataColumn(
       label: Text('名前'),
-      columnWidth: FixedColumnWidth(200),
+      columnWidth: FixedColumnWidth(240),
     ),
     DataColumn(
-      label: Text('性別'),
+      label: Text(' 性別'),
       columnWidth: FixedColumnWidth(90),
     ),
     DataColumn(
-      label: Text('秘書'),
+      label: Text(' 秘書'),
       columnWidth: FixedColumnWidth(90),
     ),
     DataColumn(
@@ -75,11 +80,18 @@ class _EditBirthPageState extends EditHorsePageStateBase<EditBirthPage> {
   DataRow buildRow(HorseRaw raw) {
     final d = HorseData.fromRaw(raw);
     final motherName = d.motherName;
+    final named = (d.isHistorical == true && d.name?.isNotEmpty == true);
+    String prefix = '   ';
+    if (raw.isHistorical == true) {
+      prefix = '☆';
+    }
     return DataRow(
       cells: [
         DataCell(
           Text(
-            '${d.motherName}${d.birthYear % 100}',
+            named ?
+              '$prefix${d.name}' :
+              '$prefix${d.motherName}${d.birthYear % 100}',
             style: TextStyle(
               fontSize: 16,
             ),
@@ -105,49 +117,49 @@ class _EditBirthPageState extends EditHorsePageStateBase<EditBirthPage> {
           raw.rating01,
           (v) => updateData(
             motherName,
-            rating01: 4 - v,
+            rating01: v,
           ),
         ),
         _buildRatingCell(
           raw.rating02,
           (v) => updateData(
             motherName,
-            rating02: 4 - v,
+            rating02: v,
           ),
         ),
         _buildRatingCell(
           raw.rating03,
           (v) => updateData(
             motherName,
-            rating03: 4 - v,
+            rating03: v,
           ),
         ),
         _buildRatingCell(
           raw.rating04,
           (v) => updateData(
             motherName,
-            rating04: 4 - v,
+            rating04: v,
           ),
         ),
         _buildRatingCell(
           raw.rating05,
           (v) => updateData(
             motherName,
-            rating05: 4 - v,
+            rating05: v,
           ),
         ),
       ],
     );
   }
-
+  
   DataCell _buildRatingCell(int? value, Function(int value) onChanged)
     => DataCell(
         Padding(
           padding: EdgeInsets.only(left: 2),
           child: buildDropdown(
             selectedIndex: 4 - (value ?? -1),
-            values: ['◎','○','▲','△','×','-'],
-            onChanged: onChanged,
+            values: ['◎','○','▲','△','-',' '],
+            onChanged: (v) => onChanged(4 - v),
           ),
         ),
       );

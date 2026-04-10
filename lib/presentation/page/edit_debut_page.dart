@@ -64,7 +64,7 @@ class _EditDebutPageState extends EditHorsePageStateBase<EditDebutPage> {
   @override
   List<DataColumn> get columns => <DataColumn>[
     DataColumn(
-      label: Text('名前'),
+      label: Text('    名前'),
       columnWidth: FixedColumnWidth(200),
     ),
     DataColumn(
@@ -100,9 +100,25 @@ class _EditDebutPageState extends EditHorsePageStateBase<EditDebutPage> {
     return DataRow(
       cells: [
         DataCell(
-          TextField(
-            controller: _nameTextControllers[motherName],
-            onChanged: (value) => updateData(motherName, name: value),
+          Row(
+            children: [
+              SizedBox(
+                width: 20,
+                child: Text(raw.isHistorical == true ? '☆' : ''),
+              ),
+              Expanded(
+                child: TextField(
+                  controller: _nameTextControllers[motherName],
+                  onChanged: (value) => updateData(motherName, name: value),
+                  decoration: InputDecoration(
+                    hintText: '${d.motherName}${d.birthYear % 100}',
+                    hintStyle: TextStyle(
+                      fontWeight: FontWeight.w100,
+                    )
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
         DataCell(
@@ -163,20 +179,26 @@ class _EditDebutPageState extends EditHorsePageStateBase<EditDebutPage> {
             ),
           ),
         ),
-        DataCell(
-          Padding(
-            padding: EdgeInsets.only(left: 2),
-            child: buildDropdown(
-              selectedIndex: 4 - (raw.rating ?? -1),
-              values: ['◎','○','▲','△','×','-'],
-              onChanged: (v) => updateData(
-                motherName,
-                rating: 4 - v,
-              ),
-            ),
+        _buildRatingCell(
+          raw.rating,
+          (v) => updateData(
+            motherName,
+            rating: v,
           ),
         ),
       ],
     );
   }
+  
+  DataCell _buildRatingCell(int? value, Function(int value) onChanged)
+    => DataCell(
+        Padding(
+          padding: EdgeInsets.only(left: 2),
+          child: buildDropdown(
+            selectedIndex: 4 - (value ?? -1),
+            values: ['◎','○','▲','△','×','-'],
+            onChanged: (v) => onChanged(4 - v),
+          ),
+        ),
+      );
 }

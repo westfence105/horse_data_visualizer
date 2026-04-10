@@ -62,13 +62,18 @@ class HorsesDao extends DatabaseAccessor<AppDb> with _$HorsesDaoMixin {
   }
 
   Future<int?> getFirstProductionYear() async {
-    final q = selectOnly(horses)..addColumns([horses.birthYear.min()]);
+    final q = selectOnly(horses)
+      ..addColumns([horses.birthYear.min()])
+      ..where(horses.sex.isNotNull());
     final r = await q.getSingle();
     return r.read(db.horses.birthYear.min());
   }
 
   Future<int?> getLatestProductionYear() async {
-    final q = selectOnly(horses)..addColumns([horses.birthYear.max()]);
+    final q = selectOnly(horses)
+      ..addColumns([horses.birthYear.max()])
+      ..where(horses.sex.isNotNull())
+      ..where(horses.isHistorical.isNotIn([true]));
     final r = await q.getSingle();
     return r.read(db.horses.birthYear.max());
   }
@@ -188,7 +193,10 @@ class HorsesDao extends DatabaseAccessor<AppDb> with _$HorsesDaoMixin {
       FROM horses AS h
       LEFT JOIN sires AS f ON h.father_id = f.id
       LEFT JOIN mares AS b ON h.mother_id = b.id
-      WHERE h.birth_year > :debut ${wp != null ? 'AND $wp' : ''}
+      WHERE
+        h.birth_year > :debut
+        ${wp != null ? 'AND $wp' : ''} AND
+        h.sex IS NOT NULL
       GROUP BY
         h.birth_year,
         h.name,

@@ -65,7 +65,8 @@ abstract class EditHorsePageStateBase<T extends StatefulWidget> extends State<T>
     await fetch();
   }
 
-  int compareHorses(HorseRaw a, HorseRaw b);
+  int compareHorses(HorseRaw a, HorseRaw b)
+    => a.motherName.compareTo(b.motherName);
 
   bool filter(HorseRaw raw);
 
@@ -80,6 +81,40 @@ abstract class EditHorsePageStateBase<T extends StatefulWidget> extends State<T>
       fetch();
     });
   }
+
+  Widget buildYearSelect()
+    => SpinBox(
+        value: targetYear,
+        min: minYear,
+        max: maxYear,
+        onChanged: (v) {
+          targetYear = v;
+          fetch();
+        },
+      );
+
+  Widget buildTopBar()
+    => Row(
+        children: [
+          Expanded(child: SizedBox.shrink()),
+          ElevatedButton(
+            style: elevatedButtonStyleFirst,
+            onPressed: applyUpdate,
+            child: const Text('編集を適用'),
+          ),
+          IconButton(
+            tooltip: '未入力馬を非表示',
+            onPressed: () => setState(() {
+              enableFilter = !enableFilter;
+            }),
+            icon: Icon(
+              enableFilter ? 
+                Icons.filter_alt : 
+                Icons.filter_alt_off,
+            )
+          ),
+        ],
+      );
 
   @override
   Widget build(BuildContext context) {
@@ -96,41 +131,13 @@ abstract class EditHorsePageStateBase<T extends StatefulWidget> extends State<T>
           Column(
             children: [
               SizedBox(height: 16),
-              SpinBox(
-                value: targetYear,
-                min: minYear,
-                max: maxYear,
-                onChanged: (v) {
-                  targetYear = v;
-                  fetch();
-                },
-              ),
+              buildYearSelect(),
             ],
           ),
           Expanded(
             child: Column(
               children: [
-                Row(
-                  children: [
-                    Expanded(child: SizedBox.shrink()),
-                    ElevatedButton(
-                      style: elevatedButtonStyleFirst,
-                      onPressed: applyUpdate,
-                      child: const Text('編集を適用'),
-                    ),
-                    IconButton(
-                      tooltip: '未入力馬を非表示',
-                      onPressed: () => setState(() {
-                        enableFilter = !enableFilter;
-                      }),
-                      icon: Icon(
-                        enableFilter ? 
-                          Icons.filter_alt : 
-                          Icons.filter_alt_off,
-                      )
-                    ),
-                  ],
-                ),
+                buildTopBar(),
                 DataTable(
                   columns: columns,
                   columnSpacing: 30,

@@ -41,11 +41,11 @@ class _EditMarePageState extends State<EditMarePage> {
       l.sort((a, b) => a.name.compareTo(b.name));
     }
     return Padding(
-      padding: EdgeInsets.only(top: 8, left: 12, right: 12),
+      padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
       child: Row(
         spacing: 10,
         children: [
-          ...[1,3,4,2,0].map((i) => Expanded(
+          ...[1,2,3,4,0].map((i) => Expanded(
             child: Column(
               spacing: 10,
               children: [
@@ -63,8 +63,7 @@ class _EditMarePageState extends State<EditMarePage> {
                       Text('(${listElements[i].length})')
                   ],
                 ),
-                SizedBox(
-                  height: 400,
+                Expanded(
                   child: DragTarget<String>(
                     onAcceptWithDetails: (data) {
                       final name = data.data;
