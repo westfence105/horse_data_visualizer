@@ -1176,6 +1176,15 @@ class $HorsesTable extends Horses with TableInfo<$HorsesTable, Horse> {
     ),
     defaultValue: Constant(true),
   );
+  static const VerificationMeta _regionMeta = const VerificationMeta('region');
+  @override
+  late final GeneratedColumn<int> region = GeneratedColumn<int>(
+    'region',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     birthYear,
@@ -1196,6 +1205,7 @@ class $HorsesTable extends Horses with TableInfo<$HorsesTable, Horse> {
     explosionPower,
     retireYear,
     isHistorical,
+    region,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1339,6 +1349,12 @@ class $HorsesTable extends Horses with TableInfo<$HorsesTable, Horse> {
         ),
       );
     }
+    if (data.containsKey('region')) {
+      context.handle(
+        _regionMeta,
+        region.isAcceptableOrUnknown(data['region']!, _regionMeta),
+      );
+    }
     return context;
   }
 
@@ -1420,6 +1436,10 @@ class $HorsesTable extends Horses with TableInfo<$HorsesTable, Horse> {
         DriftSqlType.bool,
         data['${effectivePrefix}is_historical'],
       )!,
+      region: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}region'],
+      ),
     );
   }
 
@@ -1448,6 +1468,7 @@ class Horse extends DataClass implements Insertable<Horse> {
   final int? explosionPower;
   final int? retireYear;
   final bool isHistorical;
+  final int? region;
   const Horse({
     required this.birthYear,
     this.name,
@@ -1467,6 +1488,7 @@ class Horse extends DataClass implements Insertable<Horse> {
     this.explosionPower,
     this.retireYear,
     required this.isHistorical,
+    this.region,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1507,6 +1529,9 @@ class Horse extends DataClass implements Insertable<Horse> {
       map['retire_year'] = Variable<int>(retireYear);
     }
     map['is_historical'] = Variable<bool>(isHistorical);
+    if (!nullToAbsent || region != null) {
+      map['region'] = Variable<int>(region);
+    }
     return map;
   }
 
@@ -1544,6 +1569,9 @@ class Horse extends DataClass implements Insertable<Horse> {
           ? const Value.absent()
           : Value(retireYear),
       isHistorical: Value(isHistorical),
+      region: region == null && nullToAbsent
+          ? const Value.absent()
+          : Value(region),
     );
   }
 
@@ -1571,6 +1599,7 @@ class Horse extends DataClass implements Insertable<Horse> {
       explosionPower: serializer.fromJson<int?>(json['explosionPower']),
       retireYear: serializer.fromJson<int?>(json['retireYear']),
       isHistorical: serializer.fromJson<bool>(json['isHistorical']),
+      region: serializer.fromJson<int?>(json['region']),
     );
   }
   @override
@@ -1595,6 +1624,7 @@ class Horse extends DataClass implements Insertable<Horse> {
       'explosionPower': serializer.toJson<int?>(explosionPower),
       'retireYear': serializer.toJson<int?>(retireYear),
       'isHistorical': serializer.toJson<bool>(isHistorical),
+      'region': serializer.toJson<int?>(region),
     };
   }
 
@@ -1617,6 +1647,7 @@ class Horse extends DataClass implements Insertable<Horse> {
     Value<int?> explosionPower = const Value.absent(),
     Value<int?> retireYear = const Value.absent(),
     bool? isHistorical,
+    Value<int?> region = const Value.absent(),
   }) => Horse(
     birthYear: birthYear ?? this.birthYear,
     name: name.present ? name.value : this.name,
@@ -1638,6 +1669,7 @@ class Horse extends DataClass implements Insertable<Horse> {
         : this.explosionPower,
     retireYear: retireYear.present ? retireYear.value : this.retireYear,
     isHistorical: isHistorical ?? this.isHistorical,
+    region: region.present ? region.value : this.region,
   );
   Horse copyWithCompanion(HorsesCompanion data) {
     return Horse(
@@ -1667,6 +1699,7 @@ class Horse extends DataClass implements Insertable<Horse> {
       isHistorical: data.isHistorical.present
           ? data.isHistorical.value
           : this.isHistorical,
+      region: data.region.present ? data.region.value : this.region,
     );
   }
 
@@ -1690,7 +1723,8 @@ class Horse extends DataClass implements Insertable<Horse> {
           ..write('matingRank: $matingRank, ')
           ..write('explosionPower: $explosionPower, ')
           ..write('retireYear: $retireYear, ')
-          ..write('isHistorical: $isHistorical')
+          ..write('isHistorical: $isHistorical, ')
+          ..write('region: $region')
           ..write(')'))
         .toString();
   }
@@ -1715,6 +1749,7 @@ class Horse extends DataClass implements Insertable<Horse> {
     explosionPower,
     retireYear,
     isHistorical,
+    region,
   );
   @override
   bool operator ==(Object other) =>
@@ -1737,7 +1772,8 @@ class Horse extends DataClass implements Insertable<Horse> {
           other.matingRank == this.matingRank &&
           other.explosionPower == this.explosionPower &&
           other.retireYear == this.retireYear &&
-          other.isHistorical == this.isHistorical);
+          other.isHistorical == this.isHistorical &&
+          other.region == this.region);
 }
 
 class HorsesCompanion extends UpdateCompanion<Horse> {
@@ -1759,6 +1795,7 @@ class HorsesCompanion extends UpdateCompanion<Horse> {
   final Value<int?> explosionPower;
   final Value<int?> retireYear;
   final Value<bool> isHistorical;
+  final Value<int?> region;
   final Value<int> rowid;
   const HorsesCompanion({
     this.birthYear = const Value.absent(),
@@ -1779,6 +1816,7 @@ class HorsesCompanion extends UpdateCompanion<Horse> {
     this.explosionPower = const Value.absent(),
     this.retireYear = const Value.absent(),
     this.isHistorical = const Value.absent(),
+    this.region = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   HorsesCompanion.insert({
@@ -1800,6 +1838,7 @@ class HorsesCompanion extends UpdateCompanion<Horse> {
     this.explosionPower = const Value.absent(),
     this.retireYear = const Value.absent(),
     this.isHistorical = const Value.absent(),
+    this.region = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : birthYear = Value(birthYear),
        fatherId = Value(fatherId),
@@ -1828,6 +1867,7 @@ class HorsesCompanion extends UpdateCompanion<Horse> {
     Expression<int>? explosionPower,
     Expression<int>? retireYear,
     Expression<bool>? isHistorical,
+    Expression<int>? region,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -1849,6 +1889,7 @@ class HorsesCompanion extends UpdateCompanion<Horse> {
       if (explosionPower != null) 'explosion_power': explosionPower,
       if (retireYear != null) 'retire_year': retireYear,
       if (isHistorical != null) 'is_historical': isHistorical,
+      if (region != null) 'region': region,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -1872,6 +1913,7 @@ class HorsesCompanion extends UpdateCompanion<Horse> {
     Value<int?>? explosionPower,
     Value<int?>? retireYear,
     Value<bool>? isHistorical,
+    Value<int?>? region,
     Value<int>? rowid,
   }) {
     return HorsesCompanion(
@@ -1893,6 +1935,7 @@ class HorsesCompanion extends UpdateCompanion<Horse> {
       explosionPower: explosionPower ?? this.explosionPower,
       retireYear: retireYear ?? this.retireYear,
       isHistorical: isHistorical ?? this.isHistorical,
+      region: region ?? this.region,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -1954,6 +1997,9 @@ class HorsesCompanion extends UpdateCompanion<Horse> {
     if (isHistorical.present) {
       map['is_historical'] = Variable<bool>(isHistorical.value);
     }
+    if (region.present) {
+      map['region'] = Variable<int>(region.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -1981,6 +2027,7 @@ class HorsesCompanion extends UpdateCompanion<Horse> {
           ..write('explosionPower: $explosionPower, ')
           ..write('retireYear: $retireYear, ')
           ..write('isHistorical: $isHistorical, ')
+          ..write('region: $region, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -2887,6 +2934,7 @@ typedef $$HorsesTableCreateCompanionBuilder =
       Value<int?> explosionPower,
       Value<int?> retireYear,
       Value<bool> isHistorical,
+      Value<int?> region,
       Value<int> rowid,
     });
 typedef $$HorsesTableUpdateCompanionBuilder =
@@ -2909,6 +2957,7 @@ typedef $$HorsesTableUpdateCompanionBuilder =
       Value<int?> explosionPower,
       Value<int?> retireYear,
       Value<bool> isHistorical,
+      Value<int?> region,
       Value<int> rowid,
     });
 
@@ -3038,6 +3087,11 @@ class $$HorsesTableFilterComposer extends Composer<_$AppDb, $HorsesTable> {
 
   ColumnFilters<bool> get isHistorical => $composableBuilder(
     column: $table.isHistorical,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get region => $composableBuilder(
+    column: $table.region,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3176,6 +3230,11 @@ class $$HorsesTableOrderingComposer extends Composer<_$AppDb, $HorsesTable> {
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get region => $composableBuilder(
+    column: $table.region,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$SiresTableOrderingComposer get fatherId {
     final $$SiresTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -3287,6 +3346,9 @@ class $$HorsesTableAnnotationComposer extends Composer<_$AppDb, $HorsesTable> {
     builder: (column) => column,
   );
 
+  GeneratedColumn<int> get region =>
+      $composableBuilder(column: $table.region, builder: (column) => column);
+
   $$SiresTableAnnotationComposer get fatherId {
     final $$SiresTableAnnotationComposer composer = $composerBuilder(
       composer: this,
@@ -3380,6 +3442,7 @@ class $$HorsesTableTableManager
                 Value<int?> explosionPower = const Value.absent(),
                 Value<int?> retireYear = const Value.absent(),
                 Value<bool> isHistorical = const Value.absent(),
+                Value<int?> region = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => HorsesCompanion(
                 birthYear: birthYear,
@@ -3400,6 +3463,7 @@ class $$HorsesTableTableManager
                 explosionPower: explosionPower,
                 retireYear: retireYear,
                 isHistorical: isHistorical,
+                region: region,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -3422,6 +3486,7 @@ class $$HorsesTableTableManager
                 Value<int?> explosionPower = const Value.absent(),
                 Value<int?> retireYear = const Value.absent(),
                 Value<bool> isHistorical = const Value.absent(),
+                Value<int?> region = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => HorsesCompanion.insert(
                 birthYear: birthYear,
@@ -3442,6 +3507,7 @@ class $$HorsesTableTableManager
                 explosionPower: explosionPower,
                 retireYear: retireYear,
                 isHistorical: isHistorical,
+                region: region,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

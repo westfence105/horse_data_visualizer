@@ -91,6 +91,10 @@ class _EditDebutPageState extends EditHorsePageStateBase<EditDebutPage> {
       label: Text('評価'),
       columnWidth: FixedColumnWidth(90),
     ),
+    DataColumn(
+      label: Text('所属'),
+      columnWidth: FixedColumnWidth(120),
+    ),
   ];
 
   @override
@@ -184,6 +188,19 @@ class _EditDebutPageState extends EditHorsePageStateBase<EditDebutPage> {
           (v) => updateData(
             motherName,
             rating: v,
+          ),
+        ),
+        DataCell(
+          Padding(
+            padding: EdgeInsets.only(left: 2),
+            child: buildDropdown(
+              selectedIndex: raw.region ?? 0,
+              values: ['-','日本','欧州','米国','クラブ'],
+              onChanged: (v) => updateData(
+                motherName,
+                region: v,
+              ),
+            ),
           ),
         ),
       ],

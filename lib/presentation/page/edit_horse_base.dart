@@ -42,7 +42,8 @@ abstract class EditHorsePageStateBase<T extends StatefulWidget> extends State<T>
     int? growth,
     int? surface,
     int? distance,
-    int? rating
+    int? rating,
+    int? region,
   }) {
     if (horses.containsKey(motherName)) {
       setState(() {
@@ -55,6 +56,7 @@ abstract class EditHorsePageStateBase<T extends StatefulWidget> extends State<T>
           rating05: rating05,
           growth: growth, surface: surface,
           distance: distance, rating: rating,
+          region: region,
         );
       });
     }
@@ -94,8 +96,12 @@ abstract class EditHorsePageStateBase<T extends StatefulWidget> extends State<T>
       );
 
   Widget buildTopBar()
-    => Row(
+    => SizedBox(
+      width: 1000,
+      child: Row(
         children: [
+          SizedBox(height: 16),
+          buildYearSelect(),
           Expanded(child: SizedBox.shrink()),
           ElevatedButton(
             style: elevatedButtonStyleFirst,
@@ -114,7 +120,8 @@ abstract class EditHorsePageStateBase<T extends StatefulWidget> extends State<T>
             )
           ),
         ],
-      );
+      ),
+    );
 
   @override
   Widget build(BuildContext context) {
@@ -128,12 +135,6 @@ abstract class EditHorsePageStateBase<T extends StatefulWidget> extends State<T>
       child: Row(
         spacing: 10,
         children: [
-          Column(
-            children: [
-              SizedBox(height: 16),
-              buildYearSelect(),
-            ],
-          ),
           Expanded(
             child: Column(
               children: [

@@ -341,7 +341,7 @@ class _MaresPageState extends State<MaresPage> {
         valueListenable: _farmNotifiers[mareName]!,
         builder: (ctx, v, c) => DropdownButton<int>(
           isExpanded: true,
-          items: ['-','日本','クラブ','欧州','米国'].asMap().entries.map((e) {
+          items: ['-','日本','欧州','米国','クラブ'].asMap().entries.map((e) {
             FontWeight fontWeight = (e.key == 0) ? FontWeight.w400 : FontWeight.w600;
             return DropdownMenuItem(
               value: e.key,

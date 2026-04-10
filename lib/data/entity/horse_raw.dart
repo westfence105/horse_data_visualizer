@@ -11,8 +11,9 @@ const _ratingMap = {4:'◎', 3:'○', 2:'▲', 1:'△', 0:'×',-1:'-'};
 const _growthMap = {0:'早熟', 1:'早め', 2:'遅め', 3:'覚醒', 4:'晩成'};
 const _surfaceMap = {1:'芝', -1:'ダート', 0:'万能'};
 const _distanceMap = {0:'短距離', 1:'マイル', 2:'中距離', 3:'クラシック', 4:'長距離'};
-final mateRankRegex = RegExp('([SA-D])([0-9]+)');
+final _mateRankRegex = RegExp('([SA-D])([0-9]+)');
 const _matingRanks = <String>['','S','A','B','C','D'];
+final _regions = ['','日本','欧州','米国','クラブ'].asMap();
 
 class HorseRaw {
   final int birthYear;
@@ -33,6 +34,7 @@ class HorseRaw {
   final int? explosionPower;
   final int? retireYear;
   final bool? isHistorical;
+  final int? region;
 
   const HorseRaw({
     required this.birthYear,
@@ -53,6 +55,7 @@ class HorseRaw {
     this.explosionPower,
     this.retireYear,
     this.isHistorical,
+    this.region,
   });
 
   HorseRaw.fromRow(QueryRow r) : this(
@@ -74,6 +77,7 @@ class HorseRaw {
     explosionPower: r.read('explosion_power'),
     retireYear: r.read('retire_year'),
     isHistorical: r.read('is_historical'),
+    region: r.read('region'),
   );
 
   HorseRaw copyWith({
@@ -95,7 +99,7 @@ class HorseRaw {
     int? explosionPower,
     int? retireYear,
     bool? isHistorical,
-
+    int? region,
   }) => HorseRaw(
     birthYear: birthYear ?? this.birthYear,
     sex: sex ?? this.sex,
@@ -115,6 +119,7 @@ class HorseRaw {
     explosionPower: explosionPower ?? this.explosionPower,
     retireYear: retireYear ?? this.retireYear,
     isHistorical: isHistorical ?? this.isHistorical,
+    region: region ?? this.region,
   );
 }
 
@@ -138,6 +143,8 @@ class HorseData {
     int? surface,
     int? distance,
     int? rating,
+    bool? isHistorical,
+    int? region,
   }) : rawData = HorseRaw(
     birthYear: birthYear,
     sex: sex,
@@ -153,6 +160,8 @@ class HorseData {
     surface: surface,
     distance: distance,
     rating: rating,
+    isHistorical: isHistorical,
+    region: region,
   );
 
   static bool checkMap(Map<String,String> d) {
@@ -185,10 +194,11 @@ class HorseData {
     surface: _reverse(_surfaceMap, d['馬場']),
     distance: _reverse(_distanceMap, d['距離']),
     rating: _reverse(_ratingMap, d['評価']),
-    matingRank: max(_matingRanks.indexOf(mateRankRegex.firstMatch(d['配合'] ?? '')?.group(1) ?? ''), 0),
-    explosionPower: int.tryParse((mateRankRegex.firstMatch(d['配合'] ?? ''))?.group(2) ?? '0'),
+    matingRank: max(_matingRanks.indexOf(_mateRankRegex.firstMatch(d['配合'] ?? '')?.group(1) ?? ''), 0),
+    explosionPower: int.tryParse((_mateRankRegex.firstMatch(d['配合'] ?? ''))?.group(2) ?? '0'),
     retireYear: int.tryParse(d['引退年'] ?? ''),
-    isHistorical: d['名前']?.startsWith('☆') == true
+    isHistorical: d['名前']?.startsWith('☆') == true,
+    region: _reverse(_regions, d['所属']),
   );
 
   Map<String,String> toMap() => {
@@ -207,6 +217,7 @@ class HorseData {
     '馬場': surface ?? '',
     '距離': distance ?? '',
     '評価': rating ?? '',
+    '所属': region ?? '',
     '引退年': retireYear ?? '',
   };
 
@@ -239,4 +250,5 @@ class HorseData {
   }
   String? get retireYear => rawData.retireYear?.toString();
   bool? get isHistorical => rawData.isHistorical;
+  String? get region => _regions[rawData.region ?? 0];
 }

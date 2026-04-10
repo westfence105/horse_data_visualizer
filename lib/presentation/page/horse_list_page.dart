@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../data/entity/horse_raw.dart';
 import '../../data/repository/horses_repository.dart';
-import '../../data/repository/mares_repository.dart';
 
 class HorseListPage extends StatefulWidget {
   const HorseListPage({ super.key });
@@ -23,7 +22,7 @@ class _HorseListPageState extends State<HorseListPage> {
     });
   }
 
-  int _sortColumn = 7;
+  int _sortColumn = 8;
   bool _sortAscending = false;
 
   void _onSort(int column, bool ascending) {
@@ -103,9 +102,8 @@ class _HorseListPageState extends State<HorseListPage> {
   List<DataColumn> get columns => [
     DataColumn(
       label: Text('生年'),
-      columnWidth: FixedColumnWidth(100),
+      columnWidth: FixedColumnWidth(90),
       onSort: _onSort,
-      headingRowAlignment: MainAxisAlignment.center,
     ),
     DataColumn(
       label: Text('名前'),
@@ -119,12 +117,12 @@ class _HorseListPageState extends State<HorseListPage> {
     ),
     DataColumn(
       label: Text('父'),
-      columnWidth: FixedColumnWidth(200),
+      columnWidth: FixedColumnWidth(180),
       onSort: _onSort,
     ),
     DataColumn(
       label: Text('母'),
-      columnWidth: FixedColumnWidth(200),
+      columnWidth: FixedColumnWidth(180),
       onSort: _onSort,
     ),
     DataColumn(
@@ -144,8 +142,13 @@ class _HorseListPageState extends State<HorseListPage> {
     ),
     DataColumn(
       label: Text('評価'),
-      columnWidth: FixedColumnWidth(110),
+      columnWidth: FixedColumnWidth(90),
       onSort: _onSort,
+      headingRowAlignment: MainAxisAlignment.center,
+    ),
+    DataColumn(
+      label: Text('所属'),
+      columnWidth: FixedColumnWidth(90),
       headingRowAlignment: MainAxisAlignment.center,
     ),
   ];
@@ -180,7 +183,7 @@ class _HorseListPageState extends State<HorseListPage> {
               ),
               DataTable(
                 columns: columns,
-                columnSpacing: 20,
+                columnSpacing: 16,
                 rows: [],
                 dataRowMaxHeight: 0,
                 sortColumnIndex: _sortColumn,
@@ -190,12 +193,12 @@ class _HorseListPageState extends State<HorseListPage> {
                 child: SingleChildScrollView(
                   child: DataTable(
                     columns: columns,
-                    columnSpacing: 30,
+                    columnSpacing: 24,
                     headingRowHeight: 0,
                     rows: (horses.where(_filter).toList()..sort(_compareHorses)).map(
                       (d) => DataRow(
                         cells: [
-                          _buildCell(d.birthYear.toString(), MainAxisAlignment.center),
+                          _buildCell(d.birthYear.toString()),
                           _buildCell(d.name),
                           _buildCell(d.sex, MainAxisAlignment.center),
                           _buildCell(d.fatherName),
@@ -204,6 +207,7 @@ class _HorseListPageState extends State<HorseListPage> {
                           _buildCell(d.surface, MainAxisAlignment.center),
                           _buildCell(d.distance, MainAxisAlignment.center),
                           _buildCell(d.rating, MainAxisAlignment.center),
+                          _buildCell(d.region, MainAxisAlignment.center),
                         ],
                       ),
                     ).toList(growable: false),
@@ -252,6 +256,7 @@ class _Filters {
   final surfaceFilter = <int>{};
   final distanceFilter = <int>{};
   final ratingFilter = <int>{};
+  final regionFilter = <int>{};
 
   void clear() {
     sexFilter.clear();
@@ -259,6 +264,7 @@ class _Filters {
     surfaceFilter.clear();
     distanceFilter.clear();
     ratingFilter.clear();
+    regionFilter.clear();
   }
 
   bool get isNotEmpty => (
@@ -266,7 +272,8 @@ class _Filters {
     growthFilter.isNotEmpty ||
     surfaceFilter.isNotEmpty ||
     distanceFilter.isNotEmpty ||
-    ratingFilter.isNotEmpty
+    ratingFilter.isNotEmpty ||
+    regionFilter.isNotEmpty
   );
 
   bool filter(HorseData d) {
@@ -295,6 +302,11 @@ class _Filters {
         return false;
       }
     }
+    if (regionFilter.isNotEmpty) {
+      if (!regionFilter.contains(d.rawData.region)) {
+        return false;
+      }
+    }
     return true;
   }
 }
@@ -316,48 +328,38 @@ class _FilterDialogState extends State<_FilterDialog> {
     title: Text("フィルタ"),
     content: SizedBox(
       width: 600,
-      height: 250,
+      height: 280,
       child: Column(
         children: [
           _buildFilterRow(
             '性別',
             {1: '牡', -1: '牝'},
             filters.sexFilter,
-            (k,v) => v ?
-              filters.sexFilter.add(k) : 
-              filters.sexFilter.remove(k)
           ),
           _buildFilterRow(
             '成長型',
             ['早熟','早め','遅め','覚醒','晩成'].asMap(),
             filters.growthFilter,
-            (k,v) => v ?
-              filters.growthFilter.add(k) : 
-              filters.growthFilter.remove(k)
           ),
           _buildFilterRow(
             '馬場',
             {1:' 芝 ', -1:'ダート', 0:'万能'},
             filters.surfaceFilter,
-            (k,v) => v ?
-              filters.surfaceFilter.add(k) : 
-              filters.surfaceFilter.remove(k)
           ),
           _buildFilterRow(
             '距離',
             ['短距離','マイル','中距離','クラシック','長距離'].asMap(),
             filters.distanceFilter,
-            (k,v) => v ?
-              filters.distanceFilter.add(k) : 
-              filters.distanceFilter.remove(k)
           ),
           _buildFilterRow(
             '評価',
             {4:'◎',3:'○',2:'▲',1:'△',0:'×'},
             filters.ratingFilter,
-            (k,v) => v ?
-              filters.ratingFilter.add(k) : 
-              filters.ratingFilter.remove(k)
+          ),
+          _buildFilterRow(
+            '所属',
+            {1:'日本', 2:'欧州', 3:'米国', 4:'クラブ'},
+            filters.regionFilter,
           ),
         ],
       ),
@@ -374,7 +376,7 @@ class _FilterDialogState extends State<_FilterDialog> {
     ],
   );
 
-  Widget _buildFilterRow<T>(String title, Map<T,String> options, Set<T> selections, Function(T key, bool value) onSelect)
+  Widget _buildFilterRow<T>(String title, Map<T,String> options, Set<T> selections, [Function(T key, bool value)? onSelect])
     => Row(
       children: [
         SizedBox(
@@ -406,7 +408,17 @@ class _FilterDialogState extends State<_FilterDialog> {
               ),
               onTap: () {
                 setState(() {
-                  onSelect(e.key, !selections.contains(e.key));
+                  if (onSelect != null) {
+                    onSelect(e.key, !selections.contains(e.key));
+                  }
+                  else {
+                    if (selections.contains(e.key)) {
+                      selections.remove(e.key);
+                    }
+                    else {
+                      selections.add(e.key);
+                    }
+                  }
                 });
               },
             ),
@@ -423,8 +435,13 @@ class _FilterDialogState extends State<_FilterDialog> {
           ),
           onTap: () {
             setState(() {
-              for (final k in options.keys) {
-                onSelect(k, false);
+              if (onSelect != null) {
+                for (final k in options.keys) {
+                  onSelect(k, false);
+                }
+              }
+              else {
+                selections.clear();
               }
             });
           },

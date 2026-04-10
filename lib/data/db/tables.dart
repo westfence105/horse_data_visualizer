@@ -51,6 +51,7 @@ class Horses extends Table {
   IntColumn get explosionPower => integer().nullable()();
   IntColumn get retireYear => integer().nullable()();
   BoolColumn get isHistorical => boolean().withDefault(Constant(true))();
+  IntColumn get region => integer().nullable()();
 
   @override
   Set<Column<Object>>? get primaryKey => { birthYear, motherId };

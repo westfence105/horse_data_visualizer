@@ -56,6 +56,7 @@ class HorsesDao extends DatabaseAccessor<AppDb> with _$HorsesDaoMixin {
         explosionPower: Value(d.explosionPower),
         retireYear: Value(retireYear),
         isHistorical: Value(d.isHistorical ?? false),
+        region: Value(d.region),
       ),
       mode: InsertMode.insertOrReplace,
     );
@@ -120,7 +121,8 @@ class HorsesDao extends DatabaseAccessor<AppDb> with _$HorsesDaoMixin {
           h.mating_rank,
           h.explosion_power,
           h.retire_year,
-          h.is_historical
+          h.is_historical,
+          h.region
         FROM horses h
         LEFT JOIN sires f ON f.id = h.father_id
         LEFT JOIN mares m ON m.id = h.mother_id
@@ -144,6 +146,7 @@ class HorsesDao extends DatabaseAccessor<AppDb> with _$HorsesDaoMixin {
         h.surface,
         h.distance,
         h.rating,
+        h.region,
         COUNT(s.id) + COUNT(m.id) > 0 AS breeding
       FROM horses AS h
       LEFT JOIN sires AS s ON h.name = s.name
@@ -159,7 +162,8 @@ class HorsesDao extends DatabaseAccessor<AppDb> with _$HorsesDaoMixin {
         h.sex,
         h.growth,
         h.surface,
-        h.rating
+        h.rating,
+        h.region
       '''
     ).get();
 
