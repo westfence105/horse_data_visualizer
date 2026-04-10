@@ -149,9 +149,9 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
     return rows.map(ParentStats.fromRow).toList(growable: false);
   }
 
-  static const _withRecursiveLineage =
+  String lineageTable([Iterable<String> conds = const []]) =>
   '''
-    WITH RECURSIVE lineage AS (
+    lineage AS (
       SELECT
         f.id,
         f.name  AS lineage_name,
@@ -173,6 +173,7 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
         LEFT JOIN sires p ON p.id = f.father_id
         LEFT JOIN sires ds ON ds.father_id = founder_id
         LEFT JOIN horses dh ON dh.father_id = founder_id
+      ${whereStr(conds)}
       GROUP BY f.id
 
       UNION ALL
@@ -221,7 +222,7 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
   Future<List<LineageSummary>> fetchAllLineageSummaries([int? beginYear, int? endYear]) async {
     final rows = await customSelect(
       '''
-      $_withRecursiveLineage, $bloodmaresTable, $stallionsTable
+      WITh RECURSIVE ${lineageTable()}, $bloodmaresTable, $stallionsTable
 
       SELECT 
         l.lineage_name,
@@ -269,7 +270,7 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
     final debut = r.read<int>(horses.birthYear.max());
     final rows = await customSelect(
       '''
-      $_withRecursiveLineage, $bloodmaresTable
+      WITh RECURSIVE ${lineageTable()}, $bloodmaresTable
 
       SELECT
         l.lineage_name AS name,
@@ -313,10 +314,14 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
       .toList(growable: false);
   }
 
-  Future<List<String>> findBelongingLineages(int sireId) async {
+  Future<List<String>> findBelongingLineages(int sireId, [bool searchAll = false]) async {
+    final conds = <String>[
+      if (!searchAll)
+        'f.lineage_status > 0 OR f.father_id IS NULL OR f.id = $sireId',
+    ];
     final rows = await customSelect(
       '''
-      $_withRecursiveLineage, $bloodmaresTable,
+      WITh RECURSIVE ${lineageTable(conds)}, $bloodmaresTable,
 
       target_lineages AS (
         SELECT
@@ -361,34 +366,11 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
       .toList(growable: false);
   }
 
-  static const _withRecursiveTargetLineage =
-    '''
-    WITH RECURSIVE lineage AS (
-      SELECT
-        id,
-        id AS founder_id,
-        name AS lineage_name,
-        0 AS depth
-      FROM sires
-      WHERE id = :founderId
-
-      UNION ALL
-
-      SELECT
-        s.id,
-        l.founder_id,
-        l.lineage_name,
-        l.depth + 1 AS depth
-      FROM sires s
-      INNER JOIN lineage l ON l.id = s.father_id
-    )
-    ''';
-
   Future<List<SireSummary>> fetchLineageSires(int founderId, [int? beginYear, int? endYear]) async {
     final yr = yearRange('h.birth_year', beginYear, endYear);
     final rows = await customSelect(
       '''
-      $_withRecursiveTargetLineage, $bloodmaresTable
+      WITh RECURSIVE ${lineageTable(['f.id = $founderId'])}, $bloodmaresTable
 
       SELECT
         s.id,
@@ -413,7 +395,6 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
         l.depth
       ORDER BY l.depth ASC, child_count DESC;
       ''',
-      variables: [Variable(founderId)],
     ).get();
 
     return rows.map(SireSummary.fromRow).toList();
@@ -422,7 +403,7 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
   Future<List<MareSummary>> fetchLineageMares(int founderId) async {
     final rows = await customSelect(
       '''
-      $_withRecursiveTargetLineage, $bloodmaresTable
+      WITh RECURSIVE ${lineageTable(['f.id = $founderId'])}, $bloodmaresTable
 
       SELECT
         h.id,
@@ -455,7 +436,6 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
         m.name,
         h.is_historical
       ''',
-      variables: [Variable(founderId)],
     ).get();
 
     return rows.map(MareSummary.fromRow).toList();
@@ -464,7 +444,7 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
   Future<List<OwnedHorseData>> fetchLineageOwnedHorseData(int founderId) async {
     final rows = await customSelect(
       '''
-      $_withRecursiveTargetLineage
+      WITh RECURSIVE ${lineageTable(['f.id = $founderId'])}
 
       SELECT
         h.birth_year,
@@ -494,7 +474,6 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
         h.surface,
         h.rating
       ''',
-      variables: [Variable(founderId)],
     ).get();
 
     return rows.map(OwnedHorseData.fromRow).toList(growable: false);
@@ -504,7 +483,7 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
     final debut = await getDebutGeneration();
     final rows = await customSelect(
       '''
-      $_withRecursiveTargetLineage
+      WITh RECURSIVE ${lineageTable(['f.id = $founderId'])}
 
       SELECT
         h.birth_year,
@@ -521,7 +500,7 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
       INNER JOIN lineage l ON l.id = h.father_id
       LEFT JOIN sires AS f ON h.father_id = f.id
       LEFT JOIN mares AS b ON h.mother_id = b.id
-      WHERE h.birth_year > :debut
+      WHERE h.birth_year > :debut AND h.sex IS NOT NULL
       GROUP BY
         h.birth_year,
         h.name,
@@ -533,7 +512,7 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
         h.rating04,
         h.rating05
       ''',
-      variables: [Variable(founderId),Variable(debut)],
+      variables: [Variable(debut)],
     ).get();
 
     return rows.map(FoalData.fromRow).toList(growable: false);
@@ -549,7 +528,8 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
     }
     final rows = await customSelect(
       '''
-      $_withRecursiveTargetLineage
+      WITh RECURSIVE ${lineageTable(['f.id = $founderId'])}
+
       SELECT
         l.lineage_name,
         $key AS value,
@@ -560,7 +540,6 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
       GROUP BY l.lineage_name, value
       ORDER BY value
       ''',
-      variables: [Variable(founderId)],
     ).get();
 
     String? lineageName;
@@ -589,7 +568,8 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
   Future<LineageAnnualProduction?> fetchLineageAnnualProduction(int founderId, [int? beginYear, int? endYear]) async {
     final rows = await customSelect(
       '''
-      $_withRecursiveTargetLineage
+      WITh RECURSIVE ${lineageTable(['f.id = $founderId'])}
+
       SELECT
         l.lineage_name,
         h.birth_year,
@@ -600,7 +580,6 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
       GROUP BY l.lineage_name, birth_year
       ORDER BY birth_year
       ''',
-      variables: [Variable(founderId)],
     ).get();
 
     String? lineageName;
@@ -631,7 +610,8 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
   Future<LineageAnnualSexRatio?> fetchLineageAnnualSexRatio(int founderId, [int? beginYear, int? endYear]) async {
     final rows = await customSelect(
       '''
-      $_withRecursiveTargetLineage
+      WITh RECURSIVE ${lineageTable(['f.id = $founderId'])}
+
       SELECT
         l.lineage_name,
         birth_year,
@@ -642,7 +622,6 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
       GROUP BY l.lineage_name, birth_year
       ORDER BY birth_year
       ''',
-      variables: [Variable(founderId)],
     ).get();
 
     String? lineageName;
