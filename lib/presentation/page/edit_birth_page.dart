@@ -32,7 +32,7 @@ class _EditBirthPageState extends EditHorsePageStateBase<EditBirthPage> {
       enableFilter = false;
     }
     else {
-      enableFilter = horses.values.where((d) => d.sex != 0).isNotEmpty;
+      enableFilter = horses.values.where((d) => (d.sex ?? 0) != 0).isNotEmpty;
     }
   }
 
@@ -80,6 +80,7 @@ class _EditBirthPageState extends EditHorsePageStateBase<EditBirthPage> {
   DataRow buildRow(HorseRaw raw) {
     final d = HorseData.fromRaw(raw);
     final motherName = d.motherName;
+    debugPrint(motherName);
     final named = (d.isHistorical == true && d.name?.isNotEmpty == true);
     String prefix = '   ';
     if (raw.isHistorical == true) {

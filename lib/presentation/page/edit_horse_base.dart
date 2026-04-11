@@ -62,7 +62,12 @@ abstract class EditHorsePageStateBase<T extends StatefulWidget> extends State<T>
     }
   }
 
+  Future<void> prepareUpdate() async {
+
+  }
+
   Future<void> applyUpdate() async {
+    await prepareUpdate();
     await HorsesRepository.updateHorses(horses.values);
     await fetch();
   }

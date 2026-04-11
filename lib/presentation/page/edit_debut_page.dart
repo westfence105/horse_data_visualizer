@@ -62,6 +62,13 @@ class _EditDebutPageState extends EditHorsePageStateBase<EditDebutPage> {
   bool filter(HorseRaw raw) => raw.rating != null;
 
   @override
+  Future<void> prepareUpdate() async {
+    for (final e in _nameTextControllers.entries) {
+      updateData(e.key, name: e.value.text);
+    }
+  }
+
+  @override
   List<DataColumn> get columns => <DataColumn>[
     DataColumn(
       label: Text('    名前'),
@@ -105,6 +112,7 @@ class _EditDebutPageState extends EditHorsePageStateBase<EditDebutPage> {
       cells: [
         DataCell(
           Row(
+            key: Key(motherName),
             children: [
               SizedBox(
                 width: 20,
@@ -113,12 +121,11 @@ class _EditDebutPageState extends EditHorsePageStateBase<EditDebutPage> {
               Expanded(
                 child: TextField(
                   controller: _nameTextControllers[motherName],
-                  onChanged: (value) => updateData(motherName, name: value),
                   decoration: InputDecoration(
                     hintText: '${d.motherName}${d.birthYear % 100}',
                     hintStyle: TextStyle(
                       fontWeight: FontWeight.w100,
-                    )
+                    ),
                   ),
                 ),
               ),

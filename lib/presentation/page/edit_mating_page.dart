@@ -105,12 +105,6 @@ class _EditMatingPageState extends EditHorsePageStateBase<EditMatingPage> {
       child: Row(
         spacing: 10,
         children: [
-          Column(
-            children: [
-              SizedBox(height: 16),
-              buildYearSelect(),
-            ],
-          ),
           Expanded(
             child: Column(
               children: [
