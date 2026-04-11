@@ -34,18 +34,27 @@ class _EditMatingPageState extends EditHorsePageStateBase<EditMatingPage> {
 
   @override
   Future<void> loadYears() async {
-    targetYear = (await HorsesRepository.getLatestProductionYear() ?? 1968) + 1;
-    minYear = await HorsesRepository.getFirstProductionYear() ?? 1968;
-    maxYear = (await HorsesRepository.getLatestProductionYear() ?? 2000) + 1;
+    final values = await Future.wait([
+      HorsesRepository.getFirstProductionYear(),
+      HorsesRepository.getLatestProductionYear(),
+    ]);
+    minYear = values[0] ?? 1968;
+    maxYear = (values[1] ?? 2000) + 1;
+    targetYear = maxYear;
   }
 
   @override
   Future<void> fetch() async {
-    final data = await MaresRepository.fetchMatingData(targetYear);
-    matings = {};
-    for (MatingData d in data) {
-      matings[d.mother] = d;
-    }
+    await Future.wait([
+      Future(() async {
+        final data = await MaresRepository.fetchMatingData(targetYear);
+        matings = {};
+        for (MatingData d in data) {
+          matings[d.mother] = d;
+        }
+      }),
+      super.fetch(),
+    ]);
     await onFetchCompleted();
     setState(() {});
   }
@@ -74,7 +83,23 @@ class _EditMatingPageState extends EditHorsePageStateBase<EditMatingPage> {
     for (final e in _fatherTextControllers.entries) {
       matings[e.key]?.father = e.value.text;
     }
-    await HorsesRepository.updateHorses(matings.values.map((m) => m.toHorseRaw()));
+    await HorsesRepository.updateHorses(
+      matings.entries.map((e) {
+        final m = e.value;
+        final d = horses[e.key];
+        if (d != null) {
+          return d.copyWith(
+            fatherName: m.father,
+            matingRank: m.matingRank,
+            explosionPower: m.explosionPower,
+            isHistorical: m.isHistorical,
+          );
+        }
+        else {
+          return m.toHorseRaw();
+        }
+      }),
+    );
     await fetch();
   }
 
