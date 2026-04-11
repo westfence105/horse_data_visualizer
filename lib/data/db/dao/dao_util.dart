@@ -49,3 +49,6 @@ T? inlistOrNull<T>(T? value, Iterable<T> valueList)
 
 int? positiveOrNull(int? value)
   => (value != null && value >= 0) ? value : null;
+
+int? rangeOrNull(int? value, int min, int max)
+  => (value != null && min <= value && value <= max) ? value : null;

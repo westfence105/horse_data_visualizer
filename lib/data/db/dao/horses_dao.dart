@@ -31,13 +31,6 @@ class HorsesDao extends DatabaseAccessor<AppDb> with _$HorsesDaoMixin {
   }
 
   Future<void> _upsert(HorseRaw d) async {
-    int? retireYear = d.retireYear;
-    if (retireYear != null) {
-      if (retireYear < d.birthYear + 2 ||
-          retireYear > d.birthYear + 9) {
-        retireYear = null;
-      }
-    }
     await into(db.horses).insert(
       HorsesCompanion.insert(
         birthYear: d.birthYear,
@@ -56,7 +49,7 @@ class HorsesDao extends DatabaseAccessor<AppDb> with _$HorsesDaoMixin {
         rating:   Value(positiveOrNull(d.rating)),
         matingRank: Value(d.matingRank),
         explosionPower: Value(d.explosionPower),
-        retireYear: Value(retireYear),
+        retireYear: Value(rangeOrNull(d.retireYear, d.birthYear + 3, d.birthYear + 9)),
         isHistorical: Value(d.isHistorical ?? false),
         region: Value(d.region),
       ),

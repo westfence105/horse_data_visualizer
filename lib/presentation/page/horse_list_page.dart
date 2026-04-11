@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../data/entity/horse_raw.dart';
 import '../../data/repository/horses_repository.dart';
+import '../widget/spin_box.dart';
 
 class HorseListPage extends StatefulWidget {
   const HorseListPage({ super.key });
@@ -12,6 +13,20 @@ class HorseListPage extends StatefulWidget {
 
 class _HorseListPageState extends State<HorseListPage> {
   List<HorseData> horses = [];
+
+  int _targetYear = 1968;
+  int _minYear = 1968;
+  int _maxYear = 2000;
+
+  Future<void> _fetchYear() async {
+    final values = await Future.wait([
+      HorsesRepository.getFirstProductionYear(),
+      HorsesRepository.getLatestProductionYear(),
+    ]);
+    _minYear = (values[0] ?? 1968) + 2;
+    _maxYear = (values[1] ?? 2000);
+    _targetYear = _maxYear;
+  }
 
   Future<void> _fetch() async {
     final data = await HorsesRepository.fetchHorseData();
@@ -97,7 +112,30 @@ class _HorseListPageState extends State<HorseListPage> {
 
   bool get _hasFilter => _filters.isNotEmpty;
 
-  bool _filter(HorseData d) => _filters.filter(d);
+  bool _filter(HorseData d) {
+    if (d.retireYear != null && d.rawData.retireYear! < _targetYear) {
+      return false;
+    }
+    else {
+      int age = _targetYear - d.birthYear;
+      if (age < 2 || 9 < age) {
+        return false;
+      }
+    }
+    return _filters.filter(d);
+  }
+
+  Widget buildYearSelect()
+    => SpinBox(
+        value: _targetYear,
+        min: _minYear,
+        max: _maxYear,
+        onChanged: (v) {
+          setState(() {
+            _targetYear = v;
+          });
+        },
+      );
 
   List<DataColumn> get columns => [
     DataColumn(
@@ -156,7 +194,9 @@ class _HorseListPageState extends State<HorseListPage> {
   @override
   void initState() {
     super.initState();
-    _fetch();
+    _fetchYear().then((_) {
+      _fetch();
+    });
   }
 
   @override
@@ -171,6 +211,8 @@ class _HorseListPageState extends State<HorseListPage> {
                 width: 1100,
                 child: Row(
                   children: [
+                    SizedBox(height: 16),
+                    buildYearSelect(),
                     Expanded(child: SizedBox.shrink()),
                     IconButton(
                       onPressed: _selectFilter,
