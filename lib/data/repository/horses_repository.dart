@@ -32,7 +32,7 @@ class HorsesRepository {
 
   static Future<List<List<String>>> exportToMap() async {
     final result = <List<String>>[];
-    final headers = ["生年","名前","父","母","配合","秘書","牧場長","河童木","長峰","美香","成長型","馬場","距離","評価","所属","引退年"];
+    final headers = ["生年","名前","性別","父","母","配合","秘書","牧場長","河童木","長峰","美香","成長型","馬場","距離","評価","所属","引退年"];
     result.add(headers);
     final data = await fetchHorseData();
     for (final d in data) {
