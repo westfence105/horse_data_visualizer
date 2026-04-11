@@ -3,8 +3,9 @@ import 'package:flutter/material.dart';
 import '../../data/entity/sire_raw.dart';
 import '../../data/entity/sire_summary.dart';
 import '../../data/repository/sires_repository.dart';
-import '../action/file_actions.dart';
 import '../theme/button_style.dart';
+import '../widget/action_buttons.dart';
+import '../widget/add_record_button.dart';
 
 class SiresPage extends StatefulWidget {
   const SiresPage({super.key});
@@ -83,46 +84,12 @@ class _SiresPageState extends State<SiresPage> {
     });
   }
 
-  void _addRecord() {
-    final controller = TextEditingController();
-    showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text("新規追加"),
-        content: SizedBox(
-          width: 240,
-          height: 50,
-          child: Row(
-            children: [
-              Text('名前：'),
-              Expanded(
-                child: TextField(
-                  controller: controller,
-                ),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            child: Text("Cancel"),
-            onPressed: () => Navigator.pop(context, false),
-          ),
-          TextButton(
-            child: Text("OK"),
-            onPressed: () => Navigator.pop(context, true),
-          ),
-        ],
-      ),
-    ).then((ret) async {
-      if (ret == true) {
-        await SiresRepository.updateSires([
-          SireRaw(name: controller.text),
-        ]);
-        await SiresRepository.backfillFromHorses();
-        _fetch();
-      }
-    });
+  Future<void> _addRecord(String name) async {
+    await SiresRepository.updateSires([
+      SireRaw(name: name),
+    ]);
+    await SiresRepository.backfillFromHorses();
+    _fetch();
   }
 
   void _cleanupFictionalSires() {
@@ -166,11 +133,7 @@ class _SiresPageState extends State<SiresPage> {
         Row(
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
-            ElevatedButton(
-              style: elevatedButtonStyleSecond,
-              onPressed: exportSireCsvAction,
-              child: const Text('種牡馬CSVエクスポート'),
-            ),
+            exportSireCsvButton(),
             const SizedBox(width: 16),
             ElevatedButton(
               style: elevatedButtonStyleThird,
@@ -178,10 +141,8 @@ class _SiresPageState extends State<SiresPage> {
               child: const Text('架空種牡馬クリーンアップ'),
             ),
             const SizedBox(width: 24),
-            ElevatedButton(
-              style: elevatedButtonStyleThird,
-              onPressed: _addRecord,
-              child: const Text('新規追加'),
+            AddRecordButton(
+              onComplete: _addRecord,
             ),
             const SizedBox(width: 16),
             ElevatedButton(

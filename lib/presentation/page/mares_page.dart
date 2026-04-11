@@ -3,8 +3,9 @@ import 'package:flutter/material.dart';
 import '../../data/entity/mare_raw.dart';
 import '../../data/entity/mare_summary.dart';
 import '../../data/repository/mares_repository.dart';
-import '../action/file_actions.dart';
 import '../theme/button_style.dart';
+import '../widget/action_buttons.dart';
+import '../widget/add_record_button.dart';
 
 class MaresPage extends StatefulWidget {
   const MaresPage({ super.key });
@@ -108,46 +109,12 @@ class _MaresPageState extends State<MaresPage> {
     });
   }
 
-  void _addRecord() {
-    final controller = TextEditingController();
-    showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text("新規追加"),
-        content: SizedBox(
-          width: 240,
-          height: 50,
-          child: Row(
-            children: [
-              Text('名前：'),
-              Expanded(
-                child: TextField(
-                  controller: controller,
-                ),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            child: Text("Cancel"),
-            onPressed: () => Navigator.pop(context, false),
-          ),
-          TextButton(
-            child: Text("OK"),
-            onPressed: () => Navigator.pop(context, true),
-          ),
-        ],
-      ),
-    ).then((ret) async {
-      if (ret == true) {
-        await MaresRepository.updateMares([
-          MareRaw(name: controller.text),
-        ]);
-        await MaresRepository.backfillFromHorses();
-        _fetch();
-      }
-    });
+  Future<void> _addRecord(String name) async {
+    await MaresRepository.updateMares([
+      MareRaw(name: name),
+    ]);
+    await MaresRepository.backfillFromHorses();
+    _fetch();
   }
 
   @override
@@ -200,16 +167,10 @@ class _MaresPageState extends State<MaresPage> {
         Row(
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
-            ElevatedButton(
-              style: elevatedButtonStyleSecond,
-              onPressed: exportMareCsvAction,
-              child: const Text('繁殖牝馬CSVエクスポート'),
-            ),
+            exportMareCsvButton(),
             const SizedBox(width: 24),
-            ElevatedButton(
-              style: elevatedButtonStyleThird,
-              onPressed: _addRecord,
-              child: const Text('新規追加'),
+            AddRecordButton(
+              onComplete: _addRecord,
             ),
             const SizedBox(width: 16),
             ElevatedButton(

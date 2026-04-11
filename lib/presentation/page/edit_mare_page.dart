@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../data/entity/mare_raw.dart';
 import '../../data/entity/mare_summary.dart';
 import '../../data/repository/mares_repository.dart';
+import '../widget/add_record_button.dart';
 
 class EditMarePage extends StatefulWidget {
   const EditMarePage({ super.key });
@@ -25,6 +26,14 @@ class _EditMarePageState extends State<EditMarePage> {
     });
   }
 
+  Future<void> _addRecord(String name) async {
+    await MaresRepository.updateMares([
+      MareRaw(name: name),
+    ]);
+    await MaresRepository.backfillFromHorses();
+    _fetch();
+  }
+
   @override
   void initState() {
     super.initState();
@@ -42,71 +51,85 @@ class _EditMarePageState extends State<EditMarePage> {
     }
     return Padding(
       padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-      child: Row(
-        spacing: 10,
+      child: Column(
         children: [
-          ...[1,2,3,4,0].map((i) => Expanded(
-            child: Column(
+          Row(
+            children: [
+              Expanded(child: SizedBox.shrink()),
+              AddRecordButton(
+                onComplete: _addRecord,
+              ),
+            ],
+          ),
+          Expanded(
+            child: Row(
               spacing: 10,
               children: [
-                Row(
-                  children: [
-                    Text(
-                      MaresRepository.farms[i],
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w500,
+                ...[1,2,3,4,0].map((i) => Expanded(
+                  child: Column(
+                    spacing: 10,
+                    children: [
+                      Row(
+                        children: [
+                          Text(
+                            MaresRepository.farms[i],
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          Expanded(child: SizedBox.shrink()),
+                          if (i > 0)
+                            Text('(${listElements[i].length})')
+                        ],
                       ),
-                    ),
-                    Expanded(child: SizedBox.shrink()),
-                    if (i > 0)
-                      Text('(${listElements[i].length})')
-                  ],
-                ),
-                Expanded(
-                  child: DragTarget<String>(
-                    onAcceptWithDetails: (data) {
-                      final name = data.data;
-                      setState((){
-                        _mareFarms[data.data] = i;
-                      });
-                      MaresRepository.updateMares([
-                        MareRaw.fromSummary(_mares[name]!, farm: i)
-                      ]);
-                    },
-                    builder: (context, candidateData, rejectedData) => Container(
-                      decoration: BoxDecoration(
-                        border: BoxBorder.all(
-                          color: Colors.grey,
-                        ),
-                      ),
-                      child: ListView.builder(
-                        itemCount: listElements[i].length,
-                        itemBuilder: (context, index) {
-                          final mare = listElements[i][index];
-                          return Draggable(
-                            data: mare.name,
-                            feedback: Material(
-                              elevation: 6,
-                              child: SizedBox(
-                                width: 240,
-                                child: ListTile(
-                                  title: Text(mare.name),
-                                ),
+                      Expanded(
+                        child: DragTarget<String>(
+                          onAcceptWithDetails: (data) {
+                            final name = data.data;
+                            setState((){
+                              _mareFarms[data.data] = i;
+                            });
+                            MaresRepository.updateMares([
+                              MareRaw.fromSummary(_mares[name]!, farm: i)
+                            ]);
+                          },
+                          builder: (context, candidateData, rejectedData) => Container(
+                            decoration: BoxDecoration(
+                              border: BoxBorder.all(
+                                color: Colors.grey,
                               ),
                             ),
-                            child: ListTile(
-                              title: Text(mare.name),
+                            child: ListView.builder(
+                              itemCount: listElements[i].length,
+                              itemBuilder: (context, index) {
+                                final mare = listElements[i][index];
+                                return Draggable(
+                                  data: mare.name,
+                                  feedback: Material(
+                                    elevation: 6,
+                                    child: SizedBox(
+                                      width: 240,
+                                      child: ListTile(
+                                        title: Text(mare.name),
+                                      ),
+                                    ),
+                                  ),
+                                  child: ListTile(
+                                    title: Text(mare.name),
+                                  ),
+                                );
+                              },
                             ),
-                          );
-                        },
+                          ),
+                        ),
                       ),
-                    ),
+                    ],
                   ),
-                ),
+                )),
               ],
             ),
-          )),
+          ),
         ],
       ),
     );

@@ -21,9 +21,13 @@ class _EditBirthPageState extends EditHorsePageStateBase<EditBirthPage> {
 
   @override
   Future<void> loadYears() async {
-    targetYear = (await HorsesRepository.getLatestProductionYear() ?? 1968) + 1;
-    minYear = await HorsesRepository.getFirstProductionYear() ?? 1968;
-    maxYear = (await HorsesRepository.getLatestProductionYear() ?? 2000) + 1;
+    final values = await Future.wait([
+      HorsesRepository.getFirstProductionYear(),
+      HorsesRepository.getLatestDebutGeneration(),
+    ]);
+    minYear = values[0] ?? 1968;
+    maxYear = (values[1] ?? 2000) + 2;
+    targetYear = maxYear;
   }
 
   @override
