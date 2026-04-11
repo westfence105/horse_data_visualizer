@@ -6,6 +6,8 @@ import '../../repository/sires_repository.dart';
 import '../app_database.dart';
 import '../tables.dart';
 import '../../entity/owned_horse_data.dart';
+import 'column_groups.dart';
+import 'cte_defines.dart';
 import 'dao_util.dart';
 
 part 'horses_dao.g.dart';
@@ -15,13 +17,13 @@ class HorsesDao extends DatabaseAccessor<AppDb> with _$HorsesDaoMixin {
   HorsesDao(super.db);
 
   Future<void> upsert(HorseRaw d) async {
-    db.transaction(() async {
+    await db.transaction(() async {
       await _upsert(d);
     });
   }
 
   Future<void> upsertList(Iterable<HorseRaw> data) async {
-    db.transaction(() async {
+    await db.transaction(() async {
       for(final d in data) {
         await _upsert(d);
       }
@@ -104,28 +106,13 @@ class HorsesDao extends DatabaseAccessor<AppDb> with _$HorsesDaoMixin {
     final rows = await customSelect(
       '''
         SELECT
-          h.birth_year,
-          h.sex,
-          f.name AS father_name,
-          m.name AS mother_name,
-          h.rating01,
-          h.rating02,
-          h.rating03,
-          h.rating04,
-          h.rating05,
-          h.name,
-          h.growth,
-          h.surface,
-          h.distance,
-          h.rating,
-          h.mating_rank,
-          h.explosion_power,
-          h.retire_year,
-          h.is_historical,
-          h.region
+          $horseIdentityColumns,
+          $foalRatingColumns,
+          $horseStatusColumns,
+          $horseExtraColumns
         FROM horses h
         LEFT JOIN sires f ON f.id = h.father_id
-        LEFT JOIN mares m ON m.id = h.mother_id
+        LEFT JOIN mares b ON b.id = h.mother_id
         ${whereStr(conds)}
       '''
     ).get();
@@ -136,34 +123,17 @@ class HorsesDao extends DatabaseAccessor<AppDb> with _$HorsesDaoMixin {
     final wp = whereParent(fatherId, motherId);
     final rows = await customSelect(
       '''
+      WITH $childCountsTable, $stallionsTable, $bloodmaresTable
+
       SELECT
-        h.birth_year,
-        h.name,
-        f.name AS father_name,
-        b.name AS mother_name,
-        h.sex,
-        h.growth,
-        h.surface,
-        h.distance,
-        h.rating,
+        $horseIdentityColumns,
+        $horseStatusColumns,
         h.region,
-        COUNT(s.id) + COUNT(m.id) > 0 AS breeding
+        $breedingExistsExpr
       FROM horses AS h
-      LEFT JOIN sires AS s ON h.name = s.name
-      LEFT JOIN mares AS m ON h.name = m.name
       LEFT JOIN sires AS f ON h.father_id = f.id
       LEFT JOIN mares AS b ON h.mother_id = b.id
       WHERE h.rating IS NOT NULL ${wp != null ? 'AND $wp' : ''}
-      GROUP BY
-        h.birth_year,
-        h.name,
-        father_name,
-        mother_name,
-        h.sex,
-        h.growth,
-        h.surface,
-        h.rating,
-        h.region
       '''
     ).get();
 
@@ -180,39 +150,20 @@ class HorsesDao extends DatabaseAccessor<AppDb> with _$HorsesDaoMixin {
 
   Future<List<FoalData>> fetchFoalData(int? fatherId, int? motherId) async {
     final debut = await getDebutGeneration();
-    final wp = whereParent(fatherId, motherId);
     final rows = await customSelect(
       '''
       SELECT
-        h.birth_year,
-        h.name,
-        f.name AS father_name,
-        b.name AS mother_name,
-        h.sex,
-        h.rating01,
-        h.rating02,
-        h.rating03,
-        h.rating04,
-        h.rating05
+        $horseIdentityColumns,
+        $foalRatingColumns
       FROM horses AS h
       LEFT JOIN sires AS f ON h.father_id = f.id
       LEFT JOIN mares AS b ON h.mother_id = b.id
-      WHERE
-        h.birth_year > :debut
-        ${wp != null ? 'AND $wp' : ''} AND
-        h.sex IS NOT NULL
-      GROUP BY
-        h.birth_year,
-        h.name,
-        father_name,
-        mother_name,
-        h.rating01,
-        h.rating02,
-        h.rating03,
-        h.rating04,
-        h.rating05
+      ${whereStr([
+        'h.birth_year > $debut',
+        'h.sex IS NOT NULL',
+        whereParent(fatherId, motherId),
+      ].whereType<String>())}
       ''',
-      variables: [Variable(debut)],
     ).get();
 
     return rows.map(FoalData.fromRow).toList(growable: false);

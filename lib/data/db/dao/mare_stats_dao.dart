@@ -6,6 +6,7 @@ import '../app_database.dart';
 import '../tables.dart';
 import '../../../data/entity/parent_stats.dart';
 import './dao_util.dart';
+import 'cte_defines.dart';
 
 part 'mare_stats_dao.g.dart';
 
@@ -17,7 +18,9 @@ class MareStatsDao extends DatabaseAccessor<AppDb> with _$MareStatsDaoMixin {
     final debut = await HorsesRepository.getLatestDebutGeneration();
     final rows = await customSelect(
       '''
-      WITH $bloodmaresTable
+      WITH 
+        $childCountsTable,
+        $bloodmaresTable
 
       SELECT
         h.id,
@@ -33,10 +36,15 @@ class MareStatsDao extends DatabaseAccessor<AppDb> with _$MareStatsDaoMixin {
         h.breeding_policy,
         h.child_count,
         h.own_count,
-        COUNT(cm.id) AS mare_count,
         (
           SELECT
-            COUNT(sex)
+            COUNT(*)
+          FROM bloodmares cm
+          WHERE cm.mother_id = h.id AND cm.child_count > 0
+        ) AS mare_count,
+        (
+          SELECT
+            COUNT(c.sex)
           FROM horses c
           WHERE c.mother_id = h.id
             AND c.birth_year > :debut
@@ -46,17 +54,7 @@ class MareStatsDao extends DatabaseAccessor<AppDb> with _$MareStatsDaoMixin {
         ON s.id = h.father_id
       LEFT JOIN mares m
         ON m.id = h.mother_id
-      LEFT JOIN bloodmares cm
-        ON cm.mother_id = h.id AND cm.child_count > 0
       ${(whereStr != null) ? 'WHERE $whereStr' : ''}
-      GROUP BY
-        h.id,
-        h.name,
-        h.father_id,
-        h.mother_id,
-        s.name,
-        m.name,
-        h.is_historical
       ''',
       variables: [Variable(debut)],
     ).get();
@@ -98,7 +96,10 @@ class MareStatsDao extends DatabaseAccessor<AppDb> with _$MareStatsDaoMixin {
       FROM horses AS h
       JOIN mares AS m
         ON h.mother_id = m.id
-      ${whereStr([yearRange('h.birth_year', beginYear, endYear)])}
+      ${whereStr([
+        yearRange('h.birth_year', beginYear, endYear),
+        'h.sex IS NOT NULL', 'h.is_historical != TRUE',
+      ])}
       GROUP BY m.id
       ORDER BY child_count DESC
       ''',

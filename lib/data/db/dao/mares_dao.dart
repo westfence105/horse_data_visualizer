@@ -105,7 +105,7 @@ class MaresDao extends DatabaseAccessor<AppDb> with _$MaresDaoMixin {
         Variable(farm),
         Variable(breedingPolicy),
       ],
-      updates: {db.sires},
+      updates: {db.mares},
     );
   }
 
@@ -139,12 +139,14 @@ class MaresDao extends DatabaseAccessor<AppDb> with _$MaresDaoMixin {
           SELECT father_id
           FROM horses
           WHERE horses.name = mares.name
+          ORDER BY birth_year ASC
           LIMIT 1
         ),
         mother_id = (
           SELECT mother_id
           FROM horses
           WHERE horses.name = mares.name
+          ORDER BY birth_year ASC
           LIMIT 1
         ),
         is_historical = FALSE

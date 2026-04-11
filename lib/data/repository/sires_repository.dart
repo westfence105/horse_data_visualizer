@@ -62,8 +62,8 @@ class SiresRepository {
     return _sireStatsDao.fetchSireSummary(sireId);
   }
 
-  static Future<List<SireSummary>> fetchLineageSires(int founderId) {
-    return _sireStatsDao.fetchLineageSires(founderId);
+  static Future<List<SireSummary>> fetchLineageSires(int founderId, [int? beginYear, int? endYear]) {
+    return _sireStatsDao.fetchLineageSires(founderId, beginYear, endYear);
   }
 
   static Future<List<MareSummary>> fetchLineageMares(int founderId) {

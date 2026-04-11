@@ -95,7 +95,7 @@ class _GraphPageState extends State<GraphPage> {
 
   void _fetchSireList() {
     if (_selectedLineage != null) {
-      SiresRepository.fetchLineageSires(_selectedLineage!).then((value) {
+      SiresRepository.fetchLineageSires(_selectedLineage!, _beginYear, _endYear).then((value) {
         setState(() {
           _spots = {};
           _meters = {};
@@ -298,7 +298,7 @@ class _GraphPageState extends State<GraphPage> {
                             padding: EdgeInsets.symmetric(vertical: 16, horizontal: 48),
                             child: Text([
                               '${lineage.lineageName}系',
-                              '種牡馬:${lineage.sireCount}頭',
+                              '種牡馬:${lineage.activeSireCount}頭',
                               '産駒:${lineage.descendantCount}頭',
                             ].join('   ')),
                           );

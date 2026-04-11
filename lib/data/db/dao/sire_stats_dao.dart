@@ -11,6 +11,8 @@ import '../../entity/sire_summary.dart';
 import '../../entity/lineage_summary.dart';
 import '../../entity/horse_status_distribution.dart';
 import './dao_util.dart';
+import 'column_groups.dart';
+import 'cte_defines.dart';
 
 part 'sire_stats_dao.g.dart';
 
@@ -21,38 +23,31 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
   Future<SireSummary?> fetchSireSummary(int sireId) async {
     final rows = await customSelect(
       '''
-      WITH RECURSIVE $sireLineTable, $bloodmaresTable
+      WITH RECURSIVE
+        $sireLineTable,
+        $childCountsTable,
+        $stallionsTable
 
       SELECT
         s.id,
         s.name,
         s.father_id,
-        f.name          AS father_name,
-        COUNT(h.sex)    AS child_count,
-        COUNT(h.rating) AS own_count,
-        COUNT(cm.id)    AS mare_count,
         s.is_historical,
         s.is_founder,
+        s.child_count,
+        s.own_count,
+        s.mare_count,
         s.lineage_status,
         mj.lineage_name AS major_line_name,
         mn.lineage_name AS minor_line_name
-      FROM sires AS s
+      FROM stallions AS s
       LEFT JOIN sires AS f
         ON s.father_id = f.id
-      LEFT JOIN horses AS h
-        ON h.father_id = s.id
       LEFT JOIN major_line mj
         ON mj.sire_id = s.id
       LEFT JOIN minor_line mn
         ON mn.sire_id = s.id
-      LEFT JOIN bloodmares cm
-        ON cm.father_id = s.id AND cm.child_count > 0
       WHERE s.id = :sireId
-      GROUP BY
-        s.id,
-        s.name,
-        s.father_id,
-        father_name
       ORDER BY child_count DESC;
       ''',
       variables: [Variable(sireId)],
@@ -67,42 +62,35 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
   }
 
   Future<List<SireSummary>> fetchAllSireSummaries([int? beginYear, int? endYear]) async {
-    final yr = yearRange('h.birth_year', beginYear, endYear);
     final rows = await customSelect(
       '''
-      WITH RECURSIVE $sireLineTable,$bloodmaresTable
+      WITH RECURSIVE
+        $sireLineTable,
+        ${childCountsWithRange(beginYear, endYear)},
+        $stallionsTable,
+        $bloodmaresTable
 
       SELECT
         s.id,
         s.name,
         s.father_id,
         f.name          AS father_name,
-        COUNT(h.sex)    AS child_count,
-        COUNT(h.rating) AS own_count,
-        COUNT(cm.id)    AS mare_count,
         s.is_historical,
         s.is_founder,
         s.lineage_status,
+        s.child_count,
+        s.own_count,
+        s.mare_count,
         mj.lineage_name AS major_line_name,
         mn.lineage_name AS minor_line_name
-      FROM sires AS s
+      FROM stallions AS s
       LEFT JOIN sires AS f
         ON s.father_id = f.id
-      LEFT JOIN horses AS h
-        ON h.father_id = s.id
-        ${yr != null ? 'AND $yr' : ''}
       LEFT JOIN major_line mj
         ON mj.sire_id = s.id
       LEFT JOIN minor_line mn
         ON mn.sire_id = s.id
-      LEFT JOIN bloodmares cm
-        ON cm.father_id = s.id AND cm.child_count > 0
       WHERE s.name != ''
-      GROUP BY
-        s.id,
-        s.name,
-        s.father_id,
-        father_name
       ORDER BY child_count DESC;
       '''
     ).get();
@@ -140,7 +128,10 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
       FROM horses AS h
       JOIN sires AS s
         ON h.father_id = s.id
-      ${whereStr([yearRange('h.birth_year', beginYear, endYear),'h.sex IS NOT NULL'])}
+      ${whereStr([
+        yearRange('h.birth_year', beginYear, endYear),
+        'h.sex IS NOT NULL', 'h.is_historical != TRUE',
+      ])}
       GROUP BY s.id
       ORDER BY child_count DESC
       ''',
@@ -169,7 +160,7 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
         ) AS direct_child_count,
         f.lineage_status,
         0 AS depth
-      FROM sires f
+      FROM stallions f
         LEFT JOIN sires p ON p.id = f.father_id
         LEFT JOIN sires ds ON ds.father_id = founder_id
         LEFT JOIN horses dh ON dh.father_id = founder_id
@@ -205,8 +196,8 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
   ''';
 
   int _lineageSummaryComparator(a, b) {
-    if (a.sireCount != b.sireCount) {
-      return b.sireCount - a.sireCount;
+    if (a.activeSireCount != b.activeSireCount) {
+      return b.activeSireCount - a.activeSireCount;
     }
     else if (a.depth != b.depth) {
       return a.depth - b.depth;
@@ -222,7 +213,11 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
   Future<List<LineageSummary>> fetchAllLineageSummaries([int? beginYear, int? endYear]) async {
     final rows = await customSelect(
       '''
-      WITh RECURSIVE ${lineageTable()}, $bloodmaresTable, $stallionsTable
+      WITh RECURSIVE
+        ${childCountsWithRange(beginYear, endYear)},
+        $stallionsTable,
+        $bloodmaresTable,
+        ${lineageTable()}
 
       SELECT 
         l.lineage_name,
@@ -233,25 +228,13 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
         l.direct_child_count,
         l.lineage_status,
         d.depth,
-        d.founder_id          AS root_id,
-        COUNT(h.sex)          AS descendant_count,
-        COUNT(h.rating)       AS own_descendant_count,
-        COUNT(DISTINCT s.id)  AS sire_count,
-        COUNT(DISTINCT cm.id) AS mare_count,
-        COUNT(dcm.id)         AS direct_mare_count,
-        MAX(l.depth)          AS max_depth
+        d.founder_id           AS root_id,
+        $lineageScale,
+        MAX(l.depth)    AS max_depth
       FROM lineage l
       LEFT JOIN depths d
         ON d.id = l.founder_id
-      LEFT JOIN horses h
-        ON h.father_id = l.id
-      LEFT JOIN stallions s
-        ON s.id = l.id AND s.child_count > 0
-      LEFT JOIN bloodmares cm
-        ON cm.father_id = l.id AND cm.child_count > 0
-      LEFT JOIN bloodmares dcm
-        ON dcm.father_id = l.founder_id AND dcm.child_count > 0
-      ${whereStr([yearRange('h.birth_year', beginYear, endYear)])}
+      $lineageCountJoins
       GROUP BY l.founder_id
       '''
     ).get();
@@ -270,7 +253,24 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
     final debut = r.read<int>(horses.birthYear.max());
     final rows = await customSelect(
       '''
-      WITh RECURSIVE ${lineageTable()}, $bloodmaresTable
+      WITh RECURSIVE
+        $childCountsTable,
+        $stallionsTable,
+        $bloodmaresTable,
+        ${lineageTable()},
+      
+      lineage_mares AS (
+        SELECT
+          l.founder_id,
+          SUM(COALESCE(sm.mare_count,  0)) AS mare_count,
+          MAX(COALESCE(dcm.mare_count, 0)) AS direct_mare_count
+        FROM lineage l
+        LEFT JOIN sire_mare_counts sm
+          ON sm.sire_id = l.id
+        LEFT JOIN sire_mare_counts dcm
+          ON dcm.sire_id = l.founder_id
+        GROUP BY l.founder_id
+      )
 
       SELECT
         l.lineage_name AS name,
@@ -279,10 +279,13 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
         l.direct_child_count,
         l.is_founder_line,
         d.depth,
-        COUNT(h.sex)    AS descendant_count,
         COUNT(h.sex)    AS child_count,
-        COUNT(DISTINCT cm.id)  AS mare_count,
-        COUNT(dcm.id)   AS direct_mare_count,
+        COUNT(h.sex)    AS descendant_count,
+        COUNT(h.rating) AS own_count,
+        COUNT(h.rating) AS own_descendant_count,
+        COUNT(DISTINCT l.id)  AS active_sire_count,
+        lm.mare_count,
+        lm.direct_mare_count,
         AVG(h.sex)      AS sex,
         AVG(h.rating01) AS rating01,
         AVG(h.rating02) AS rating02,
@@ -293,16 +296,15 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
         AVG(h.surface)  AS surface,
         AVG(h.distance) AS distance,
         AVG(h.rating)   AS rating,
-        SUM(CASE WHEN h.rating IS NOT NULL THEN 1 ELSE 0 END) AS own_count,
         SUM(CASE WHEN h.birth_year > :year THEN 1 ELSE 0 END) AS foal_count
       FROM horses AS h
       LEFT JOIN lineage AS l ON l.id = h.father_id
       LEFT JOIN depths d ON l.founder_id = d.id
-      LEFT JOIN bloodmares cm
-        ON cm.father_id = l.id AND cm.child_count > 0
-      LEFT JOIN bloodmares dcm
-        ON dcm.father_id = l.founder_id AND cm.child_count > 0
-      ${whereStr([yearRange('h.birth_year', beginYear, endYear)])}
+      LEFT JOIN lineage_mares lm ON lm.founder_id = l.founder_id
+      ${whereStr([
+        yearRange('h.birth_year', beginYear, endYear),
+        'h.sex IS NOT NULL', 'h.is_historical != TRUE',
+      ])}
       GROUP BY l.founder_id
       ORDER BY descendant_count DESC
       ''',
@@ -321,7 +323,11 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
     ];
     final rows = await customSelect(
       '''
-      WITh RECURSIVE ${lineageTable(conds)}, $bloodmaresTable,
+      WITh RECURSIVE
+        $childCountsTable,
+        $stallionsTable,
+        $bloodmaresTable,
+        ${lineageTable(conds)},
 
       target_lineages AS (
         SELECT
@@ -341,16 +347,10 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
         l.direct_child_count,
         l.is_founder_line,
         d.depth,
-        COUNT(DISTINCT cm.id) AS mare_count,
-        COUNT(h.sex)  AS descendant_count,
-        COUNT(dcm.id) AS direct_mare_count
+        $lineageScale
       FROM lineage l
-      LEFT JOIN horses h ON h.father_id = l.id
       LEFT JOIN depths d ON l.founder_id = d.id
-      LEFT JOIN bloodmares cm
-        ON cm.father_id = l.id AND cm.child_count > 0
-      LEFT JOIN bloodmares dcm
-        ON dcm.father_id = l.founder_id AND cm.child_count > 0
+      $lineageCountJoins
       WHERE l.founder_id IN (
         SELECT founder_id FROM target_lineages
       )
@@ -367,10 +367,12 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
   }
 
   Future<List<SireSummary>> fetchLineageSires(int founderId, [int? beginYear, int? endYear]) async {
-    final yr = yearRange('h.birth_year', beginYear, endYear);
     final rows = await customSelect(
       '''
-      WITh RECURSIVE ${lineageTable(['f.id = $founderId'])}, $bloodmaresTable
+      WITh RECURSIVE
+        ${childCountsWithRange(beginYear, endYear)},
+        $stallionsTable,
+        ${lineageTable(['f.id = $founderId'])}
 
       SELECT
         s.id,
@@ -378,21 +380,12 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
         s.father_id,
         l.lineage_name AS father_name,
         l.depth,
-        COUNT(h.sex)    AS child_count,
-        COUNT(h.rating) AS own_count,
-        COUNT(cm.id)    AS mare_count
+        s.child_count,
+        s.own_count,
+        s.mare_count
       FROM lineage AS l
-      LEFT JOIN horses h
-        ON l.id = h.father_id
-        ${yr != null ? 'AND $yr' : ''}
-      LEFT JOIN sires AS s
+      LEFT JOIN stallions AS s
         ON l.id = s.id
-      LEFT JOIN bloodmares cm
-        ON cm.father_id = s.id AND cm.child_count > 0
-      GROUP BY
-        s.id,
-        s.name,
-        l.depth
       ORDER BY l.depth ASC, child_count DESC;
       ''',
     ).get();
@@ -403,7 +396,11 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
   Future<List<MareSummary>> fetchLineageMares(int founderId) async {
     final rows = await customSelect(
       '''
-      WITh RECURSIVE ${lineageTable(['f.id = $founderId'])}, $bloodmaresTable
+      WITh RECURSIVE
+        $childCountsTable,
+        $stallionsTable,
+        $bloodmaresTable,
+        ${lineageTable(['f.id = $founderId'])}
 
       SELECT
         h.id,
@@ -411,30 +408,17 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
         h.father_id,
         h.mother_id,
         s.name AS father_name,
-        m.name AS mother_name,
+        b.name AS mother_name,
         h.is_historical,
-        COUNT(c.sex) AS child_count,
-        COUNT(c.rating) AS own_count,
-        COUNT(cm.id) AS mare_count
-      FROM mares AS h
+        h.child_count,
+        h.own_count
+      FROM bloodmares AS h
       INNER JOIN lineage l
         ON l.id = h.father_id
       LEFT JOIN sires s
         ON s.id = h.father_id
-      LEFT JOIN mares m
-        ON m.id = h.mother_id
-      LEFT JOIN horses c
-        ON c.mother_id = h.id
-      LEFT JOIN bloodmares cm
-        ON cm.mother_id = h.id AND cm.child_count > 0
-      GROUP BY
-        h.id,
-        h.name,
-        h.father_id,
-        h.mother_id,
-        s.name,
-        m.name,
-        h.is_historical
+      LEFT JOIN mares b
+        ON b.id = h.mother_id
       ''',
     ).get();
 
@@ -444,35 +428,21 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
   Future<List<OwnedHorseData>> fetchLineageOwnedHorseData(int founderId) async {
     final rows = await customSelect(
       '''
-      WITh RECURSIVE ${lineageTable(['f.id = $founderId'])}
+      WITh RECURSIVE 
+        $childCountsTable,
+        $stallionsTable,
+        $bloodmaresTable,
+        ${lineageTable(['f.id = $founderId'])}
 
       SELECT
-        h.birth_year,
-        h.name,
-        f.name AS father_name,
-        b.name AS mother_name,
-        h.sex,
-        h.growth,
-        h.surface,
-        h.distance,
-        h.rating,
-        COUNT(s.id) + COUNT(m.id) > 0 AS breeding
+        $horseIdentityColumns,
+        $horseStatusColumns,
+        $breedingExistsExpr
       FROM horses AS h
       INNER JOIN lineage l ON l.id = h.father_id
-      LEFT JOIN sires AS s ON h.name = s.name
-      LEFT JOIN mares AS m ON h.name = m.name
       LEFT JOIN sires AS f ON h.father_id = f.id
       LEFT JOIN mares AS b ON h.mother_id = b.id
       WHERE h.rating IS NOT NULL
-      GROUP BY
-        h.birth_year,
-        h.name,
-        father_name,
-        mother_name,
-        h.sex,
-        h.growth,
-        h.surface,
-        h.rating
       ''',
     ).get();
 
@@ -483,34 +453,19 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
     final debut = await getDebutGeneration();
     final rows = await customSelect(
       '''
-      WITh RECURSIVE ${lineageTable(['f.id = $founderId'])}
+      WITh RECURSIVE
+        $childCountsTable,
+        $stallionsTable,
+        ${lineageTable(['f.id = $founderId'])}
 
       SELECT
-        h.birth_year,
-        h.name,
-        f.name AS father_name,
-        b.name AS mother_name,
-        h.sex,
-        h.rating01,
-        h.rating02,
-        h.rating03,
-        h.rating04,
-        h.rating05
+        $horseIdentityColumns,
+        $foalRatingColumns
       FROM horses AS h
       INNER JOIN lineage l ON l.id = h.father_id
       LEFT JOIN sires AS f ON h.father_id = f.id
       LEFT JOIN mares AS b ON h.mother_id = b.id
       WHERE h.birth_year > :debut AND h.sex IS NOT NULL
-      GROUP BY
-        h.birth_year,
-        h.name,
-        father_name,
-        mother_name,
-        h.rating01,
-        h.rating02,
-        h.rating03,
-        h.rating04,
-        h.rating05
       ''',
       variables: [Variable(debut)],
     ).get();
@@ -528,15 +483,21 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
     }
     final rows = await customSelect(
       '''
-      WITh RECURSIVE ${lineageTable(['f.id = $founderId'])}
+      WITh RECURSIVE
+        $childCountsTable,
+        $stallionsTable,
+        ${lineageTable(['f.id = $founderId'])}
 
       SELECT
         l.lineage_name,
-        $key AS value,
+        h.$key AS value,
         COUNT(*) AS count
-      FROM horses
+      FROM horses h
       INNER JOIN lineage l ON l.id = father_id
-      ${whereStr([yearRange('birth_year', beginYear, endYear)])}
+      ${whereStr([
+        yearRange('h.birth_year', beginYear, endYear),
+        'h.sex IS NOT NULL', 'h.is_historical != TRUE',
+      ])}
       GROUP BY l.lineage_name, value
       ORDER BY value
       ''',
@@ -568,7 +529,10 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
   Future<LineageAnnualProduction?> fetchLineageAnnualProduction(int founderId, [int? beginYear, int? endYear]) async {
     final rows = await customSelect(
       '''
-      WITh RECURSIVE ${lineageTable(['f.id = $founderId'])}
+      WITh RECURSIVE
+        $childCountsTable,
+        $stallionsTable,
+        ${lineageTable(['f.id = $founderId'])}
 
       SELECT
         l.lineage_name,
@@ -576,7 +540,9 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
         COUNT(h.sex) AS count
       FROM horses h
       INNER JOIN lineage l ON l.id = father_id
-      ${whereStr([yearRange('birth_year', beginYear, endYear)])}
+      ${whereStr([
+        yearRange('h.birth_year', beginYear, endYear),
+      ])}
       GROUP BY l.lineage_name, birth_year
       ORDER BY birth_year
       ''',
@@ -610,15 +576,21 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
   Future<LineageAnnualSexRatio?> fetchLineageAnnualSexRatio(int founderId, [int? beginYear, int? endYear]) async {
     final rows = await customSelect(
       '''
-      WITh RECURSIVE ${lineageTable(['f.id = $founderId'])}
+      WITh RECURSIVE
+        $childCountsTable,
+        $stallionsTable,
+        ${lineageTable(['f.id = $founderId'])}
 
       SELECT
         l.lineage_name,
-        birth_year,
-        AVG(sex) AS ratio
-      FROM horses
+        h.birth_year,
+        AVG(h.sex) AS ratio
+      FROM horsesh
       INNER JOIN lineage l ON l.id = father_id
-      ${whereStr([yearRange('birth_year', beginYear, endYear)])}
+      ${whereStr([
+        yearRange('h.birth_year', beginYear, endYear),
+        'h.sex IS NOT NULL', 'h.is_historical != TRUE',
+      ])}
       GROUP BY l.lineage_name, birth_year
       ORDER BY birth_year
       ''',

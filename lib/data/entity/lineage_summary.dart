@@ -5,7 +5,7 @@ class LineageSummary {
   final String lineageName;
   final String? progenitorName;
   final int? progenitorId;
-  final int sireCount;
+  final int activeSireCount;
   final int descendantCount;
   final int ownDescendantCount;
   final int directChildCount;
@@ -18,7 +18,7 @@ class LineageSummary {
   const LineageSummary({
     required this.lineageName,
     required this.founderId,
-    required this.sireCount,
+    required this.activeSireCount,
     required this.descendantCount,
     required this.ownDescendantCount,
     required this.directChildCount,
@@ -34,7 +34,7 @@ class LineageSummary {
   LineageSummary.fromRow(QueryRow r) : this(
         lineageName: r.read<String>('lineage_name'),
         founderId: r.read<int>('founder_id'),
-        sireCount: r.read<int>('sire_count'),
+        activeSireCount: r.read<int>('active_sire_count'),
         descendantCount: r.read<int>('descendant_count'),
         ownDescendantCount: r.read<int>('own_descendant_count'),
         directChildCount: r.read<int>('direct_child_count'),

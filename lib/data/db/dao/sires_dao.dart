@@ -110,6 +110,7 @@ class SiresDao extends DatabaseAccessor<AppDb> with _$SiresDaoMixin {
           SELECT father_id
           FROM horses
           WHERE horses.name = sires.name
+          ORDER BY birth_year ASC
           LIMIT 1
         ),
         is_historical = FALSE
@@ -150,13 +151,16 @@ class SiresDao extends DatabaseAccessor<AppDb> with _$SiresDaoMixin {
         LEFT JOIN horses h
           ON h.father_id = l.sire_id
         GROUP BY l.founder_id
-        HAVING COUNT(h.sex) = 0
+        HAVING COUNT(h.father_id) = 0
       )
       DELETE FROM sires
       WHERE id IN (
-        SELECT founder_id
-        FROM targets
-      )
+        SELECT sire_id FROM lineage
+        WHERE founder_id IN (
+          SELECT founder_id
+          FROM targets
+        )
+      ) AND is_historical != TRUE
       ''',
       updates: {sires},
     );

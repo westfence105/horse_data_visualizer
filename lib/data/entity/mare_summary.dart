@@ -10,7 +10,6 @@ class MareSummary {
   final int? childCount;
   final int? ownCount;
   final int? foalCount;
-  final int? mareCount;
   final bool? isHistorical;
   final bool? isFounder;
   final bool? isGradeWinner;
@@ -27,7 +26,6 @@ class MareSummary {
       this.childCount,
       this.ownCount,
       this.foalCount,
-      this.mareCount,
       this.isHistorical,
       this.isFounder,
       this.isGradeWinner,
@@ -45,7 +43,6 @@ class MareSummary {
     childCount: r.read('child_count'),
     ownCount: r.read('own_count'),
     foalCount: r.read('foal_count'),
-    mareCount: r.read('mare_count'),
     isHistorical: r.read('is_historical'),
     isFounder: r.read('is_founder'),
     isGradeWinner: r.read('is_grade_winner'),
