@@ -15,7 +15,7 @@ import 'dao/mare_stats_dao.dart';
 part 'app_database.g.dart';
 
 @DriftDatabase(
-  tables: [Sires, Horses],
+  tables: [Sires, Horses, Mares],
   daos: [SiresDao, MaresDao, HorsesDao, SireStatsDao, MareStatsDao],
 )
 class AppDb extends _$AppDb {

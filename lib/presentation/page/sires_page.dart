@@ -76,7 +76,6 @@ class _SiresPageState extends State<SiresPage> {
         );
       }
     }
-    // debugPrint(changedData.map((s) => '${s.name}, ${s.father}, ${s.isHistorical}').join('\n'));
     SiresRepository.updateSires(
       changedData,
     ).then((_) {

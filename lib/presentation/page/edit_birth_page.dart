@@ -21,9 +21,9 @@ class _EditBirthPageState extends EditHorsePageStateBase<EditBirthPage> {
 
   @override
   Future<void> loadYears() async {
-    targetYear = (await HorsesRepository.getLatestProductionYear() ?? 1968);
+    targetYear = (await HorsesRepository.getLatestProductionYear() ?? 1968) + 1;
     minYear = await HorsesRepository.getFirstProductionYear() ?? 1968;
-    maxYear = await HorsesRepository.getLatestProductionYear() ?? 2000;
+    maxYear = (await HorsesRepository.getLatestProductionYear() ?? 2000) + 1;
   }
 
   @override
@@ -80,7 +80,6 @@ class _EditBirthPageState extends EditHorsePageStateBase<EditBirthPage> {
   DataRow buildRow(HorseRaw raw) {
     final d = HorseData.fromRaw(raw);
     final motherName = d.motherName;
-    debugPrint(motherName);
     final named = (d.isHistorical == true && d.name?.isNotEmpty == true);
     String prefix = '   ';
     if (raw.isHistorical == true) {
