@@ -19,15 +19,14 @@ abstract class EditHorsePageStateBase<T extends StatefulWidget> extends State<T>
   Future<void> fetch() async {
     final data = await HorsesRepository.fetchHorseRaw(beginYear: targetYear, endYear: targetYear);
     horses = {};
-    for (HorseRaw d in data) {
-      if (d.isHistorical == true && d.name?.isNotEmpty != true) {
-        d = d.copyWith(name: '☆');
-      }
+    for (HorseRaw d in prepareData(data)) {
       horses[d.motherName] = d;
     }
     await onFetchCompleted();
     setState(() {});
   }
+
+  Iterable<HorseRaw> prepareData(Iterable<HorseRaw> data) => data;
 
   Future<void> onFetchCompleted();
 

@@ -38,8 +38,8 @@ class _EditMatingPageState extends EditHorsePageStateBase<EditMatingPage> {
       HorsesRepository.getFirstProductionYear(),
       HorsesRepository.getLatestProductionYear(),
     ]);
-    minYear = values[0] ?? 1968;
-    maxYear = (values[1] ?? 2000) + 1;
+    minYear = (values[0] ?? 1968);
+    maxYear = (values[1] ?? 1968) + 1;
     targetYear = maxYear;
   }
 
@@ -250,7 +250,7 @@ class _EditMatingPageState extends EditHorsePageStateBase<EditMatingPage> {
           md.isHistorical != true ?
             TextField(
               controller: _explosionTextControllers[mother],
-              onChanged: (value) => matings[mother]!.explosionPower = int.tryParse(value),
+              onChanged: (value) => matings[mother]!.explosionPower = int.tryParse(value) ?? 0,
               inputFormatters: [
                 FilteringTextInputFormatter.digitsOnly,
               ],

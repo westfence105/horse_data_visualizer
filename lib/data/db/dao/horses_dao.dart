@@ -48,7 +48,7 @@ class HorsesDao extends DatabaseAccessor<AppDb> with _$HorsesDaoMixin {
         distance: Value(positiveOrNull(d.distance)),
         rating:   Value(positiveOrNull(d.rating)),
         matingRank: Value(d.matingRank),
-        explosionPower: Value(d.explosionPower),
+        explosionPower: Value(rangeOrNull(d.explosionPower,1,200)),
         retireYear: Value(rangeOrNull(d.retireYear, d.birthYear + 3, d.birthYear + 9)),
         isHistorical: Value(d.isHistorical ?? false),
         region: Value(d.region),

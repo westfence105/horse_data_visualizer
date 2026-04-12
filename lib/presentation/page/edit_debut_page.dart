@@ -23,10 +23,14 @@ class _EditDebutPageState extends EditHorsePageStateBase<EditDebutPage> {
 
   @override
   Future<void> loadYears() async {
-    targetYear = (await HorsesRepository.getLatestDebutGeneration() ?? 1968) + 1;
+    targetYear = (await HorsesRepository.getLatestDebutGeneration() ?? 1967) + 1;
     minYear = await HorsesRepository.getFirstProductionYear() ?? 1968;
-    maxYear = await HorsesRepository.getLatestProductionYear() ?? 2000;
+    maxYear = (await HorsesRepository.getLatestProductionYear() ?? 1968) + 1;
   }
+
+  @override
+  Iterable<HorseRaw> prepareData(Iterable<HorseRaw> data)
+    => data.where((r) => r.sex != null || r.isHistorical == true);
 
   @override
   Future<void> onFetchCompleted() async {

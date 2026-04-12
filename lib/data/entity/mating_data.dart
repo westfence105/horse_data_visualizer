@@ -46,5 +46,6 @@ class MatingData {
         rating05: -1,
         matingRank: matingRank,
         explosionPower: explosionPower,
+        isHistorical: isHistorical,
       );
 }

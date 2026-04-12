@@ -25,10 +25,14 @@ class _EditBirthPageState extends EditHorsePageStateBase<EditBirthPage> {
       HorsesRepository.getFirstProductionYear(),
       HorsesRepository.getLatestDebutGeneration(),
     ]);
-    minYear = values[0] ?? 1968;
-    maxYear = (values[1] ?? 2000) + 2;
-    targetYear = maxYear;
+    minYear = (values[0] ?? 1968);
+    maxYear = (values[1] ?? 1967) + 2;
+    targetYear = (values[1] ?? 1966) + 2;
   }
+
+  @override
+  Iterable<HorseRaw> prepareData(Iterable<HorseRaw> data)
+    => data.where((r) => r.fatherName.isNotEmpty == true);
 
   @override
   Future<void> onFetchCompleted() async {
@@ -52,7 +56,11 @@ class _EditBirthPageState extends EditHorsePageStateBase<EditBirthPage> {
   List<DataColumn> get columns => <DataColumn>[
     DataColumn(
       label: Text('名前'),
-      columnWidth: FixedColumnWidth(240),
+      columnWidth: FixedColumnWidth(200),
+    ),
+    DataColumn(
+      label: Text('父'),
+      columnWidth: FixedColumnWidth(180),
     ),
     DataColumn(
       label: Text(' 性別'),
@@ -96,6 +104,14 @@ class _EditBirthPageState extends EditHorsePageStateBase<EditBirthPage> {
             named ?
               '$prefix${d.name}' :
               '$prefix${d.motherName}${d.birthYear % 100}',
+            style: TextStyle(
+              fontSize: 16,
+            ),
+          ),
+        ),
+        DataCell(
+          Text(
+            d.fatherName,
             style: TextStyle(
               fontSize: 16,
             ),

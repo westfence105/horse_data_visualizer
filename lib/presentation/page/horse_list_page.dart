@@ -24,7 +24,7 @@ class _HorseListPageState extends State<HorseListPage> {
       HorsesRepository.getLatestProductionYear(),
     ]);
     _minYear = (values[0] ?? 1968) + 2;
-    _maxYear = (values[1] ?? 2000);
+    _maxYear = (values[1] ?? 1968) + 2;
     _targetYear = _maxYear;
   }
 
