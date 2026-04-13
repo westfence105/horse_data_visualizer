@@ -3,9 +3,14 @@ import 'package:flutter/material.dart';
 import '../../data/entity/mare_raw.dart';
 import '../../data/entity/mare_summary.dart';
 import '../../data/repository/mares_repository.dart';
+import '../../data/repository/sires_repository.dart';
+import '../../data/service/store/mare_name_store.dart';
+import '../../data/service/store/sire_name_store.dart';
 import '../theme/button_style.dart';
 import '../widget/action_buttons.dart';
 import '../widget/add_record_button.dart';
+import '../widget/mare_name_input.dart';
+import '../widget/sire_name_input.dart';
 
 class MaresPage extends StatefulWidget {
   const MaresPage({ super.key });
@@ -121,6 +126,8 @@ class _MaresPageState extends State<MaresPage> {
   void initState() {
     super.initState();
     _fetch();
+    sireNameStore.refresh();
+    mareNameStore.refresh();
   }
 
   @override
@@ -205,16 +212,16 @@ class _MaresPageState extends State<MaresPage> {
                     ),
                   ),
                   DataCell(
-                    TextField(
-                      controller: TextEditingController(
+                    SireNameInput(
+                      textEditingController: TextEditingController(
                         text: s.fatherName ?? '',
                       ),
                       onChanged: (value) => _changedFather[s.name] = value,
                     ),
                   ),
                   DataCell(
-                    TextField(
-                      controller: TextEditingController(
+                    MareNameInput(
+                      textEditingController: TextEditingController(
                         text: s.motherName ?? '',
                       ),
                       onChanged: (value) => _changedMother[s.name] = value,

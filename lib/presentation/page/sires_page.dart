@@ -3,9 +3,11 @@ import 'package:flutter/material.dart';
 import '../../data/entity/sire_raw.dart';
 import '../../data/entity/sire_summary.dart';
 import '../../data/repository/sires_repository.dart';
+import '../../data/service/store/sire_name_store.dart';
 import '../theme/button_style.dart';
 import '../widget/action_buttons.dart';
 import '../widget/add_record_button.dart';
+import '../widget/sire_name_input.dart';
 
 class SiresPage extends StatefulWidget {
   const SiresPage({super.key});
@@ -102,6 +104,7 @@ class _SiresPageState extends State<SiresPage> {
   void initState() {
     super.initState();
     _fetch();
+    sireNameStore.refresh();
   }
 
   @override
@@ -181,8 +184,8 @@ class _SiresPageState extends State<SiresPage> {
                     ),
                   ),
                   DataCell(
-                    TextField(
-                      controller: _fatherTextControllers[s.name],
+                    SireNameInput(
+                      textEditingController: _fatherTextControllers[s.name]!,
                       onChanged: (value) => _changedFather[s.name] = value,
                     ),
                   ),

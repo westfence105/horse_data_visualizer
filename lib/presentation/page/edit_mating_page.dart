@@ -7,6 +7,7 @@ import '../../data/repository/horses_repository.dart';
 import '../../data/repository/mares_repository.dart';
 import '../../data/repository/sires_repository.dart';
 import '../misc/string_extension.dart';
+import '../widget/sire_name_input.dart';
 import 'edit_horse_base.dart';
 
 class EditMatingPage extends StatefulWidget {
@@ -20,10 +21,6 @@ class _EditMatingPageState extends EditHorsePageStateBase<EditMatingPage> {
   Map<String, MatingData> matings = {};
   final Map<String,TextEditingController> _fatherTextControllers = {};
   final Map<String,TextEditingController> _explosionTextControllers = {};
-
-  final Future<List<String>> _sireNames = SiresRepository.fetchAllSireSummaries().then(
-    (data) => data.map((s) => s.name).toList(growable: false)
-  );
 
   @override
   int minYear = 1968;
@@ -207,15 +204,8 @@ class _EditMatingPageState extends EditHorsePageStateBase<EditMatingPage> {
           ),
         ),
         DataCell(
-          Autocomplete<String>(
-            key: Key('${md.mother}${md.birthYear}'),
-            textEditingController: _fatherTextControllers[mother],
-            focusNode: FocusNode(),
-            optionsBuilder: (value) async
-              => (await _sireNames).where(
-                   (s) => s.startsWith(value.text.toKatakana()),
-                 ),
-            onSelected: (value) => matings[mother]!.father = value,
+          SireNameInput(
+            textEditingController: _fatherTextControllers[mother]!,
           ),
         ),
         DataCell(

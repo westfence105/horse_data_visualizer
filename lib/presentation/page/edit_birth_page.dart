@@ -56,7 +56,7 @@ class _EditBirthPageState extends EditHorsePageStateBase<EditBirthPage> {
   List<DataColumn> get columns => <DataColumn>[
     DataColumn(
       label: Text('名前'),
-      columnWidth: FixedColumnWidth(200),
+      columnWidth: FixedColumnWidth(240),
     ),
     DataColumn(
       label: Text('父'),
