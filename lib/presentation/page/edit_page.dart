@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../data/repository/horses_repository.dart';
 import 'edit_birth_page.dart';
 import 'edit_debut_page.dart';
 import 'edit_mare_page.dart';
@@ -31,6 +32,16 @@ class _EditPageState extends State<EditPage> {
     const EditRetirePage(),
     const EditMarePage(),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    HorsesRepository.cleanupEmptyHorses().then((count) {
+      if (count > 0) {
+        debugPrint('Deleted $count empty horse records.');
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) => Padding(

@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../../data/entity/mare_raw.dart';
 import '../../data/entity/mare_summary.dart';
 import '../../data/repository/mares_repository.dart';
-import '../../data/repository/sires_repository.dart';
 import '../../data/service/store/mare_name_store.dart';
 import '../../data/service/store/sire_name_store.dart';
 import '../theme/button_style.dart';

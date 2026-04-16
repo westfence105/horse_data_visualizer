@@ -32,7 +32,7 @@ sire_mare_counts AS (
     COUNT(m.id) AS mare_count
   FROM mares m
   LEFT JOIN mare_child_counts mc ON mc.mare_id = m.id
-  WHERE COALESCE(mc.child_count, 0) > 0
+  WHERE m.farm > 0 OR COALESCE(mc.child_count, 0) > 0
   GROUP BY father_id
 )
 ''';

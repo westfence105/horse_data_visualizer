@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 
 import '../../data/entity/horse_raw.dart';
@@ -22,9 +24,10 @@ class _HorseListPageState extends State<HorseListPage> {
     final values = await Future.wait([
       HorsesRepository.getFirstProductionYear(),
       HorsesRepository.getLatestProductionYear(),
+      HorsesRepository.getLatestDebutGeneration(),
     ]);
     _minYear = (values[0] ?? 1968) + 2;
-    _maxYear = (values[1] ?? 1968) + 2;
+    _maxYear = max((values[1] ?? 1970), (values[2] ?? 1968) + 2);
     _targetYear = _maxYear;
   }
 
@@ -145,7 +148,7 @@ class _HorseListPageState extends State<HorseListPage> {
     ),
     DataColumn(
       label: Text('名前'),
-      columnWidth: FixedColumnWidth(150),
+      columnWidth: FixedColumnWidth(160),
       onSort: _onSort,
     ),
     DataColumn(

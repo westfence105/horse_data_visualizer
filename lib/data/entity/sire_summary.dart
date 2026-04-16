@@ -10,6 +10,7 @@ class SireSummary {
   final int? lineageStatus;
   final int? childCount;
   final int? ownCount;
+  final int? foalCount;
   final int? mareCount;
   final bool? isHistorical;
   final bool? isFounder;
@@ -23,6 +24,7 @@ class SireSummary {
       this.isHistorical,
       this.isFounder,
       this.ownCount,
+      this.foalCount,
       this.mareCount,
       this.majorLine,
       this.minorLine,
@@ -38,6 +40,7 @@ class SireSummary {
       isHistorical: r.read('is_historical'),
       isFounder: r.read('is_founder'),
       ownCount: r.read('own_count'),
+      foalCount: r.read('foal_count'),
       mareCount: r.read('mare_count'),
       majorLine: r.read('major_line_name'),
       minorLine: r.read('minor_line_name'),

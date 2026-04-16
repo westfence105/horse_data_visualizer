@@ -22,9 +22,10 @@ class _EditRetirePageState extends State<EditRetirePage> {
     final values = await Future.wait([
       HorsesRepository.getFirstProductionYear(),
       HorsesRepository.getLatestProductionYear(),
+      HorsesRepository.getLatestDebutGeneration(),
     ]);
     _minYear = (values[0] ?? 1968) + 3;
-    _maxYear = (values[1] ?? 1968) + 3;
+    _maxYear = (values[2] ?? 1968) + 3;
     _targetYear = _maxYear;
   }
 

@@ -161,4 +161,11 @@ class HorsesDao extends DatabaseAccessor<AppDb> with _$HorsesDaoMixin {
 
     return rows.map(FoalData.fromRow).toList(growable: false);
   }
+
+  Future<int> cleanupEmptyRecords() async {
+    int emptyFather = await SiresRepository.findByName("");
+    final q = delete(horses)
+      ..where((h) => h.fatherId.equals(emptyFather));
+    return await q.go();
+  }
 }

@@ -13,11 +13,11 @@ import '../misc/enums.dart';
 import '../widget/action_buttons.dart';
 import '../widget/aggregation_mode_selector.dart';
 
-class ListPage extends StatefulWidget {
-  const ListPage({ super.key });
+class ChildListPage extends StatefulWidget {
+  const ChildListPage({ super.key });
 
   @override
-  State<StatefulWidget> createState() => _ListPageState();
+  State<StatefulWidget> createState() => _ChildListPageState();
 }
 
 class _SexPair<T> {
@@ -26,7 +26,7 @@ class _SexPair<T> {
   const _SexPair(this.male, this.female);
 }
 
-class _ListPageState extends State<ListPage> {
+class _ChildListPageState extends State<ChildListPage> {
   int? _selectedParent;
   List<SireSummary> _sireSummaries = [];
   List<MareSummary> _mareSummaries = [];
@@ -50,22 +50,25 @@ class _ListPageState extends State<ListPage> {
     ]).then((result) {
       setState(() {
         _sireSummaries = result[0].cast<SireSummary>()
-          .where((e) => (e.ownCount ?? 0) + (e.mareCount ?? 0) > 0).toList()
+          .where((e) => (e.childCount ?? 0) + (e.foalCount ?? 0) + (e.mareCount ?? 0) > 0).toList()
           ..sort(_compareSires);
         _mareSummaries = result[1].cast<MareSummary>()
           .where((e) => (e.ownCount ?? 0) + (e.foalCount ?? 0) > 0).toList()
           ..sort(_compareMares);
         _lineageSummaries = result[2].cast<LineageSummary>()
-          .where((e) => e.ownDescendantCount > 0).toList();
+          .where((e) => e.descendantCount > 0).toList();
       });
     });
   }
 
   int _compareSires(SireSummary a, SireSummary b) {
-    if (a.childCount != null && b.childCount != null && a.childCount != b.childCount) {
+    if (a.ownCount != b.ownCount) {
+      return b.ownCount! - a.ownCount!;
+    }
+    else if (a.childCount != b.childCount) {
       return b.childCount! - a.childCount!;
     }
-    else if (a.mareCount != null && b.mareCount != null && a.mareCount != b.mareCount) {
+    else if (a.mareCount != b.mareCount) {
       return b.mareCount! - a.mareCount!;
     }
     else {
@@ -140,7 +143,10 @@ class _ListPageState extends State<ListPage> {
     });
     mareFuture.then((result) {
       setState(() {
-        _mareData = result.where((m) => (m.childCount ?? 0) > 0).toList(growable: false);
+        _mareData = result.where(
+          (m) => ((m.farm ?? 0) > 0) || 
+                 ((m.childCount ?? 0) > 0)
+          ).toList(growable: false);
       });
     });
   }
@@ -221,7 +227,7 @@ class _ListPageState extends State<ListPage> {
               children: [
                 ConstrainedBox(
                   constraints: BoxConstraints(
-                    maxWidth: 180,
+                    maxWidth: 200,
                   ),
                   child: ListView.builder(
                     shrinkWrap: true,
@@ -370,7 +376,7 @@ class _ListPageState extends State<ListPage> {
           (r) => _createNameText(
             mark: '・',
             name: '${r.motherName}${r.birthYear}',
-            suffix: '[${r.fatherName}]',
+            suffix: _aggMode != AggregationMode.sire ? '[${r.fatherName}]' : '',
             color: (r.sex == 1) ? 
               Color(0xff000080) : 
               Color(0xffff0000),

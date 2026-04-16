@@ -5,8 +5,6 @@ import '../../data/entity/horse_raw.dart';
 import '../../data/entity/mating_data.dart';
 import '../../data/repository/horses_repository.dart';
 import '../../data/repository/mares_repository.dart';
-import '../../data/repository/sires_repository.dart';
-import '../misc/string_extension.dart';
 import '../widget/sire_name_input.dart';
 import 'edit_horse_base.dart';
 

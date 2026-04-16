@@ -99,4 +99,8 @@ class HorsesRepository {
   static Future<LineageAnnualSexRatio?> fetchLineageAnnualSexRatio(int founderId, [int? beginYear, int? endYear]) {
     return _sireStatsDao.fetchLineageAnnualSexRatio(founderId, beginYear, endYear);
   }
+
+  static Future<int> cleanupEmptyHorses() {
+    return _horsesDao.cleanupEmptyRecords();
+  }
 }

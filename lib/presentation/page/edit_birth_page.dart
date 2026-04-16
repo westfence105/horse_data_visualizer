@@ -24,9 +24,10 @@ class _EditBirthPageState extends EditHorsePageStateBase<EditBirthPage> {
     final values = await Future.wait([
       HorsesRepository.getFirstProductionYear(),
       HorsesRepository.getLatestDebutGeneration(),
+      HorsesRepository.getLatestProductionYear(),
     ]);
     minYear = (values[0] ?? 1968);
-    maxYear = (values[1] ?? 1967) + 2;
+    maxYear = (values[2] ?? 1968) + 1;
     targetYear = (values[1] ?? 1966) + 2;
   }
 

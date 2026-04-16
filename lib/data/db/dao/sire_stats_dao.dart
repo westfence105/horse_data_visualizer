@@ -4,6 +4,7 @@ import 'package:drift/drift.dart';
 import '../../entity/foal_data.dart';
 import '../../entity/mare_summary.dart';
 import '../../entity/owned_horse_data.dart';
+import '../../repository/horses_repository.dart';
 import '../app_database.dart';
 import '../tables.dart';
 import '../../entity/parent_stats.dart';
@@ -62,6 +63,7 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
   }
 
   Future<List<SireSummary>> fetchAllSireSummaries([int? beginYear, int? endYear]) async {
+    final debut = await HorsesRepository.getLatestDebutGeneration();
     final rows = await customSelect(
       '''
       WITH RECURSIVE
@@ -82,7 +84,14 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
         s.own_count,
         s.mare_count,
         mj.lineage_name AS major_line_name,
-        mn.lineage_name AS minor_line_name
+        mn.lineage_name AS minor_line_name,
+        (
+          SELECT
+            COUNT(c.sex)
+          FROM horses c
+          WHERE c.father_id = s.id
+            AND c.birth_year > :debut
+        ) AS foal_count
       FROM stallions AS s
       LEFT JOIN sires AS f
         ON s.father_id = f.id
@@ -92,7 +101,8 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
         ON mn.sire_id = s.id
       WHERE s.name != ''
       ORDER BY child_count DESC;
-      '''
+      ''',
+      variables: [Variable(debut)],
     ).get();
 
     return rows.map(SireSummary.fromRow).toList();
@@ -131,6 +141,7 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
       ${whereStr([
         yearRange('h.birth_year', beginYear, endYear),
         'h.sex IS NOT NULL', 'h.is_historical != TRUE',
+        "s.name != ''",
       ])}
       GROUP BY s.id
       ORDER BY child_count DESC
@@ -164,7 +175,7 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
         LEFT JOIN sires p ON p.id = f.father_id
         LEFT JOIN sires ds ON ds.father_id = founder_id
         LEFT JOIN horses dh ON dh.father_id = founder_id
-      ${whereStr(conds)}
+      ${whereStr([...conds, "f.name != ''"])}
       GROUP BY f.id
 
       UNION ALL
@@ -274,6 +285,7 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
 
       SELECT
         l.lineage_name AS name,
+        l.lineage_name,
         l.founder_id,
         l.progenitor_id,
         l.direct_child_count,
@@ -624,6 +636,7 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
 
 class _LineageDataForFilter {
   final QueryRow row;
+  final String? lineageName;
   final int  founderId;
   final int? progenitorId;
   final int  depth;
@@ -636,7 +649,8 @@ class _LineageDataForFilter {
   int get directChildAndMareCount => directChildCount + directMareCount;
 
   _LineageDataForFilter(QueryRow r)
-    : founderId = r.read('founder_id'),
+    : lineageName = r.read('lineage_name'),
+      founderId = r.read('founder_id'),
       progenitorId = r.read('progenitor_id'),
       depth = r.read('depth'),
       isFounder = r.read('is_founder_line'),
@@ -651,7 +665,8 @@ class _LineageDataForFilter {
     final data = <int, _LineageDataForFilter>{};
     for (final r in rows) {
       final d = _LineageDataForFilter(r);
-      if (d.descendantAndMareCount == 0) {
+      if (d.lineageName?.isNotEmpty != true ||
+          d.descendantAndMareCount == 0) {
         continue;
       }
       data[d.founderId] = d;
