@@ -81,10 +81,8 @@ class HorseRaw {
   );
 
   HorseRaw copyWith({
-    int? birthYear,
     int? sex,
     String? fatherName,
-    String? motherName,
     int? rating01,
     int? rating02,
     int? rating03,
@@ -100,27 +98,39 @@ class HorseRaw {
     int? retireYear,
     bool? isHistorical,
     int? region,
-  }) => HorseRaw(
-    birthYear: birthYear ?? this.birthYear,
-    sex: sex ?? this.sex,
-    fatherName: fatherName ?? this.fatherName,
-    motherName: motherName ?? this.motherName,
-    rating01: rating01 ?? this.rating01,
-    rating02: rating02 ?? this.rating02,
-    rating03: rating03 ?? this.rating03,
-    rating04: rating04 ?? this.rating04,
-    rating05: rating05 ?? this.rating05,
-    name: name ?? this.name,
-    growth: growth ?? this.growth,
-    surface: surface ?? this.surface,
-    distance: distance ?? this.distance,
-    rating: rating ?? this.rating,
-    matingRank: matingRank ?? this.matingRank,
-    explosionPower: explosionPower ?? this.explosionPower,
-    retireYear: retireYear ?? this.retireYear,
-    isHistorical: isHistorical ?? this.isHistorical,
-    region: region ?? this.region,
-  );
+  }) {
+    if (retireYear == null) {
+      retireYear = this.retireYear;
+    }
+    else {
+      // 引退年をNULLにするときは有効範囲外の年を入力する
+      if (birthYear + 2 >= retireYear || retireYear > birthYear + 9) {
+        retireYear = null;
+      }
+    }
+
+    return HorseRaw(
+      birthYear: birthYear,
+      sex: sex ?? this.sex,
+      fatherName: fatherName ?? this.fatherName,
+      motherName: motherName,
+      rating01: rating01 ?? this.rating01,
+      rating02: rating02 ?? this.rating02,
+      rating03: rating03 ?? this.rating03,
+      rating04: rating04 ?? this.rating04,
+      rating05: rating05 ?? this.rating05,
+      name: name ?? this.name,
+      growth: growth ?? this.growth,
+      surface: surface ?? this.surface,
+      distance: distance ?? this.distance,
+      rating: rating ?? this.rating,
+      matingRank: matingRank ?? this.matingRank,
+      explosionPower: explosionPower ?? this.explosionPower,
+      retireYear: retireYear,
+      isHistorical: isHistorical ?? this.isHistorical,
+      region: region ?? this.region,
+    );
+  }
 }
 
 class HorseData {

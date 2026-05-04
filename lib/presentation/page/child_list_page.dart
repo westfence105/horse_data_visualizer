@@ -50,7 +50,7 @@ class _ChildListPageState extends State<ChildListPage> {
     ]).then((result) {
       setState(() {
         _sireSummaries = result[0].cast<SireSummary>()
-          .where((e) => (e.childCount ?? 0) + (e.foalCount ?? 0) + (e.mareCount ?? 0) > 0).toList()
+          .where((e) => (e.ownCount ?? 0) + (e.foalCount ?? 0) + (e.mareCount ?? 0) > 0).toList()
           ..sort(_compareSires);
         _mareSummaries = result[1].cast<MareSummary>()
           .where((e) => (e.ownCount ?? 0) + (e.foalCount ?? 0) > 0).toList()

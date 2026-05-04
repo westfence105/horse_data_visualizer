@@ -35,7 +35,7 @@ class _HorseListPageState extends State<HorseListPage> {
     final data = await HorsesRepository.fetchHorseData();
     setState(() {
       horses = data.where(
-        (d) => d.rating != null && d.rawData.retireYear == null,
+        (d) => d.rating != null,
       ).toList(growable: false);
     });
   }
