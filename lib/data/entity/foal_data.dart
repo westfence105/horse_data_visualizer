@@ -34,4 +34,25 @@ class FoalData {
     rating04: r.read('rating04'),
     rating05: r.read('rating05'),
   );
+
+  int get foalRating {
+    if (rating03 == null || rating05 == null) {
+      return 0;
+    }
+    else if (2 <= rating03! && 4 == rating05!) {
+      return 4;
+    }
+    else if (1 <= rating03! && 3 <= rating05!) {
+      return 3;
+    }
+    else if (2 <= rating05!) {
+      return 2;
+    }
+    else if (0 == rating03! && 0 == rating05!) {
+      return 0;
+    }
+    else {
+      return 1;
+    }
+  }
 }

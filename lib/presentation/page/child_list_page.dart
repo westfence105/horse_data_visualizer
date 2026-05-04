@@ -344,22 +344,6 @@ class _ChildListPageState extends State<ChildListPage> {
               color: (r.sex == 1) ? 
                 Color(0xff000080) : 
                 Color(0xffff0000),
-              onTap: r.breeding ? () {
-                Future<int> id;
-                if (r.sex == 1) {
-                  id = SiresRepository.findByName(r.name);
-                }
-                else {
-                  id = MaresRepository.findByName(r.name);
-                }
-                id.then((value) =>
-                  setState(() {
-                    _aggMode = (r.sex == 1) ? AggregationMode.sire : AggregationMode.mare;
-                    _selectedParent = value;
-                    _fetchChildrenData();
-                  })
-                );
-              } : null,
             );
           }).toList(growable: false),
       ),
@@ -367,6 +351,9 @@ class _ChildListPageState extends State<ChildListPage> {
   }
 
   Widget _buildFoalList(List<FoalData> foals) {
+    const ratings = {
+      4: '◎', 3: '○', 2: '▲', 1: '△', 0: '×',
+    };
     return SizedBox(
       width: 360,
       child: Column(
@@ -374,8 +361,8 @@ class _ChildListPageState extends State<ChildListPage> {
         spacing: 10,
         children: foals.map<Widget>(
           (r) => _createNameText(
-            mark: '・',
-            name: '${r.motherName}${r.birthYear}',
+            mark: ratings[r.foalRating],
+            name: '${r.motherName}${r.birthYear % 100}',
             suffix: _aggMode != AggregationMode.sire ? '[${r.fatherName}]' : '',
             color: (r.sex == 1) ? 
               Color(0xff000080) : 
@@ -399,7 +386,7 @@ class _ChildListPageState extends State<ChildListPage> {
           mark: '◆',
           name: m.name,
           suffix: '[${m.fatherName}]',
-          color: Colors.red,
+          color: Color(0xff006600),
         );
       },
     );
