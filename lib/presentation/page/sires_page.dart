@@ -7,6 +7,7 @@ import '../../data/service/store/sire_name_store.dart';
 import '../theme/button_style.dart';
 import '../widget/action_buttons.dart';
 import '../widget/add_record_button.dart';
+import '../widget/custom_table.dart';
 import '../widget/sire_name_input.dart';
 
 class SiresPage extends StatefulWidget {
@@ -41,8 +42,13 @@ class _SiresPageState extends State<SiresPage> {
 
   void _onSort(int column, bool asc) {
     setState(() {
-      _sortColumn = column;
-      _sortAscending = asc;
+      if (_sortColumn == column) {
+        _sortAscending = asc;
+      }
+      else {
+        _sortColumn = column;
+        _sortAscending = false;
+      }
       _summaries.sort(_compareSires);
     });
   }
@@ -109,28 +115,6 @@ class _SiresPageState extends State<SiresPage> {
 
   @override
   Widget build(BuildContext context) {
-    final columns = <DataColumn>[
-      DataColumn(
-        label: Text('系統 '),
-        columnWidth: FixedColumnWidth(100),
-        headingRowAlignment: MainAxisAlignment.start,
-      ),
-      DataColumn(
-        label: Text(' 名前  '),
-        columnWidth: FixedColumnWidth(240),
-        onSort: _onSort,
-      ),
-      DataColumn(
-        label: Text(' 父  '),
-        columnWidth: FixedColumnWidth(240),
-        onSort: _onSort,
-      ),
-      DataColumn(
-        label: Text(' 史実'),
-        columnWidth: FixedColumnWidth(100),
-        headingRowAlignment: MainAxisAlignment.start,
-      ),
-    ];
     return Column(
       children: [
         Row(
@@ -156,57 +140,55 @@ class _SiresPageState extends State<SiresPage> {
             const SizedBox(width: 48),
           ],
         ),
-        DataTable(
-          columns: columns,
-          rows: [],
-          dataRowMaxHeight: 0,
-          sortColumnIndex: _sortColumn,
-          sortAscending: _sortAscending,
-        ),
         Expanded(
-          child: SingleChildScrollView(
-            child: DataTable(
-              columns: columns,
-              rows: _summaries.map((s) => DataRow(
-                cells: <DataCell>[
-                  DataCell(
-                    Padding(
-                      padding: EdgeInsets.only(left: 2),
-                      child: _buildLineageStatusButton(s.name),
-                    ),
+          child: CustomTable(
+            data: _summaries,
+            onSort: _onSort,
+            sortColumn: _sortColumn,
+            sortAscending: _sortAscending,
+            sortableColumns: [1,2],
+            columns: [
+              CustomTableColumnDefinition<SireSummary>(
+                name: '系統',
+                width: 100,
+                headerAlignment: MainAxisAlignment.start,
+                cellBuilder: (context, cellData)
+                  => _buildLineageStatusButton(cellData.name),
+              ),
+              StaticTableColumnDefinition<SireSummary>(
+                name: '名前',
+                width: 240,
+                headerAlignment: MainAxisAlignment.start,
+                bodyAlignment: Alignment.centerLeft,
+                valueBuilder: (d) => d.name,
+              ),
+              CustomTableColumnDefinition<SireSummary>(
+                name: '父',
+                width: 240,
+                headerAlignment: MainAxisAlignment.start,
+                cellBuilder: (context, s)
+                  => SireNameInput(
+                    textEditingController: _fatherTextControllers[s.name]!,
+                    onChanged: (value) => _changedFather[s.name] = value,
                   ),
-                  DataCell(
-                    Text(
-                      s.name,
-                      style: TextStyle(
-                        fontSize: 16,
-                      ),
-                    ),
+              ),
+              CustomTableColumnDefinition<SireSummary>(
+                name: '史実',
+                width: 100,
+                cellBuilder: (context, s) => ValueListenableBuilder(
+                  valueListenable: _historicalNotifiers[s.name]!,
+                  builder: (ctx, v, child) => Checkbox(
+                    value: v,
+                    onChanged: (value) {
+                      if (value != null) {
+                        _changedHistorical[s.name] = value;
+                        _historicalNotifiers[s.name]!.value = value;
+                      }
+                    },
                   ),
-                  DataCell(
-                    SireNameInput(
-                      textEditingController: _fatherTextControllers[s.name]!,
-                      onChanged: (value) => _changedFather[s.name] = value,
-                    ),
-                  ),
-                  DataCell(
-                    ValueListenableBuilder(
-                      valueListenable: _historicalNotifiers[s.name]!,
-                      builder: (ctx, v, child) => Checkbox(
-                        value: v,
-                        onChanged: (value) {
-                          if (value != null) {
-                            _changedHistorical[s.name] = value;
-                            _historicalNotifiers[s.name]!.value = value;
-                          }
-                        },
-                      ),
-                    ),
-                  ),
-                ]
-              )).toList(),
-              headingRowHeight: 0,
-            ),
+                ),
+              ),
+            ],
           ),
         ),
       ],

@@ -8,6 +8,7 @@ import '../../data/service/store/sire_name_store.dart';
 import '../theme/button_style.dart';
 import '../widget/action_buttons.dart';
 import '../widget/add_record_button.dart';
+import '../widget/custom_table.dart';
 import '../widget/mare_name_input.dart';
 import '../widget/sire_name_input.dart';
 
@@ -21,6 +22,8 @@ class MaresPage extends StatefulWidget {
 class _MaresPageState extends State<MaresPage> {
   List<MareSummary> _summaries = [];
 
+  final _fatherTextControllers = <String,TextEditingController>{};
+  final _motherTextControllers = <String,TextEditingController>{};
   final _historicalNotifiers = <String, ValueNotifier<bool>>{};
   final _founderNotifiers = <String, ValueNotifier<bool>>{};
   final _gradeNotifiers = <String, ValueNotifier<bool>>{};
@@ -30,7 +33,10 @@ class _MaresPageState extends State<MaresPage> {
     MaresRepository.fetchAllMareSummaries()
       .then((result) => setState(() {
         _summaries = result;
+        _summaries.sort(_compareMares);
         for (final s in _summaries) {
+          _fatherTextControllers[s.name] = TextEditingController(text: s.fatherName ?? '');
+          _motherTextControllers[s.name] = TextEditingController(text: s.motherName ?? '');
           _historicalNotifiers[s.name] = ValueNotifier(s.isHistorical ?? false);
           _founderNotifiers[s.name] = ValueNotifier(s.isFounder ?? false);
           _gradeNotifiers[s.name] = ValueNotifier(s.isGradeWinner ?? false);
@@ -44,8 +50,14 @@ class _MaresPageState extends State<MaresPage> {
 
   void _onSort(int column, bool asc) {
     setState(() {
-      _sortColumn = column;
-      _sortAscending = asc;
+      if (_sortColumn == column) {
+        _sortAscending = asc;
+      }
+      else {
+        _sortColumn = column;
+        _sortAscending = false;
+      }
+      _summaries.sort(_compareMares);
     });
   }
 
@@ -131,43 +143,6 @@ class _MaresPageState extends State<MaresPage> {
 
   @override
   Widget build(BuildContext context) {
-    final columns = <DataColumn>[
-      DataColumn(
-        label: Text(' 名前  '),
-        columnWidth: FixedColumnWidth(220),
-        onSort: _onSort,
-      ),
-      DataColumn(
-        label: Text(' 父  '),
-        columnWidth: FixedColumnWidth(200),
-        onSort: _onSort,
-      ),
-      DataColumn(
-        label: Text(' 母  '),
-        columnWidth: FixedColumnWidth(200),
-        onSort: _onSort,
-      ),
-      DataColumn(
-        label: Text('史実'),
-        columnWidth: FixedColumnWidth(80),
-        headingRowAlignment: MainAxisAlignment.center,
-      ),
-      DataColumn(
-        label: Text('重賞'),
-        columnWidth: FixedColumnWidth(80),
-        headingRowAlignment: MainAxisAlignment.center,
-      ),
-      DataColumn(
-        label: Text('牝系'),
-        columnWidth: FixedColumnWidth(80),
-        headingRowAlignment: MainAxisAlignment.center,
-      ),
-      DataColumn(
-        label: Text('牧場    '),
-        columnWidth: FixedColumnWidth(100),
-        headingRowAlignment: MainAxisAlignment.center,
-      ),
-    ];
     return Column(
       children: [
         Row(
@@ -187,116 +162,93 @@ class _MaresPageState extends State<MaresPage> {
             const SizedBox(width: 48),
           ],
         ),
-        DataTable(
-          columns: columns,
-          columnSpacing: 20,
-          rows: [],
-          dataRowMaxHeight: 0,
-          sortColumnIndex: _sortColumn,
-          sortAscending: _sortAscending,
-        ),
         Expanded(
-          child: SingleChildScrollView(
-            child: DataTable(
-              columns: columns,
-              columnSpacing: 20,
-              rows: (_summaries..sort(_compareMares)).map((s) => DataRow(
-                cells: <DataCell>[
-                  DataCell(
-                    Text(
-                      s.name,
-                      style: TextStyle(
-                        fontSize: 16,
-                      ),
-                    ),
+          child: CustomTable(
+            data: _summaries,
+            onSort: _onSort,
+            sortColumn: _sortColumn,
+            sortAscending: _sortAscending,
+            sortableColumns: [0,1,2],
+            columnSpacing: 8,
+            columns: [
+              StaticTableColumnDefinition<MareSummary>(
+                name: '名前',
+                width: 220,
+                headerAlignment: MainAxisAlignment.start,
+                bodyAlignment: Alignment.centerLeft,
+                valueBuilder: (s) => s.name,
+              ),
+              CustomTableColumnDefinition<MareSummary>(
+                name: '父',
+                width: 200,
+                headerAlignment: MainAxisAlignment.start,
+                cellBuilder: (context, s) => SireNameInput(
+                  textEditingController: _fatherTextControllers[s.name]!,
+                  onChanged: (value) => _changedFather[s.name] = value,
+                ),
+              ),
+              CustomTableColumnDefinition<MareSummary>(
+                name: '母',
+                width: 200,
+                cellBuilder: (context, s) => MareNameInput(
+                  textEditingController: _motherTextControllers[s.name]!,
+                  onChanged: (value) => _changedMother[s.name] = value,
+                ),
+              ),
+              CustomTableColumnDefinition<MareSummary>(
+                name: '史実',
+                width: 80,
+                cellBuilder: (context, s) => ValueListenableBuilder(
+                  valueListenable: _historicalNotifiers[s.name]!,
+                  builder: (ctx, v, child) => Checkbox(
+                    value: v,
+                    onChanged: (value) {
+                      if (value != null) {
+                        _changedHistorical[s.name] = value;
+                        _historicalNotifiers[s.name]!.value = value;
+                      }
+                    },
                   ),
-                  DataCell(
-                    SireNameInput(
-                      textEditingController: TextEditingController(
-                        text: s.fatherName ?? '',
-                      ),
-                      onChanged: (value) => _changedFather[s.name] = value,
-                    ),
-                  ),
-                  DataCell(
-                    MareNameInput(
-                      textEditingController: TextEditingController(
-                        text: s.motherName ?? '',
-                      ),
-                      onChanged: (value) => _changedMother[s.name] = value,
-                    ),
-                  ),
-                  DataCell(
-                    ValueListenableBuilder(
-                      valueListenable: _historicalNotifiers[s.name]!,
-                      builder: (ctx, v, child) => Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Checkbox(
-                            value: v,
-                            onChanged: (value) {
-                              if (value != null) {
-                                _changedHistorical[s.name] = value;
-                                _historicalNotifiers[s.name]!.value = value;
-                              }
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  DataCell(
-                    ValueListenableBuilder(
+                ),
+              ),
+              CustomTableColumnDefinition<MareSummary>(
+                name: '重賞',
+                width: 80,
+                cellBuilder: (context, s) => ValueListenableBuilder(
                       valueListenable: _gradeNotifiers[s.name]!,
-                      builder: (ctx, v, child) => Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Checkbox(
-                            value: v,
-                            onChanged: (value) {
-                              if (value != null) {
-                                _changedGrade[s.name] = value;
-                                _gradeNotifiers[s.name]!.value = value;
-                              }
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
+                  builder: (ctx, v, child) => Checkbox(
+                    value: v,
+                    onChanged: (value) {
+                      if (value != null) {
+                        _changedGrade[s.name] = value;
+                        _gradeNotifiers[s.name]!.value = value;
+                      }
+                    },
                   ),
-                  DataCell(
-                    ValueListenableBuilder(
+                ),
+              ),
+              CustomTableColumnDefinition<MareSummary>(
+                name: '牝系',
+                width: 80,
+                cellBuilder: (context, s) => ValueListenableBuilder(
                       valueListenable: _founderNotifiers[s.name]!,
-                      builder: (ctx, v, child) => Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Checkbox(
-                            value: v,
-                            onChanged: (value) {
-                              if (value != null) {
-                                _changedFounder[s.name] = value;
-                                _founderNotifiers[s.name]!.value = value;
-                              }
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
+                  builder: (ctx, v, child) => Checkbox(
+                    value: v,
+                    onChanged: (value) {
+                      if (value != null) {
+                        _changedFounder[s.name] = value;
+                        _founderNotifiers[s.name]!.value = value;
+                      }
+                    },
                   ),
-                  DataCell(
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Expanded(
-                          child: _buildFarmButton(s.name),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              )).toList(growable: false),
-              headingRowHeight: 0,
-            ),
+                ),
+              ),
+              CustomTableColumnDefinition<MareSummary>(
+                name: '牧場  ',
+                width: 140,
+                cellBuilder: (context, s) => _buildFarmButton(s.name),
+              ),
+            ],
           ),
         ),
       ],
@@ -313,13 +265,17 @@ class _MaresPageState extends State<MaresPage> {
             return DropdownMenuItem(
               value: e.key,
               alignment: AlignmentGeometry.center,
-              child: Text(
-                e.value,
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: fontWeight,
+              child: Container(
+                padding: EdgeInsets.only(left: 16),
+                alignment: Alignment.center,
+                child: Text(
+                  e.value,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: fontWeight,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
-                textAlign: TextAlign.center,
               ),
             );
           }).toList(growable: false),
