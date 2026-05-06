@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../data/entity/horse_raw.dart';
 import '../../data/repository/horses_repository.dart';
+import '../widget/custom_table.dart';
 import 'edit_horse_base.dart';
 
 class EditBirthPage extends StatefulWidget {
@@ -54,19 +55,112 @@ class _EditBirthPageState extends EditHorsePageStateBase<EditBirthPage> {
   bool filter(HorseRaw raw) => raw.sex != null;
 
   @override
-  List<DataColumn> get columns => <DataColumn>[
-    DataColumn(
-      label: Text('名前'),
-      columnWidth: FixedColumnWidth(240),
+  List<CustomTableColumnDefinitionBase<HorseRaw>> get columns => [
+    StaticTableColumnDefinition<HorseRaw>(
+      name: '名前',
+      width: 220,
+      headerAlignment: MainAxisAlignment.start,
+      bodyAlignment: Alignment.centerLeft,
+      valueBuilder: (d) =>
+        ((d.isHistorical == true) ? '☆' : '') +
+        ((d.isHistorical == true && d.name?.isNotEmpty == true ) ? d.name! : '${d.motherName}${d.birthYear % 100}')
+      ,
+      styleBuilder: (d, baseStyle)
+        => (d.motherGradeWinner == true) ?
+          baseStyle.copyWith(
+            decoration: TextDecoration.underline,
+          ) : baseStyle,
     ),
-    DataColumn(
-      label: Text('父'),
-      columnWidth: FixedColumnWidth(180),
+    StaticTableColumnDefinition<HorseRaw>(
+      name: '父',
+      width: 200,
+      headerAlignment: MainAxisAlignment.start,
+      bodyAlignment: Alignment.centerLeft,
+      valueBuilder: (d) => d.fatherName,
     ),
-    DataColumn(
-      label: Text(' 性別'),
-      columnWidth: FixedColumnWidth(90),
+    CustomTableColumnDefinition(
+      name: '性別',
+      width: 90,
+      cellBuilder: (context, d) {
+        final valueMap = <int>[-2, 1, -1];
+        return buildDropdown(
+          selectedIndex: valueMap.indexOf(d.sex ?? -2),
+          values: ['-','牡','牝'],
+          onChanged: (v) => updateData(
+            d.motherName,
+            sex: valueMap[v],
+          ),
+        );
+      },
     ),
+    CustomTableColumnDefinition(
+      name: '秘書',
+      width: 90,
+      cellBuilder: (context, d)
+        => buildDropdown(
+            selectedIndex: 4 - (d.rating01),
+            values: ['◎','○','▲','△','-',' '],
+            onChanged: (v) => updateData(
+              d.motherName,
+              rating01: v,
+            ),
+          ),
+    ),
+    CustomTableColumnDefinition(
+      name: '牧場長',
+      width: 90,
+      cellBuilder: (context, d)
+        => buildDropdown(
+            selectedIndex: 4 - (d.rating02),
+            values: ['◎','○','▲','△','-',' '],
+            onChanged: (v) => updateData(
+              d.motherName,
+              rating02: v,
+            ),
+          ),
+    ),
+    CustomTableColumnDefinition(
+      name: '河童木',
+      width: 90,
+      cellBuilder: (context, d)
+        => buildDropdown(
+            selectedIndex: 4 - (d.rating03),
+            values: ['◎','○','▲','△','-',' '],
+            onChanged: (v) => updateData(
+              d.motherName,
+              rating03: v,
+            ),
+          ),
+    ),
+    CustomTableColumnDefinition(
+      name: '長峰',
+      width: 90,
+      cellBuilder: (context, d)
+        => buildDropdown(
+            selectedIndex: 4 - (d.rating04),
+            values: ['◎','○','▲','△','-',' '],
+            onChanged: (v) => updateData(
+              d.motherName,
+              rating04: v,
+            ),
+          ),
+    ),
+    CustomTableColumnDefinition(
+      name: '美香',
+      width: 90,
+      cellBuilder: (context, d)
+        => buildDropdown(
+            selectedIndex: 4 - (d.rating05),
+            values: ['◎','○','▲','△','-',' '],
+            onChanged: (v) => updateData(
+              d.motherName,
+              rating05: v,
+            ),
+          ),
+    ),
+  ];
+
+  List<DataColumn> get dataColumns => <DataColumn>[
     DataColumn(
       label: Text(' 秘書'),
       columnWidth: FixedColumnWidth(90),
@@ -89,7 +183,6 @@ class _EditBirthPageState extends EditHorsePageStateBase<EditBirthPage> {
     ),
   ];
 
-  @override
   DataRow buildRow(HorseRaw raw) {
     final d = HorseData.fromRaw(raw);
     final motherName = d.motherName;
@@ -122,15 +215,6 @@ class _EditBirthPageState extends EditHorsePageStateBase<EditBirthPage> {
           Padding(
             padding: EdgeInsets.only(left: 2),
             child: (){
-              final valueMap = <int>[-2, 1, -1];
-              return buildDropdown(
-                selectedIndex: valueMap.indexOf(raw.sex ?? -2),
-                values: ['-','牡','牝'],
-                onChanged: (v) => updateData(
-                  motherName,
-                  sex: valueMap[v],
-                ),
-              );
             }(),
           ),
         ),

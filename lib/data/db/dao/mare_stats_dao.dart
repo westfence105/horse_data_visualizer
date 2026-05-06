@@ -134,7 +134,7 @@ class MareStatsDao extends DatabaseAccessor<AppDb> with _$MareStatsDaoMixin {
         h.mating_rank,
         h.explosion_power,
         h.is_historical,
-        m.is_grade_winner
+        m.is_grade_winner AS mother_grade_winner
       FROM mares m
       LEFT JOIN foals h ON h.mother_id = m.id
       WHERE

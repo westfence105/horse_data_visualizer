@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../data/entity/horse_raw.dart';
 import '../../data/repository/horses_repository.dart';
 import '../theme/button_style.dart';
+import '../widget/custom_table.dart';
 import '../widget/spin_box.dart';
 
 abstract class EditHorsePageStateBase<T extends StatefulWidget> extends State<T> {
@@ -23,7 +24,7 @@ abstract class EditHorsePageStateBase<T extends StatefulWidget> extends State<T>
       horses[d.motherName] = d;
     }
     await onFetchCompleted();
-    setState(() {});
+    updateList();
   }
 
   Iterable<HorseRaw> prepareData(Iterable<HorseRaw> data) => data;
@@ -45,19 +46,18 @@ abstract class EditHorsePageStateBase<T extends StatefulWidget> extends State<T>
     int? region,
   }) {
     if (horses.containsKey(motherName)) {
-      setState(() {
-        horses[motherName] = horses[motherName]!.copyWith(
-          sex: sex, name: name,
-          rating01: rating01,
-          rating02: rating02,
-          rating03: rating03,
-          rating04: rating04,
-          rating05: rating05,
-          growth: growth, surface: surface,
-          distance: distance, rating: rating,
-          region: region,
-        );
-      });
+      horses[motherName] = horses[motherName]!.copyWith(
+        sex: sex, name: name,
+        rating01: rating01,
+        rating02: rating02,
+        rating03: rating03,
+        rating04: rating04,
+        rating05: rating05,
+        growth: growth, surface: surface,
+        distance: distance, rating: rating,
+        region: region,
+      );
+      updateList();
     }
   }
 
@@ -76,9 +76,18 @@ abstract class EditHorsePageStateBase<T extends StatefulWidget> extends State<T>
 
   bool filter(HorseRaw raw);
 
-  List<DataColumn> get columns;
+  List<CustomTableColumnDefinitionBase<HorseRaw>> get columns;
 
-  DataRow buildRow(HorseRaw raw);
+  double get tableWidth => columns.map((c) => c.width).reduce((a, b) => a + b);
+
+  List<HorseRaw> rows = [];
+
+  void updateList() => setState(() {
+    rows = horses.values
+      .where((r) => !enableFilter || filter(r))
+      .toList(growable: false)
+      ..sort(compareHorses);
+  });
 
   @override
   void initState() {
@@ -101,7 +110,7 @@ abstract class EditHorsePageStateBase<T extends StatefulWidget> extends State<T>
 
   Widget buildTopBar()
     => SizedBox(
-      width: 1000,
+      width: tableWidth,
       child: Row(
         children: [
           SizedBox(height: 16),
@@ -114,9 +123,10 @@ abstract class EditHorsePageStateBase<T extends StatefulWidget> extends State<T>
           ),
           IconButton(
             tooltip: '未入力馬を非表示',
-            onPressed: () => setState(() {
+            onPressed: () {
               enableFilter = !enableFilter;
-            }),
+              updateList();
+            },
             icon: Icon(
               enableFilter ? 
                 Icons.filter_alt : 
@@ -129,11 +139,6 @@ abstract class EditHorsePageStateBase<T extends StatefulWidget> extends State<T>
 
   @override
   Widget build(BuildContext context) {
-    final rowData = horses.values
-      .where((r) => !enableFilter || filter(r))
-      .toList(growable: false)
-      ..sort(compareHorses);
-
     return Padding(
       padding: EdgeInsets.only(top: 8, left: 12, right: 12),
       child: Row(
@@ -143,20 +148,10 @@ abstract class EditHorsePageStateBase<T extends StatefulWidget> extends State<T>
             child: Column(
               children: [
                 buildTopBar(),
-                DataTable(
-                  columns: columns,
-                  columnSpacing: 30,
-                  rows: [],
-                  dataRowMaxHeight: 0,
-                ),
                 Expanded(
-                  child: SingleChildScrollView(
-                    child: DataTable(
-                      columns: columns,
-                      columnSpacing: 40,
-                      rows: rowData.map(buildRow).toList(growable: false),
-                      headingRowHeight: 0,
-                    ),
+                  child: CustomTable<HorseRaw>(
+                    data: rows,
+                    columns: columns,
                   ),
                 ),
               ],
@@ -174,25 +169,19 @@ abstract class EditHorsePageStateBase<T extends StatefulWidget> extends State<T>
   })
     => DropdownButton<int>(
         isExpanded: true,
+        padding: EdgeInsets.only(left: 16),
         items: values.asMap().entries.map((e) {
           FontWeight fontWeight = (e.key == 0) ? FontWeight.w400 : FontWeight.w600;
           return DropdownMenuItem(
             value: e.key,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Padding(
-                  padding: EdgeInsets.all(2),
-                  child: Text(
-                    e.value,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: fontWeight,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-              ],
+            alignment: Alignment.center,
+            child: Text(
+              e.value,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: fontWeight,
+              ),
+              textAlign: TextAlign.center,
             ),
           );
         }).toList(growable: false),

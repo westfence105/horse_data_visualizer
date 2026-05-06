@@ -85,6 +85,27 @@ class _MaresPageState extends State<MaresPage> {
         }
         return a.name.compareTo(b.name) * d;
       }
+      case 6: {
+        if (a.farm != null && a.farm! > 0) {
+          if (b.farm != null && b.farm! > 0) {
+            if (a.farm == b.farm) {
+              return a.name.compareTo(b.name);
+            }
+            else {
+              return (a.farm! - b.farm!) * d;
+            }
+          }
+          else {
+            return -d;
+          }
+        }
+        else if (b.farm != null && b.farm! > 0) {
+          return d;
+        }
+        else {
+          return a.name.compareTo(b.name);
+        }
+      }
       default: return 0;
     }
   }
@@ -168,7 +189,7 @@ class _MaresPageState extends State<MaresPage> {
             onSort: _onSort,
             sortColumn: _sortColumn,
             sortAscending: _sortAscending,
-            sortableColumns: [0,1,2],
+            sortableColumns: [0,1,2,6],
             columnSpacing: 8,
             columns: [
               StaticTableColumnDefinition<MareSummary>(

@@ -35,6 +35,7 @@ class HorseRaw {
   final int? retireYear;
   final bool? isHistorical;
   final int? region;
+  final bool? motherGradeWinner;
 
   const HorseRaw({
     required this.birthYear,
@@ -56,6 +57,7 @@ class HorseRaw {
     this.retireYear,
     this.isHistorical,
     this.region,
+    this.motherGradeWinner,
   });
 
   HorseRaw.fromRow(QueryRow r) : this(
@@ -78,6 +80,7 @@ class HorseRaw {
     retireYear: r.read('retire_year'),
     isHistorical: r.read('is_historical'),
     region: r.read('region'),
+    motherGradeWinner: r.read('mother_grade_winner'),
   );
 
   HorseRaw copyWith({
@@ -98,6 +101,7 @@ class HorseRaw {
     int? retireYear,
     bool? isHistorical,
     int? region,
+    bool? motherGradeWinner,
   }) {
     if (retireYear == null) {
       retireYear = this.retireYear;
@@ -129,6 +133,7 @@ class HorseRaw {
       retireYear: retireYear,
       isHistorical: isHistorical ?? this.isHistorical,
       region: region ?? this.region,
+      motherGradeWinner: motherGradeWinner ?? this.motherGradeWinner,
     );
   }
 }
@@ -155,6 +160,7 @@ class HorseData {
     int? rating,
     bool? isHistorical,
     int? region,
+    bool? motherGradeWinner,
   }) : rawData = HorseRaw(
     birthYear: birthYear,
     sex: sex,
@@ -172,6 +178,7 @@ class HorseData {
     rating: rating,
     isHistorical: isHistorical,
     region: region,
+    motherGradeWinner: motherGradeWinner,
   );
 
   static bool checkMap(Map<String,String> d) {
@@ -261,4 +268,5 @@ class HorseData {
   String? get retireYear => rawData.retireYear?.toString();
   bool? get isHistorical => rawData.isHistorical;
   String? get region => _regions[rawData.region ?? 0];
+  bool? get motherGradeWinner => rawData.motherGradeWinner;
 }

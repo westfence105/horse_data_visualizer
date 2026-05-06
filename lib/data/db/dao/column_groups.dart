@@ -4,7 +4,8 @@ h.birth_year,
 h.name,
 h.sex,
 f.name AS father_name,
-b.name AS mother_name
+b.name AS mother_name,
+b.is_grade_winner AS mother_grade_winner
 ''';
 
 const horseStatusColumns =

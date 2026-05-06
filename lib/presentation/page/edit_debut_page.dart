@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../data/entity/horse_raw.dart';
 import '../../data/repository/horses_repository.dart';
+import '../widget/custom_table.dart';
 import 'edit_horse_base.dart';
 
 class EditDebutPage extends StatefulWidget {
@@ -23,9 +24,14 @@ class _EditDebutPageState extends EditHorsePageStateBase<EditDebutPage> {
 
   @override
   Future<void> loadYears() async {
-    targetYear = (await HorsesRepository.getLatestDebutGeneration() ?? 1967) + 1;
-    minYear = await HorsesRepository.getFirstProductionYear() ?? 1968;
-    maxYear = (await HorsesRepository.getLatestProductionYear() ?? 1968) + 1;
+    final values = await Future.wait([
+      HorsesRepository.getFirstProductionYear(),
+      HorsesRepository.getLatestProductionYear(),
+      HorsesRepository.getLatestDebutGeneration(),
+    ]);
+    minYear = (values[0] ?? 1968);
+    maxYear = (values[1] ?? 1968) + 1;
+    targetYear = (values[1] ?? 1969) - 1;
   }
 
   @override
@@ -37,11 +43,7 @@ class _EditDebutPageState extends EditHorsePageStateBase<EditDebutPage> {
     _nameTextControllers = horses.map(
       (k, v) => MapEntry(k, TextEditingController(text: v.name ?? '')),
     );
-    if (enableFilter) {
-      if (horses.values.where((d) => d.rating != null).isEmpty) {
-        enableFilter = false;
-      }
-    }
+    enableFilter = (targetYear < maxYear - 2);
   }
 
   @override
@@ -73,160 +75,112 @@ class _EditDebutPageState extends EditHorsePageStateBase<EditDebutPage> {
   }
 
   @override
-  List<DataColumn> get columns => <DataColumn>[
-    DataColumn(
-      label: Text('    名前'),
-      columnWidth: FixedColumnWidth(200),
+  List<CustomTableColumnDefinitionBase<HorseRaw>> get columns => [
+    CustomTableColumnDefinition<HorseRaw>(
+      name: '   名前',
+      width: 200,
+      headerAlignment: MainAxisAlignment.start,
+      cellBuilder: (context, d) => Row(
+        key: Key(d.motherName),
+        children: [
+          SizedBox(
+            width: 20,
+            child: Text(d.isHistorical == true ? '☆' : ''),
+          ),
+          Expanded(
+            child: TextField(
+              controller: _nameTextControllers[d.motherName],
+              decoration: InputDecoration(
+                hintText: '${d.motherName}${d.birthYear % 100}',
+                hintStyle: TextStyle(
+                  fontWeight: FontWeight.w100,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     ),
-    DataColumn(
-      label: Text('父'),
-      columnWidth: FixedColumnWidth(200),
+    StaticTableColumnDefinition<HorseRaw>(
+      name: '父',
+      width: 200,
+      headerAlignment: MainAxisAlignment.start,
+      bodyAlignment: Alignment.centerLeft,
+      valueBuilder: (d) => d.fatherName,
     ),
-    DataColumn(
-      label: Text('母'),
-      columnWidth: FixedColumnWidth(200),
+    StaticTableColumnDefinition<HorseRaw>(
+      name: '母',
+      width: 200,
+      headerAlignment: MainAxisAlignment.start,
+      bodyAlignment: Alignment.centerLeft,
+      valueBuilder: (d) => d.motherName,
     ),
-    DataColumn(
-      label: Text('成長型'),
-      columnWidth: FixedColumnWidth(110),
+    CustomTableColumnDefinition(
+      name: '成長型  ',
+      width: 120,
+      cellBuilder: (context, d)
+        => buildDropdown(
+          selectedIndex: (d.growth ?? -1) + 1,
+          values: ['-','早熟','早め','遅め','覚醒','晩成'],
+          onChanged: (v) => updateData(
+            d.motherName,
+            growth: v - 1,
+          ),
+        ),
     ),
-    DataColumn(
-      label: Text('馬場'),
-      columnWidth: FixedColumnWidth(120),
+    CustomTableColumnDefinition(
+      name: '馬場  ',
+      width: 120,
+      cellBuilder: (context, d){
+        final valueMap = <int>[-2, 1, -1, 0];
+        return buildDropdown(
+          selectedIndex: valueMap.indexOf(d.surface ?? -2),
+          values: ['-','芝','ダート','万能'],
+          onChanged: (v) => updateData(
+            d.motherName,
+            surface: valueMap[v],
+          ),
+        );
+      },
     ),
-    DataColumn(
-      label: Text('距離'),
-      columnWidth: FixedColumnWidth(140),
+    CustomTableColumnDefinition(
+      name: '距離  ',
+      width: 140,
+      cellBuilder: (context, d)
+        => buildDropdown(
+            selectedIndex: (d.distance ?? -1) + 1,
+            values: ['-','短距離','マイル','中距離','クラシック','長距離'],
+            onChanged: (v) => updateData(
+              d.motherName,
+              distance: v - 1,
+            ),
+          ),
     ),
-    DataColumn(
-      label: Text('評価'),
-      columnWidth: FixedColumnWidth(90),
+    CustomTableColumnDefinition<HorseRaw>(
+      name: '評価  ',
+      width: 100,
+      cellBuilder: (context, d)
+        => buildDropdown(
+            selectedIndex: 4 - (d.rating ?? -1),
+            values: ['◎','○','▲','△','×','-'],
+            onChanged: (v) => updateData(
+              d.motherName,
+              rating: v,
+            ),
+          ),
     ),
-    DataColumn(
-      label: Text('所属'),
-      columnWidth: FixedColumnWidth(120),
+    CustomTableColumnDefinition<HorseRaw>(
+      name: '所属  ',
+      width: 120,
+      cellBuilder: (context, d)
+        => buildDropdown(
+            selectedIndex: d.region ?? 0,
+            values: ['-','日本','欧州','米国','クラブ'],
+            onChanged: (v) => updateData(
+              d.motherName,
+              region: v,
+            ),
+          ),
     ),
   ];
-
-  @override
-  DataRow buildRow(HorseRaw raw) {
-    final d = HorseData.fromRaw(raw);
-    final motherName = d.motherName;
-    return DataRow(
-      cells: [
-        DataCell(
-          Row(
-            key: Key(motherName),
-            children: [
-              SizedBox(
-                width: 20,
-                child: Text(raw.isHistorical == true ? '☆' : ''),
-              ),
-              Expanded(
-                child: TextField(
-                  controller: _nameTextControllers[motherName],
-                  decoration: InputDecoration(
-                    hintText: '${d.motherName}${d.birthYear % 100}',
-                    hintStyle: TextStyle(
-                      fontWeight: FontWeight.w100,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-        DataCell(
-          Text(
-            d.fatherName,
-            style: TextStyle(
-              fontSize: 16,
-            ),
-          ),
-        ),
-        DataCell(
-          Text(
-            d.motherName,
-            style: TextStyle(
-              fontSize: 16,
-            ),
-          ),
-        ),
-        DataCell(
-          Padding(
-            padding: EdgeInsets.only(left: 2),
-            child: buildDropdown(
-              selectedIndex: (raw.growth ?? -1) + 1,
-              values: ['-','早熟','早め','遅め','覚醒','晩成'],
-              onChanged: (v) => updateData(
-                motherName,
-                growth: v - 1,
-              ),
-            ),
-          ),
-        ),
-        DataCell(
-          Padding(
-            padding: EdgeInsets.only(left: 2),
-            child: (){
-              final valueMap = <int>[-2, 1, -1, 0];
-              return buildDropdown(
-                selectedIndex: valueMap.indexOf(raw.surface ?? -2),
-                values: ['-','芝','ダート','万能'],
-                onChanged: (v) => updateData(
-                  motherName,
-                  surface: valueMap[v],
-                ),
-              );
-            }(),
-          ),
-        ),
-        DataCell(
-          Padding(
-            padding: EdgeInsets.only(left: 2),
-            child: buildDropdown(
-              selectedIndex: (raw.distance ?? -1) + 1,
-              values: ['-','短距離','マイル','中距離','クラシック','長距離'],
-              onChanged: (v) => updateData(
-                motherName,
-                distance: v - 1,
-              ),
-            ),
-          ),
-        ),
-        _buildRatingCell(
-          raw.rating,
-          (v) => updateData(
-            motherName,
-            rating: v,
-          ),
-        ),
-        DataCell(
-          Padding(
-            padding: EdgeInsets.only(left: 2),
-            child: buildDropdown(
-              selectedIndex: raw.region ?? 0,
-              values: ['-','日本','欧州','米国','クラブ'],
-              onChanged: (v) => updateData(
-                motherName,
-                region: v,
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-  
-  DataCell _buildRatingCell(int? value, Function(int value) onChanged)
-    => DataCell(
-        Padding(
-          padding: EdgeInsets.only(left: 2),
-          child: buildDropdown(
-            selectedIndex: 4 - (value ?? -1),
-            values: ['◎','○','▲','△','×','-'],
-            onChanged: (v) => onChanged(4 - v),
-          ),
-        ),
-      );
 }

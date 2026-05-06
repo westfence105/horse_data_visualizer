@@ -24,8 +24,8 @@ class _EditRetirePageState extends State<EditRetirePage> {
       HorsesRepository.getLatestProductionYear(),
       HorsesRepository.getLatestDebutGeneration(),
     ]);
-    _minYear = (values[0] ?? 1968) + 3;
-    _maxYear = (values[2] ?? 1968) + 3;
+    _minYear = (values[0] ?? 1967) + 3;
+    _maxYear = (values[2] ?? 1968) + 2;
     _targetYear = _maxYear;
   }
 

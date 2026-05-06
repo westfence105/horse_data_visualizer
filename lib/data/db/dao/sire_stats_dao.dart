@@ -597,7 +597,7 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
         l.lineage_name,
         h.birth_year,
         AVG(h.sex) AS ratio
-      FROM horsesh
+      FROM horses h
       INNER JOIN lineage l ON l.id = father_id
       ${whereStr([
         yearRange('h.birth_year', beginYear, endYear),

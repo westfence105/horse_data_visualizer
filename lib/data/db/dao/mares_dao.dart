@@ -149,7 +149,13 @@ class MaresDao extends DatabaseAccessor<AppDb> with _$MaresDaoMixin {
           ORDER BY birth_year ASC
           LIMIT 1
         ),
-        is_historical = FALSE
+        is_historical = (
+          SELECT is_historical
+          FROM horses
+          WHERE horses.name = mares.name
+          ORDER BY birth_year ASC
+          LIMIT 1
+        )
       WHERE
         (father_id IS NULL OR mother_id IS NULL)
         AND EXISTS (

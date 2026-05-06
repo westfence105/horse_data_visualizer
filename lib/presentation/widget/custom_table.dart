@@ -73,49 +73,52 @@ class _CustomTableState<T> extends State<CustomTable<T>> {
   @override
   Widget build(BuildContext context) => Align(
     alignment: widget.alignment,
-    child: SizedBox(
-      width: _tableWidth + 16,
-      child: RawScrollbar(
-        controller: _verticalScrollController,
-        thumbVisibility: true,
-        trackVisibility: false,
-        interactive: true,
-        scrollbarOrientation: ScrollbarOrientation.right,
-        padding: EdgeInsets.only(top: widget.rowHeight),
-        child: TableView.builder(
-          alignment: Alignment.topLeft,
-          pinnedRowCount: 1,
-          verticalDetails: ScrollableDetails.vertical(
-            controller: _verticalScrollController,
-          ),
-          columnCount: widget.columns.length,
-          rowCount: widget.data.length + 1,
-          columnBuilder: (col) => TableSpan(
-            extent: FixedSpanExtent(widget.columns[col].width),
-          ),
-          rowBuilder: (row) => TableSpan(
-            extent: FixedSpanExtent(widget.rowHeight),
-          ),
-          cellBuilder: (context, vicinity) {
-            final row = vicinity.row;
-            final col = vicinity.column;
+    child: SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: SizedBox(
+        width: _tableWidth + 16,
+        child: RawScrollbar(
+          controller: _verticalScrollController,
+          thumbVisibility: true,
+          trackVisibility: false,
+          interactive: true,
+          scrollbarOrientation: ScrollbarOrientation.right,
+          padding: EdgeInsets.only(top: widget.rowHeight),
+          child: TableView.builder(
+            alignment: Alignment.topLeft,
+            pinnedRowCount: 1,
+            verticalDetails: ScrollableDetails.vertical(
+              controller: _verticalScrollController,
+            ),
+            columnCount: widget.columns.length,
+            rowCount: widget.data.length + 1,
+            columnBuilder: (col) => TableSpan(
+              extent: FixedSpanExtent(widget.columns[col].width),
+            ),
+            rowBuilder: (row) => TableSpan(
+              extent: FixedSpanExtent(widget.rowHeight),
+            ),
+            cellBuilder: (context, vicinity) {
+              final row = vicinity.row;
+              final col = vicinity.column;
 
-            late final Widget content;
-            if (row == 0) {
-              content = _buildHeaderCell(col);
-            }
-            else {
-              content = widget.columns[col].buildCell(context, widget.data[row-1]);
-            }
-            return TableViewCell(
-              child: Padding(
-                padding: EdgeInsets.symmetric(
-                  horizontal: widget.columnSpacing,
+              late final Widget content;
+              if (row == 0) {
+                content = _buildHeaderCell(col);
+              }
+              else {
+                content = widget.columns[col].buildCell(context, widget.data[row-1]);
+              }
+              return TableViewCell(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: widget.columnSpacing * 0.5,
+                  ),
+                  child: content,
                 ),
-                child: content,
-              ),
-            );
-          },
+              );
+            },
+          ),
         ),
       ),
     ),
@@ -155,6 +158,8 @@ class StaticTableColumnDefinition<T> extends CustomTableColumnDefinitionBase<T> 
   final FontWeight fontWeight;
   final Color? fontColor;
   final Alignment bodyAlignment;
+  final TextDecoration? textDecoration;
+  final TextStyle Function(T rowData, TextStyle baseStyle)? styleBuilder;
 
   StaticTableColumnDefinition({
     required super.name,
@@ -163,22 +168,28 @@ class StaticTableColumnDefinition<T> extends CustomTableColumnDefinitionBase<T> 
     this.fontSize = 16,
     this.fontWeight = FontWeight.normal,
     this.fontColor,
+    this.textDecoration,
     super.headerAlignment,
     this.bodyAlignment = Alignment.center,
+    this.styleBuilder,
   });
 
   @override
-  Widget buildCell(BuildContext context, T rowData)
-    => Container(
+  Widget buildCell(BuildContext context, T rowData) {
+    final baseStyle = TextStyle(
+      fontSize: fontSize,
+      fontWeight: fontWeight,
+      color: fontColor,
+      decoration: textDecoration,
+    );
+    return Container(
       width: width,
       alignment: bodyAlignment,
       child: Text(
         valueBuilder(rowData),
-        style: TextStyle(
-          fontSize: fontSize,
-          fontWeight: fontWeight,
-          color: fontColor,
-        ),
+        style: styleBuilder != null ?
+          styleBuilder!(rowData, baseStyle) : baseStyle,
       ),
     );
+  }
 }
