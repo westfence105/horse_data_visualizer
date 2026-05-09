@@ -126,7 +126,7 @@ families AS (
     name  AS family_name,
     id    AS mare_id
   FROM mares
-  WHERE is_founder = TRUE
+  WHERE is_founder = TRUE OR mother_id IS NULL
 
   UNION ALL
 
@@ -135,6 +135,6 @@ families AS (
     f.family_name,
     h.id AS mare_id
   FROM mares h
-  INNER JOIN families f ON h.mother_id = f.mare_id
+  INNER JOIN families f ON h.mother_id = f.mare_id AND h.is_founder = FALSE
 )
 ''';

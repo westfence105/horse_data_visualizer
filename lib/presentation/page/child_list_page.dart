@@ -259,6 +259,7 @@ class _ChildListPageState extends State<ChildListPage> {
                       child: Align(
                         alignment: Alignment.topLeft,
                         child: ChildList.builder(
+                          width: 800,
                           ownedHorses: _childrenData,
                           foals: _foalData,
                           mares: _mareData,

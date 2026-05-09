@@ -368,6 +368,8 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
       )
       GROUP BY
         l.founder_id
+      ORDER BY
+        d.depth ASC
       ''',
       variables: [Variable(sireId)],
     ).get();

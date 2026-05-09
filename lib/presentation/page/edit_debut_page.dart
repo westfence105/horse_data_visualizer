@@ -5,6 +5,7 @@ import '../../data/repository/horses_repository.dart';
 import '../misc/notifier_util.dart';
 import '../widget/custom_table.dart';
 import '../widget/filter_dialog.dart';
+import '../widget/foal_info_dialog.dart';
 import 'edit_horse_base.dart';
 
 class EditDebutPage extends StatefulWidget {
@@ -205,6 +206,19 @@ class _EditDebutPageState extends EditHorsePageStateBase<EditDebutPage> {
               region: v,
             ),
           ),
+    ),
+    CustomTableColumnDefinition<HorseRaw>(
+      name: '',
+      width: 40,
+      cellBuilder: (context, d) => GestureDetector(
+        child: Icon(Icons.info_outline),
+        onTap: () {
+          showDialog(
+            context: context,
+            builder: (context) => FoalInfoDialog(horse: d),
+          );
+        },
+      ),
     ),
   ];
   

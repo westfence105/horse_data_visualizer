@@ -20,7 +20,8 @@ class MareStatsDao extends DatabaseAccessor<AppDb> with _$MareStatsDaoMixin {
       '''
       WITH 
         $childCountsTable,
-        $bloodmaresTable
+        $bloodmaresTable,
+        $familiesTable
 
       SELECT
         h.id,
@@ -48,12 +49,15 @@ class MareStatsDao extends DatabaseAccessor<AppDb> with _$MareStatsDaoMixin {
           FROM horses c
           WHERE c.mother_id = h.id
             AND c.birth_year > :debut
-        ) AS foal_count
+        ) AS foal_count,
+        f.family_name
       FROM bloodmares AS h
       LEFT JOIN sires s
         ON s.id = h.father_id
       LEFT JOIN mares m
         ON m.id = h.mother_id
+      LEFT JOIN families f
+        ON h.id = f.mare_id
       ${(whereStr != null) ? 'WHERE $whereStr' : ''}
       ''',
       variables: [Variable(debut)],

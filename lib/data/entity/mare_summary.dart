@@ -15,6 +15,7 @@ class MareSummary {
   final bool? isGradeWinner;
   final int? farm;
   final int? breedingPolicy;
+  final String? familyName;
 
   const MareSummary({
     required this.id,
@@ -31,6 +32,7 @@ class MareSummary {
       this.isGradeWinner,
       this.farm,
       this.breedingPolicy,
+      this.familyName,
     });
 
   MareSummary.fromRow(QueryRow r) : this(
@@ -48,5 +50,6 @@ class MareSummary {
     isGradeWinner: r.read('is_grade_winner'),
     farm: r.read('farm'),
     breedingPolicy: r.read('breeding_policy'),
+    familyName: r.read('family_name'),
   );
 }

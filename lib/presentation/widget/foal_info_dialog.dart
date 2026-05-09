@@ -1,0 +1,315 @@
+import 'package:flutter/material.dart';
+
+import '../../data/entity/foal_data.dart';
+import '../../data/entity/horse_enums.dart';
+import '../../data/entity/horse_raw.dart';
+import '../../data/entity/mare_summary.dart';
+import '../../data/entity/owned_horse_data.dart';
+import '../../data/repository/horses_repository.dart';
+import '../../data/repository/mares_repository.dart';
+import '../../data/repository/sires_repository.dart';
+import 'child_list.dart';
+
+class FoalInfoDialog extends StatefulWidget {
+  final HorseRaw horse;
+
+  const FoalInfoDialog({
+    super.key,
+    required this.horse,
+  });
+
+  @override
+  State<StatefulWidget> createState() => _FoalInfoDialogState();
+}
+
+class _FoalInfoDialogState extends State<FoalInfoDialog> {
+  late HorseRaw horse;
+
+  final _nameController = TextEditingController();
+
+  List<OwnedHorseData> sameSireOwnedHorses = [];
+  List<OwnedHorseData> siblingOwnedHorses = [];
+  List<FoalData> sameSireFoals = [];
+  List<FoalData> siblingFoals = [];
+  List<MareSummary> siblingMares = [];
+  String lineage = '';
+  MareSummary? motherSummary;
+  String get family => motherSummary?.familyName ?? '';
+
+  Future<void> _fetch() async {
+    final fatherId = await SiresRepository.findByName(horse.fatherName);
+    final motherId = await MaresRepository.findByName(horse.motherName);
+    final futures = <Future>[];
+    futures.addAll([
+      HorsesRepository.fetchOwnedHorseData(fatherId, null).then((result) {
+        setState(() {
+          sameSireOwnedHorses = result.where((h) => h.rating >= 2).toList();
+        });
+      }),
+      HorsesRepository.fetchOwnedHorseData(null, motherId).then((result) {
+        setState(() {
+          siblingOwnedHorses = result.toList();
+        });
+      }),
+      HorsesRepository.fetchFoalData(fatherId, null).then((result) {
+        setState(() {
+          sameSireFoals = result.toList();
+        });
+      }),
+      HorsesRepository.fetchFoalData(null, motherId).then((result) {
+        setState(() {
+          siblingFoals = result.toList();
+        });
+      }),
+      MaresRepository.fetchMareSummaries(motherId: motherId).then((result) {
+        setState(() {
+          siblingMares = result.toList();
+        });
+      }),
+      SiresRepository.findBelongingLineages(fatherId).then((result) {
+        setState(() {
+          lineage = result.lastOrNull ?? '';
+        });
+      }),
+      MaresRepository.fetchMareSummary(motherId).then((result) {
+        setState(() {
+          motherSummary = result;
+        });
+      }),
+    ]);
+    await Future.wait(futures);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    horse = widget.horse;
+    _nameController.text = horse.name ?? '';
+    _fetch();
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => AlertDialog(
+    title: Text('新馬情報', style: TextStyle(fontSize: 20)),
+    contentPadding: EdgeInsets.fromLTRB(24, 12, 24, 8),
+    content: SizedBox(
+      width: 900,
+      height: 600,
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Text('名前:'),
+              SizedBox(width: 4),
+              Text(horse.isHistorical == true ? '☆' : ''),
+              SizedBox(width: 4),
+              SizedBox(
+                width: 160,
+                child: TextField(
+                  controller: _nameController,
+                  decoration: InputDecoration(
+                    hintText: '${horse.motherName}${horse.birthYear % 100}',
+                    hintStyle: TextStyle(
+                      fontWeight: FontWeight.w100,
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(width: 24),
+              Text('成長型: ${HorseGrowth.labelOf(horse.growth)}'),
+              Text('   /   '),
+              Text('馬場: ${HorseSurface.labelOf(horse.surface)}'),
+              Text('   /   '),
+              Text('距離: ${HorseDistance.labelOf(horse.distance)}'),
+              Text('   /   '),
+              Text('評価: ${HorseRating.labelOf(horse.rating)}'),
+              Text('   /   '),
+              Text('所属:'),
+              SizedBox(
+                width: 100,
+                child: _buildDropdown(
+                  selectedIndex: horse.region ?? 0,
+                  values: ['-', ...HorseRegion.values.map((e) => e.label)],
+                  onChanged: (v) {
+                    horse = horse.copyWith(
+                      region: v,
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+          Expanded(
+            child: Padding(
+              padding: EdgeInsetsGeometry.only(top: 24, left: 32, right: 32),
+              child: Row(
+                children: [
+                  SizedBox(
+                    width: 400,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Text('父: '),
+                            Text(
+                              horse.fatherName,
+                              style: TextStyle(
+                                fontSize: 17,
+                              ),
+                            ),
+                            SizedBox(width: 8),
+                            Text(
+                              '($lineage系)',
+                              style: TextStyle(
+                                fontSize: 16,
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 12),
+                        Text('主な産駒:'),
+                        Expanded(
+                          child: Container(
+                            margin: EdgeInsets.only(left: 8, top: 8),
+                            decoration: BoxDecoration(
+                              border: BoxBorder.all(
+                                color: Colors.grey,
+                              ),
+                            ),
+                            child: SingleChildScrollView(
+                              child: ChildList.builder(
+                                ownedHorses: sameSireOwnedHorses,
+                                foals: sameSireFoals,
+                                fontSize: 14,
+                                width: 390,
+                                showFatherName: false,
+                                showMotherName: false,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(width: 36),
+                  SizedBox(
+                    width: 400,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Text('母: '),
+                            Text(
+                              horse.motherName,
+                              style: TextStyle(
+                                fontSize: 17,
+                                decoration: (motherSummary?.isGradeWinner == true) ?
+                                  TextDecoration.underline : null,
+                              ),
+                            ),
+                            SizedBox(width: 8),
+                            Text(
+                              '($family系)',
+                              style: TextStyle(
+                                fontSize: 16,
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 12),
+                        Text('主な産駒:'),
+                        Expanded(
+                          child: Container(
+                            margin: EdgeInsets.only(left: 8, top: 8),
+                            decoration: BoxDecoration(
+                              border: BoxBorder.all(
+                                color: Colors.grey,
+                              ),
+                            ),
+                            child: SingleChildScrollView(
+                              child: ChildList.builder(
+                                ownedHorses: siblingOwnedHorses,
+                                foals: siblingFoals,
+                                mares: siblingMares,
+                                fontSize: 14,
+                                width: 390,
+                                showFatherName: false,
+                                showMotherName: false,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    ),
+    actions: [
+      TextButton(
+        child: Text("Cancel"),
+        onPressed: () => Navigator.pop(context),
+      ),
+      TextButton(
+        child: Text("OK"),
+        onPressed: () {
+          final name = _nameController.text;
+          if (name != horse.name) {
+            horse = horse.copyWith(
+              name: name,
+            );
+          }
+          Navigator.pop(context, horse);
+        },
+      ),
+    ],
+    actionsPadding: EdgeInsets.only(bottom: 32, right: 32),
+  );
+
+  Widget _buildDropdown({
+    required int selectedIndex,
+    required List<String> values,
+    required Function(int) onChanged,
+  })
+    => DropdownButton<int>(
+        isExpanded: true,
+        items: values.asMap().entries.map((e) {
+          FontWeight fontWeight = (e.key == 0) ? FontWeight.w400 : FontWeight.w600;
+          return DropdownMenuItem(
+            value: e.key,
+            alignment: Alignment.center,
+            child: Padding(
+              padding: EdgeInsets.only(left: 8),
+              child: Text(
+                e.value,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: fontWeight,
+                ),
+                textAlign: TextAlign.center,
+              ),  
+            ),
+          );
+        }).toList(growable: false),
+        value: selectedIndex,
+        onChanged: (v) {
+          if (v != null) {
+            onChanged(v);
+          }
+        },
+      );
+}

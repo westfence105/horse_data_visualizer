@@ -11,27 +11,36 @@ class ChildList extends StatelessWidget {
   final Map<int,SexPair<List<FoalData>>> foals;
   final List<MareSummary> mares;
   final bool showFatherName;
+  final bool showMotherName;
   final double width;
   final double fontSize;
+  final EdgeInsets contentPadding;
 
   const ChildList({
     super.key,
     this.ownedHorses = const {},
     this.foals = const {},
     this.mares = const [],
-    this.showFatherName = true,
-    this.width = 640,
+    bool? showFatherName,
+    bool? showMotherName,
+    double width = 640,
     this.fontSize = 16,
-  });
+    this.contentPadding = const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+  }) : assert(width > 32),
+       width = width - 32,
+       showFatherName = showFatherName ?? false,
+       showMotherName = showMotherName ?? (showFatherName != true);
 
   static ChildList builder({
     Key? key,
     List<OwnedHorseData> ownedHorses = const [],
     List<FoalData> foals = const [],
     List<MareSummary> mares = const [],
-    bool showFatherName = true,
+    bool? showFatherName,
+    bool? showMotherName,
     double width = 640,
     double fontSize = 16,
+    EdgeInsets contentPadding = const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
   }) {
     final ownedHorseMap = <int,SexPair<List<OwnedHorseData>>>{};
     final foalMap = <int,SexPair<List<FoalData>>>{};
@@ -62,8 +71,10 @@ class ChildList extends StatelessWidget {
       foals: foalMap,
       mares: mares,
       showFatherName: showFatherName,
+      showMotherName: showMotherName,
       width: width,
       fontSize: fontSize,
+      contentPadding: contentPadding,
     );
   }
 
@@ -76,7 +87,7 @@ class ChildList extends StatelessWidget {
         for (int i = 4; i >= 0; --i)
           if (ownedHorses[i]?.male.isNotEmpty == true || ownedHorses[i]?.female.isNotEmpty == true)
             Container(
-              padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+              padding: contentPadding,
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -89,7 +100,7 @@ class ChildList extends StatelessWidget {
           Divider(),
         for (final i in foals.keys.toList()..sort())
           Container(
-            padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+            padding: contentPadding,
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [foals[i]?.male, foals[i]?.female].map(
@@ -101,7 +112,7 @@ class ChildList extends StatelessWidget {
           Divider(),
         if (mares.isNotEmpty)
           Container(
-            padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+            padding: contentPadding,
             child: _buildMareGrid(mares),
           ),
       ],
@@ -116,11 +127,20 @@ class ChildList extends StatelessWidget {
         spacing: fontSize * 0.8,
         children: horses.where((r) => r.name.isNotEmpty)
           .map<Widget>((r) {
-            final pair = showFatherName ? r.fatherName : r.motherName;
+            late final String pair;
+            if (showFatherName) {
+              pair = '[${r.fatherName}]';
+            }
+            else if (showMotherName) {
+              pair = '[${r.motherName}]';
+            }
+            else {
+              pair = '';
+            }
             return _createNameText(
               mark: HorseRating.labelOf(r.rating),
               name: r.name,
-              suffix: '(${r.birthYear}) [$pair]',
+              suffix: '(${r.birthYear}) $pair',
               color: (r.sex == 1) ? 
                 Color(0xff000080) : 
                 Color(0xffff0000),
