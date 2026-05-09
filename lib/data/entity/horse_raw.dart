@@ -1,19 +1,8 @@
-import 'dart:math';
-
 import 'package:drift/drift.dart';
 
-int? _reverse(Map<int,String> map, String? str)
-  => map.entries.where((e) => e.value == str).firstOrNull?.key;
+import 'horse_enums.dart';
 
-const _sexMap = {1:'牡', -1:'牝'};
-const _rating5Map = {4:'◎', 3:'○', 2:'▲', 1:'△', 0:'-',-1:' '};
-const _ratingMap = {4:'◎', 3:'○', 2:'▲', 1:'△', 0:'×',-1:'-'};
-const _growthMap = {0:'早熟', 1:'早め', 2:'遅め', 3:'覚醒', 4:'晩成'};
-const _surfaceMap = {1:'芝', -1:'ダート', 0:'万能'};
-const _distanceMap = {0:'短距離', 1:'マイル', 2:'中距離', 3:'クラシック', 4:'長距離'};
 final _mateRankRegex = RegExp('([SA-D])([0-9]+)');
-const _matingRanks = <String>['','S','A','B','C','D'];
-final _regions = ['','日本','欧州','米国','クラブ'].asMap();
 
 class HorseRaw {
   final int birthYear;
@@ -199,23 +188,23 @@ class HorseData {
   HorseData.fromMap(Map<String,String> d) : rawData = HorseRaw(
     birthYear: int.tryParse(d['生年'] ?? '1900') ?? 1900,
     name: _prepareName(d['名前']),
-    sex: _reverse(_sexMap, d['性別']) ?? 0,
+    sex: HorseSex.reverse(d['性別']) ?? 0,
     fatherName: d['父'] ?? '',
     motherName: d['母'] ?? '',
-    rating01: _reverse(_rating5Map, d['秘書'])   ?? -1,
-    rating02: _reverse(_rating5Map, d['牧場長']) ?? -1,
-    rating03: _reverse(_rating5Map, d['河童木']) ?? -1,
-    rating04: _reverse(_rating5Map, d['長峰'])   ?? -1,
-    rating05: _reverse(_rating5Map, d['美香'])   ?? -1,
-    growth: _reverse(_growthMap, d['成長型']),
-    surface: _reverse(_surfaceMap, d['馬場']),
-    distance: _reverse(_distanceMap, d['距離']),
-    rating: _reverse(_ratingMap, d['評価']),
-    matingRank: max(_matingRanks.indexOf(_mateRankRegex.firstMatch(d['配合'] ?? '')?.group(1) ?? ''), 0),
+    rating01: FoalRating.reverse(d['秘書'])   ?? -1,
+    rating02: FoalRating.reverse(d['牧場長']) ?? -1,
+    rating03: FoalRating.reverse(d['河童木']) ?? -1,
+    rating04: FoalRating.reverse(d['長峰'])   ?? -1,
+    rating05: FoalRating.reverse(d['美香'])   ?? -1,
+    growth: HorseGrowth.reverse(d['成長型']),
+    surface: HorseSurface.reverse(d['馬場']),
+    distance: HorseDistance.reverse(d['距離']),
+    rating: HorseRating.reverse(d['評価']),
+    matingRank: HorseMatingRank.reverse(_mateRankRegex.firstMatch(d['配合'] ?? '')?.group(1) ?? '') ?? 0,
     explosionPower: int.tryParse((_mateRankRegex.firstMatch(d['配合'] ?? ''))?.group(2) ?? '0'),
     retireYear: int.tryParse(d['引退年'] ?? ''),
     isHistorical: d['名前']?.startsWith('☆') == true,
-    region: _reverse(_regions, d['所属']),
+    region: HorseRegion.reverse(d['所属']),
   );
 
   Map<String,String> toMap() => {
@@ -242,18 +231,18 @@ class HorseData {
 
   int get birthYear => rawData.birthYear;
   String? get name => rawData.name;
-  String get sex => _sexMap[rawData.sex] ?? '';
+  String get sex => HorseSex.labelOf(rawData.sex) ?? '';
   String get fatherName => rawData.fatherName;
   String get motherName => rawData.motherName;
-  String  get rating01 => _rating5Map[rawData.rating01] ?? '';
-  String  get rating02 => _rating5Map[rawData.rating02] ?? '';
-  String  get rating03 => _rating5Map[rawData.rating03] ?? '';
-  String  get rating04 => _rating5Map[rawData.rating04] ?? '';
-  String  get rating05 => _rating5Map[rawData.rating05] ?? '';
-  String? get growth   => _growthMap[rawData.growth];
-  String? get surface  => _surfaceMap[rawData.surface];
-  String? get distance => _distanceMap[rawData.distance];
-  String? get rating   => _ratingMap[rawData.rating];
+  String  get rating01 => FoalRating.labelOf(rawData.rating01) ?? '';
+  String  get rating02 => FoalRating.labelOf(rawData.rating02) ?? '';
+  String  get rating03 => FoalRating.labelOf(rawData.rating03) ?? '';
+  String  get rating04 => FoalRating.labelOf(rawData.rating04) ?? '';
+  String  get rating05 => FoalRating.labelOf(rawData.rating05) ?? '';
+  String? get growth   => HorseGrowth.labelOf(rawData.growth);
+  String? get surface  => HorseSurface.labelOf(rawData.surface);
+  String? get distance => HorseDistance.labelOf(rawData.distance);
+  String? get rating   => HorseRating.labelOf(rawData.rating);
   String? get mating {
     if (rawData.isHistorical == true) {
       return '☆';
@@ -262,11 +251,11 @@ class HorseData {
       return null;
     }
     else {
-      return '${_matingRanks[rawData.matingRank!]}${rawData.explosionPower}';
+      return '${HorseMatingRank.labelOf(rawData.matingRank)}${rawData.explosionPower}';
     }
   }
   String? get retireYear => rawData.retireYear?.toString();
   bool? get isHistorical => rawData.isHistorical;
-  String? get region => _regions[rawData.region ?? 0];
+  String? get region => HorseRegion.labelOf(rawData.region);
   bool? get motherGradeWinner => rawData.motherGradeWinner;
 }

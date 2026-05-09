@@ -45,7 +45,7 @@ class _EditPageState extends State<EditPage> {
 
   @override
   Widget build(BuildContext context) => Padding(
-    padding: EdgeInsets.symmetric(vertical: 0, horizontal: 8),
+    padding: EdgeInsets.symmetric(vertical: 0, horizontal: 32),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

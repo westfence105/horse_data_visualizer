@@ -11,18 +11,13 @@ import '../../data/repository/sires_repository.dart';
 import '../misc/enums.dart';
 import '../widget/action_buttons.dart';
 import '../widget/aggregation_mode_selector.dart';
+import '../widget/child_list.dart';
 
 class ChildListPage extends StatefulWidget {
   const ChildListPage({ super.key });
 
   @override
   State<StatefulWidget> createState() => _ChildListPageState();
-}
-
-class _SexPair<T> {
-  final T male;
-  final T female;
-  const _SexPair(this.male, this.female);
 }
 
 class _ChildListPageState extends State<ChildListPage> {
@@ -33,8 +28,8 @@ class _ChildListPageState extends State<ChildListPage> {
 
   List<String> _lineages = [];
   
-  Map<int, _SexPair<List<OwnedHorseData>>> _childrenData = {};
-  Map<int, _SexPair<List<FoalData>>> _foalData = {};
+  List<OwnedHorseData> _childrenData = [];
+  List<FoalData> _foalData = [];
   List<MareSummary> _mareData = [];
 
   final _mainScrollController = ScrollController();
@@ -82,7 +77,7 @@ class _ChildListPageState extends State<ChildListPage> {
   void _fetchChildrenData() {
     _lineages = [];
     _mareData = [];
-    _foalData = {};
+    _foalData = [];
     _mainScrollController.jumpTo(0);
     Future<List<OwnedHorseData>> future;
     Future<List<FoalData>> foalFuture;
@@ -116,38 +111,17 @@ class _ChildListPageState extends State<ChildListPage> {
       mareFuture = SiresRepository.fetchLineageMares(_selectedParent!);
     }
     future.then((result) => setState(() {
-      _childrenData = {};
-      for (final r in result) {
-        final p = (_childrenData[r.rating] ??= _SexPair([],[]));
-        if (r.sex == 1) {
-          p.male.add(r);
-        }
-        else {
-          p.female.add(r);
-        }
-      }
+      _childrenData = result;
     }));
-    foalFuture.then((result) {
-      setState(() {
-        for (final r in result) {
-          final f = (_foalData[r.birthYear] ??= _SexPair([],[]));
-          if (r.sex > 0) {
-            f.male.add(r);
-          }
-          else {
-            f.female.add(r);
-          }
-        }
-      });
-    });
-    mareFuture.then((result) {
-      setState(() {
-        _mareData = result.where(
-          (m) => ((m.farm ?? 0) > 0) || 
-                 ((m.childCount ?? 0) > 0)
-          ).toList(growable: false);
-      });
-    });
+    foalFuture.then((result) => setState(() {
+      _foalData = result;
+    }));
+    mareFuture.then((result) => setState(() {
+      _mareData = result.where(
+        (m) => ((m.farm ?? 0) > 0) || 
+                ((m.childCount ?? 0) > 0)
+        ).toList(growable: false);
+    }));
   }
 
   @override
@@ -190,8 +164,8 @@ class _ChildListPageState extends State<ChildListPage> {
                     _selectedParent = null;
                     _lineages = [];
                     _mareData = [];
-                    _childrenData = {};
-                    _foalData = {};
+                    _childrenData = [];
+                    _foalData = [];
                     _fetch();
                   }
                 }),
@@ -282,143 +256,20 @@ class _ChildListPageState extends State<ChildListPage> {
                       constraints: BoxConstraints(
                         minHeight: MediaQuery.of(context).size.height * 0.9,
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          for (int i = 4; i >= 0; --i)
-                            if (_childrenData[i]?.male.isNotEmpty == true || _childrenData[i]?.female.isNotEmpty == true)
-                              Container(
-                                padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                                child: Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    _buildChildList(_childrenData[i]?.male ?? []),
-                                    _buildChildList(_childrenData[i]?.female ?? []),
-                                  ],
-                                ),
-                              ),
-                          if (_foalData.isNotEmpty && _childrenData.isNotEmpty)
-                            Divider(),
-                          for (final i in _foalData.keys.toList()..sort())
-                            Container(
-                              padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [_foalData[i]?.male, _foalData[i]?.female].map(
-                                  (r) => (r != null) ? _buildFoalList(r) : const SizedBox(width: 360),
-                                ).toList(),
-                              ),
-                            ),
-                          if (_mareData.isNotEmpty && (_childrenData.isNotEmpty || _foalData.isNotEmpty))
-                            Divider(),
-                          if (_mareData.isNotEmpty)
-                            Container(
-                              width: 750,
-                              padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                              child: _buildMareGrid(_mareData),
-                            ),
-                        ],
+                      child: Align(
+                        alignment: Alignment.topLeft,
+                        child: ChildList.builder(
+                          ownedHorses: _childrenData,
+                          foals: _foalData,
+                          mares: _mareData,
+                          showFatherName: _aggMode != AggregationMode.sire
+                        ),
                       ),
                     ),
                   ),
                 ),
               ],
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildChildList(List<OwnedHorseData> horses) {
-    const ratings = {
-      4: '◎', 3: '○', 2: '▲', 1: '△', 0: '×',
-    };
-    return SizedBox(
-      width: 360,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        spacing: 10,
-        children: horses.where((r) => r.name.isNotEmpty)
-          .map<Widget>((r) {
-            final pair = (_aggMode == AggregationMode.sire) ? r.motherName : r.fatherName;
-            return _createNameText(
-              mark: ratings[r.rating],
-              name: r.name,
-              suffix: '(${r.birthYear}) [$pair]',
-              color: (r.sex == 1) ? 
-                Color(0xff000080) : 
-                Color(0xffff0000),
-            );
-          }).toList(growable: false),
-      ),
-    );
-  }
-
-  Widget _buildFoalList(List<FoalData> foals) {
-    const ratings = {
-      4: '◎', 3: '○', 2: '▲', 1: '△', 0: '×',
-    };
-    return SizedBox(
-      width: 360,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        spacing: 10,
-        children: foals.map<Widget>(
-          (r) => _createNameText(
-            mark: ratings[r.foalRating],
-            name: '${r.motherName}${r.birthYear % 100}',
-            suffix: _aggMode != AggregationMode.sire ? '[${r.fatherName}]' : '',
-            color: (r.sex == 1) ? 
-              Color(0xff000080) : 
-              Color(0xffff0000),
-          )).toList(growable: false),
-      ),
-    );
-  }
-
-  Widget _buildMareGrid(List<MareSummary> mareData)
-    => GridView.builder(
-      shrinkWrap: true,
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        childAspectRatio: 12,
-      ),
-      itemCount: _mareData.length,
-      itemBuilder: (ctx, i) {
-        final m = mareData[i];
-        return _createNameText(
-          mark: '◆',
-          name: m.name,
-          suffix: '[${m.fatherName}]',
-          color: Color(0xff006600),
-        );
-      },
-    );
-
-  Widget _createNameText({String? mark, required String name, required String suffix, Color color = Colors.black}) {
-    final styleBase = TextStyle(
-      fontSize: 16,
-      color: color,
-    );
-    return RichText(
-      text: TextSpan(
-        children: [
-          TextSpan(
-            text: mark ?? ' ',
-            style: styleBase,
-          ),
-          const TextSpan(text: ' '),
-          TextSpan(
-            text: name,
-            style: styleBase.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const TextSpan(text: ' '),
-          TextSpan(
-            text: suffix,
-            style: styleBase,
           ),
         ],
       ),
