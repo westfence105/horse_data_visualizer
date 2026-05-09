@@ -4,6 +4,7 @@ import '../../data/entity/sire_raw.dart';
 import '../../data/entity/sire_summary.dart';
 import '../../data/repository/sires_repository.dart';
 import '../../data/service/store/sire_name_store.dart';
+import '../misc/notifier_util.dart';
 import '../theme/button_style.dart';
 import '../widget/action_buttons.dart';
 import '../widget/add_record_button.dart';
@@ -29,12 +30,29 @@ class _SiresPageState extends State<SiresPage> {
       .then((result) => setState(() {
         _summaries = result;
         _summaries.sort(_compareSires);
+        final names = <String>{};
         for (final s in _summaries) {
-          _fatherTextControllers[s.name] = TextEditingController(text: s.fatherName ?? '');
-          _historicalNotifiers[s.name] = ValueNotifier(s.isHistorical ?? false);
-          _lineageStatusNotifiers[s.name] = ValueNotifier(s.lineageStatus ?? 0);
+          names.add(s.name);
+          updateTextEditingControllerMap(_fatherTextControllers, s.name, s.fatherName ?? '');
+          updateNotifierMap(_historicalNotifiers, s.name, s.isHistorical ?? false);
+          updateNotifierMap(_lineageStatusNotifiers, s.name, s.lineageStatus ?? 0);
         }
+        _fatherTextControllers.removeWhere(testAndDispose(names));
+        _historicalNotifiers.removeWhere(testAndDispose(names));
+        _lineageStatusNotifiers.removeWhere(testAndDispose(names));
+
+        _changedFather.clear();
+        _changedHistorical.clear();
+        _changedLineage.clear();
       }));
+  }
+
+  @override
+  void dispose() {
+    disposeAll(_fatherTextControllers.values);
+    disposeAll(_historicalNotifiers.values);
+    disposeAll(_lineageStatusNotifiers.values);
+    super.dispose();
   }
 
   int _sortColumn = 1;

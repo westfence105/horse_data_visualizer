@@ -76,6 +76,13 @@ class _StatsPageState extends State<StatsPage> {
     _fetch();
   }
 
+  @override
+  void dispose() {
+    _headerScrollController.dispose();
+    _bodyScrollController.dispose();
+    super.dispose();
+  }
+
   TextStyle _cellStyle(double value)
     => TextStyle(
       color: Color.lerp(Colors.blue, Colors.red, value),

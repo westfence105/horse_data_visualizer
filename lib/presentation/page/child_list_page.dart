@@ -1,4 +1,3 @@
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 import '../../data/entity/foal_data.dart';
@@ -155,6 +154,12 @@ class _ChildListPageState extends State<ChildListPage> {
   void initState() {
     super.initState();
     _fetch();
+  }
+
+  @override
+  void dispose() {
+    _mainScrollController.dispose();
+    super.dispose();
   }
 
   @override
@@ -391,7 +396,7 @@ class _ChildListPageState extends State<ChildListPage> {
       },
     );
 
-  Widget _createNameText({String? mark, required String name, required String suffix, Color color = Colors.black, void Function()? onTap}) {
+  Widget _createNameText({String? mark, required String name, required String suffix, Color color = Colors.black}) {
     final styleBase = TextStyle(
       fontSize: 16,
       color: color,
@@ -408,10 +413,7 @@ class _ChildListPageState extends State<ChildListPage> {
             text: name,
             style: styleBase.copyWith(
               fontWeight: FontWeight.bold,
-              decoration: onTap != null ?
-                TextDecoration.underline : null,
             ),
-            recognizer: (onTap != null) ? (TapGestureRecognizer()..onTap = onTap) : null,
           ),
           const TextSpan(text: ' '),
           TextSpan(

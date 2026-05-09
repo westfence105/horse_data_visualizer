@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../data/entity/horse_raw.dart';
 import '../../data/repository/horses_repository.dart';
+import '../misc/notifier_util.dart';
 import '../widget/custom_table.dart';
 import '../widget/filter_dialog.dart';
 import 'edit_horse_base.dart';
@@ -14,7 +15,7 @@ class EditDebutPage extends StatefulWidget {
 }
 
 class _EditDebutPageState extends EditHorsePageStateBase<EditDebutPage> {
-  Map<String,TextEditingController> _nameTextControllers = {};
+  final Map<String,TextEditingController> _nameTextControllers = {};
 
   @override
   int minYear = 1968;
@@ -41,12 +42,22 @@ class _EditDebutPageState extends EditHorsePageStateBase<EditDebutPage> {
 
   @override
   Future<void> onFetchCompleted() async {
-    _nameTextControllers = horses.map(
-      (k, v) => MapEntry(k, TextEditingController(text: v.name ?? '')),
-    );
+    final validKeys = <String>{};
+    for (final e in horses.entries) {
+      validKeys.add(e.key);
+      updateTextEditingControllerMap(_nameTextControllers, e.key, e.value.name ?? '');
+    }
+    _nameTextControllers.removeWhere(testAndDispose(validKeys));
+
     if (!_filters.isNotEmpty) {
       enableFilter = (targetYear < maxYear - 2);
     }
+  }
+
+  @override
+  void dispose() {
+    disposeAll(_nameTextControllers.values);
+    super.dispose();
   }
 
   @override

@@ -5,6 +5,7 @@ import '../../data/entity/mare_summary.dart';
 import '../../data/repository/mares_repository.dart';
 import '../../data/service/store/mare_name_store.dart';
 import '../../data/service/store/sire_name_store.dart';
+import '../misc/notifier_util.dart';
 import '../theme/button_style.dart';
 import '../widget/action_buttons.dart';
 import '../widget/add_record_button.dart';
@@ -34,15 +35,34 @@ class _MaresPageState extends State<MaresPage> {
       .then((result) => setState(() {
         _summaries = result;
         _summaries.sort(_compareMares);
+        final names = <String>{};
         for (final s in _summaries) {
-          _fatherTextControllers[s.name] = TextEditingController(text: s.fatherName ?? '');
-          _motherTextControllers[s.name] = TextEditingController(text: s.motherName ?? '');
-          _historicalNotifiers[s.name] = ValueNotifier(s.isHistorical ?? false);
-          _founderNotifiers[s.name] = ValueNotifier(s.isFounder ?? false);
-          _gradeNotifiers[s.name] = ValueNotifier(s.isGradeWinner ?? false);
-          _farmNotifiers[s.name] = ValueNotifier(s.farm ?? 0);
+          names.add(s.name);
+          updateTextEditingControllerMap(_fatherTextControllers, s.name, s.fatherName ?? '');
+          updateTextEditingControllerMap(_motherTextControllers, s.name, s.motherName ?? '');
+          updateNotifierMap(_historicalNotifiers, s.name, s.isHistorical ?? false);
+          updateNotifierMap(_founderNotifiers, s.name, s.isFounder ?? false);
+          updateNotifierMap(_gradeNotifiers, s.name, s.isGradeWinner ?? false);
+          updateNotifierMap(_farmNotifiers, s.name, s.farm ?? 0);
         }
+        _fatherTextControllers.removeWhere(testAndDispose(names));
+        _motherTextControllers.removeWhere(testAndDispose(names));
+        _historicalNotifiers.removeWhere(testAndDispose(names));
+        _founderNotifiers.removeWhere(testAndDispose(names));
+        _gradeNotifiers.removeWhere(testAndDispose(names));
+        _farmNotifiers.removeWhere(testAndDispose(names));
       }));
+  }
+
+  @override
+  void dispose() {
+    disposeAll(_fatherTextControllers.values);
+    disposeAll(_motherTextControllers.values);
+    disposeAll(_historicalNotifiers.values);
+    disposeAll(_founderNotifiers.values);
+    disposeAll(_gradeNotifiers.values);
+    disposeAll(_farmNotifiers.values);
+    super.dispose();
   }
 
   int _sortColumn = 0;

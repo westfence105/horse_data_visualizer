@@ -5,6 +5,7 @@ import '../../data/entity/horse_raw.dart';
 import '../../data/entity/mating_data.dart';
 import '../../data/repository/horses_repository.dart';
 import '../../data/repository/mares_repository.dart';
+import '../misc/notifier_util.dart';
 import '../widget/custom_table.dart';
 import '../widget/sire_name_input.dart';
 import 'edit_horse_base.dart';
@@ -70,14 +71,14 @@ class _EditMatingPageState extends EditHorsePageStateBase<EditMatingPage> {
 
   @override
   Future<void> onFetchCompleted() async {
+    final validKeys = <String>{};
     for (MatingData d in matings.values) {
-      _fatherTextControllers[d.motherName] = TextEditingController(
-        text: d.fatherName,
-      );
-      _explosionTextControllers[d.motherName] = TextEditingController(
-        text: d.isHistorical != true ? d.explosionPower?.toString() ?? '' : '',
-      );
+      validKeys.add(d.motherName);
+      updateTextEditingControllerMap(_fatherTextControllers, d.motherName, d.fatherName);
+      updateTextEditingControllerMap(_explosionTextControllers, d.motherName, d.isHistorical != true ? d.explosionPower?.toString() ?? '' : '');
     }
+    _fatherTextControllers.removeWhere(testAndDispose(validKeys));
+    _explosionTextControllers.removeWhere(testAndDispose(validKeys));
 
     if (targetYear == maxYear) {
       enableFilter = false;
@@ -85,6 +86,13 @@ class _EditMatingPageState extends EditHorsePageStateBase<EditMatingPage> {
     else {
       enableFilter = matings.values.where((d) => d.fatherName.isNotEmpty == true).isNotEmpty;
     }
+  }
+
+  @override
+  void dispose() {
+    disposeAll(_fatherTextControllers.values);
+    disposeAll(_explosionTextControllers.values);
+    super.dispose();
   }
 
   @override

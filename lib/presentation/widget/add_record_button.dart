@@ -7,7 +7,7 @@ import '../theme/button_style.dart';
 class AddRecordButton extends StatelessWidget {
   final FutureOr<void> Function(String name) onComplete;
 
-  AddRecordButton({ super.key, required this.onComplete });
+  const AddRecordButton({ super.key, required this.onComplete });
 
   @override
   Widget build(BuildContext context)
@@ -17,10 +17,9 @@ class AddRecordButton extends StatelessWidget {
         child: const Text('新規追加'),
       );
 
-  final controller = TextEditingController();
-
-  void _showDialog(BuildContext context) {
-    showDialog<bool>(
+  void _showDialog(BuildContext context) async {
+    final controller = TextEditingController();
+    final accept = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: Text("新規追加"),
@@ -49,10 +48,10 @@ class AddRecordButton extends StatelessWidget {
           ),
         ],
       ),
-    ).then((ret) {
-      if (ret == true) {
-        onComplete(controller.text);
-      }
-    });
+    );
+    if (accept == true) {
+      await onComplete(controller.text);
+    }
+    controller.dispose();
   }
 }

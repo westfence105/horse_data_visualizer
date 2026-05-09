@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-class SpinBox extends StatelessWidget {
+class SpinBox extends StatefulWidget {
   final int value;
   final int min;
   final int max;
@@ -8,8 +8,6 @@ class SpinBox extends StatelessWidget {
   final double? width;
   final double? height;
   final void Function(int value) onChanged;
-
-  final _textController = TextEditingController();
 
   SpinBox({
     required this.value,
@@ -21,8 +19,33 @@ class SpinBox extends StatelessWidget {
     super.key,
   }) {
     assert(min <= max);
+  }
 
+  @override
+  State<StatefulWidget> createState() => _SpinBoxState();
+}
+
+class _SpinBoxState extends State<SpinBox> {
+  int get value => widget.value;
+  int get min => widget.min;
+  int get max => widget.max;
+  double get fontSize => widget.fontSize;
+  double? get width => widget.width;
+  double? get height => widget.height;
+  void Function(int value) get onChanged => widget.onChanged;
+
+  final _textController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
     _textController.text = value.toString();
+  }
+
+  @override
+  void dispose() {
+    _textController.dispose();
+    super.dispose();
   }
 
   @override
