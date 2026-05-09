@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 
 import '../../data/entity/horse_raw.dart';
 import '../../data/repository/horses_repository.dart';
+import '../widget/custom_table.dart';
+import '../widget/filter_dialog.dart';
 import '../widget/spin_box.dart';
 
 class HorseListPage extends StatefulWidget {
@@ -33,11 +35,10 @@ class _HorseListPageState extends State<HorseListPage> {
 
   Future<void> _fetch() async {
     final data = await HorsesRepository.fetchHorseData();
-    setState(() {
-      horses = data.where(
-        (d) => d.rating != null,
-      ).toList(growable: false);
-    });
+    horses = data.where(
+      (d) => d.rating != null,
+    ).toList(growable: false);
+    _updateList();
   }
 
   int _sortColumn = 8;
@@ -45,13 +46,12 @@ class _HorseListPageState extends State<HorseListPage> {
 
   void _onSort(int column, bool ascending) {
     const ascCols = <int>{};
-    setState(() {
-      if (_sortColumn != column) {
-        ascending = ascCols.contains(column);
-      }
-      _sortColumn = column;
-      _sortAscending = ascending;
-    });
+    if (_sortColumn != column) {
+      ascending = ascCols.contains(column);
+    }
+    _sortColumn = column;
+    _sortAscending = ascending;
+    _updateList();
   }
 
   int _compareHorses(HorseData a, HorseData b) {
@@ -111,7 +111,7 @@ class _HorseListPageState extends State<HorseListPage> {
     }
   }
 
-  _Filters _filters = _Filters();
+  HorseDataFilter _filters = HorseDataFilter();
 
   bool get _hasFilter => _filters.isNotEmpty;
 
@@ -125,7 +125,16 @@ class _HorseListPageState extends State<HorseListPage> {
         return false;
       }
     }
-    return _filters.filter(d);
+    return _filters.filter(d.rawData);
+  }
+
+  List<HorseData> _sortedHorses = [];
+
+  void _updateList() {
+    setState(() {
+      _sortedHorses = horses.where(_filter).toList();
+      _sortedHorses.sort(_compareHorses);
+    });
   }
 
   Widget buildYearSelect()
@@ -134,65 +143,10 @@ class _HorseListPageState extends State<HorseListPage> {
         min: _minYear,
         max: _maxYear,
         onChanged: (v) {
-          setState(() {
-            _targetYear = v;
-          });
+          _targetYear = v;
+          _updateList();
         },
       );
-
-  List<DataColumn> get columns => [
-    DataColumn(
-      label: Text('生年'),
-      columnWidth: FixedColumnWidth(90),
-      onSort: _onSort,
-    ),
-    DataColumn(
-      label: Text('名前'),
-      columnWidth: FixedColumnWidth(160),
-      onSort: _onSort,
-    ),
-    DataColumn(
-      label: Text('性別'),
-      columnWidth: FixedColumnWidth(80),
-      headingRowAlignment: MainAxisAlignment.center,
-    ),
-    DataColumn(
-      label: Text('父'),
-      columnWidth: FixedColumnWidth(180),
-      onSort: _onSort,
-    ),
-    DataColumn(
-      label: Text('母'),
-      columnWidth: FixedColumnWidth(180),
-      onSort: _onSort,
-    ),
-    DataColumn(
-      label: Text('成長型'),
-      columnWidth: FixedColumnWidth(100),
-      headingRowAlignment: MainAxisAlignment.center,
-    ),
-    DataColumn(
-      label: Text('馬場'),
-      columnWidth: FixedColumnWidth(100),
-      headingRowAlignment: MainAxisAlignment.center,
-    ),
-    DataColumn(
-      label: Text('距離'),
-      columnWidth: FixedColumnWidth(100),
-      headingRowAlignment: MainAxisAlignment.center,
-    ),
-    DataColumn(
-      label: Text('評価'),
-      columnWidth: FixedColumnWidth(90),
-      onSort: _onSort,
-      headingRowAlignment: MainAxisAlignment.center,
-    ),
-    DataColumn(
-      label: Text('所属'),
-      columnWidth: FixedColumnWidth(90),
-      headingRowAlignment: MainAxisAlignment.center,
-    ),
-  ];
 
   @override
   void initState() {
@@ -226,37 +180,71 @@ class _HorseListPageState extends State<HorseListPage> {
                   ],
                 ),
               ),
-              DataTable(
-                columns: columns,
-                columnSpacing: 16,
-                rows: [],
-                dataRowMaxHeight: 0,
-                sortColumnIndex: _sortColumn,
-                sortAscending: _sortAscending,
-              ),
               Expanded(
-                child: SingleChildScrollView(
-                  child: DataTable(
-                    columns: columns,
-                    columnSpacing: 24,
-                    headingRowHeight: 0,
-                    rows: (horses.where(_filter).toList()..sort(_compareHorses)).map(
-                      (d) => DataRow(
-                        cells: [
-                          _buildCell(d.birthYear.toString()),
-                          _buildCell(d.name),
-                          _buildCell(d.sex, MainAxisAlignment.center),
-                          _buildCell(d.fatherName),
-                          _buildCell(d.motherName),
-                          _buildCell(d.growth, MainAxisAlignment.center),
-                          _buildCell(d.surface, MainAxisAlignment.center),
-                          _buildCell(d.distance, MainAxisAlignment.center),
-                          _buildCell(d.rating, MainAxisAlignment.center),
-                          _buildCell(d.region, MainAxisAlignment.center),
-                        ],
-                      ),
-                    ).toList(growable: false),
-                  ),
+                child: CustomTable<HorseData>(
+                  data: _sortedHorses,
+                  sortColumn: _sortColumn,
+                  sortAscending: _sortAscending,
+                  sortableColumns: [0,1,3,4,8],
+                  onSort: _onSort,
+                  columns: [
+                    StaticTableColumnDefinition(
+                      name: '生年',
+                      width: 70,
+                      valueBuilder: (d) => d.birthYear.toString(),
+                    ),
+                    StaticTableColumnDefinition(
+                      name: '名前',
+                      width: 150,
+                      headerAlignment: MainAxisAlignment.start,
+                      bodyAlignment: MainAxisAlignment.start,
+                      valueBuilder: (d) => d.name ?? '',
+                    ),
+                    StaticTableColumnDefinition(
+                      name: '性別',
+                      width: 48,
+                      valueBuilder: (d) => d.sex,
+                    ),
+                    StaticTableColumnDefinition(
+                      name: '父',
+                      width: 180,
+                      headerAlignment: MainAxisAlignment.start,
+                      bodyAlignment: MainAxisAlignment.start,
+                      valueBuilder: (d) => d.fatherName,
+                    ),
+                    StaticTableColumnDefinition(
+                      name: '母',
+                      width: 180,
+                      headerAlignment: MainAxisAlignment.start,
+                      bodyAlignment: MainAxisAlignment.start,
+                      valueBuilder: (d) => d.motherName,
+                    ),
+                    StaticTableColumnDefinition(
+                      name: '成長型',
+                      width: 80,
+                      valueBuilder: (d) => d.growth ?? '',
+                    ),
+                    StaticTableColumnDefinition(
+                      name: '馬場',
+                      width: 80,
+                      valueBuilder: (d) => d.surface ?? '',
+                    ),
+                    StaticTableColumnDefinition(
+                      name: '距離',
+                      width: 90,
+                      valueBuilder: (d) => d.distance ?? '',
+                    ),
+                    StaticTableColumnDefinition(
+                      name: '評価',
+                      width: 80,
+                      valueBuilder: (d) => d.rating ?? '',
+                    ),
+                    StaticTableColumnDefinition(
+                      name: '所属',
+                      width: 80,
+                      valueBuilder: (d) => d.region ?? '',
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -265,232 +253,17 @@ class _HorseListPageState extends State<HorseListPage> {
       ],
     ),
   );
-
-  DataCell _buildCell(String? value, [MainAxisAlignment alignment = MainAxisAlignment.start])
-    => DataCell(
-        Row(
-          mainAxisAlignment: alignment,
-          children: [
-            Text(
-              value ?? '-',
-              style: TextStyle(
-                fontSize: 16,
-              ),
-            ),
-          ],
-        ),
-      );
   
   Future<void> _selectFilter() async {
     await showDialog(
       context: context,
-      builder:  (context) => _FilterDialog(filters: _filters),
+      builder:  (context) => HorseDataFilterDialog(filters: _filters),
     ).then((filters) {
       if (filters != null) {
-        setState(() {
-          _filters = filters;
-        });
+        _filters = filters;
+        _updateList();
       }
     });
   }
 }
 
-class _Filters {
-  final sexFilter = <int>{};
-  final growthFilter = <int>{};
-  final surfaceFilter = <int>{};
-  final distanceFilter = <int>{};
-  final ratingFilter = <int>{};
-  final regionFilter = <int>{};
-
-  void clear() {
-    sexFilter.clear();
-    growthFilter.clear();
-    surfaceFilter.clear();
-    distanceFilter.clear();
-    ratingFilter.clear();
-    regionFilter.clear();
-  }
-
-  bool get isNotEmpty => (
-    sexFilter.isNotEmpty ||
-    growthFilter.isNotEmpty ||
-    surfaceFilter.isNotEmpty ||
-    distanceFilter.isNotEmpty ||
-    ratingFilter.isNotEmpty ||
-    regionFilter.isNotEmpty
-  );
-
-  bool filter(HorseData d) {
-    if (sexFilter.isNotEmpty) {
-      if (!sexFilter.contains(d.rawData.sex)) {
-        return false;
-      }
-    }
-    if (growthFilter.isNotEmpty) {
-      if (!growthFilter.contains(d.rawData.growth)) {
-        return false;
-      }
-    }
-    if (surfaceFilter.isNotEmpty) {
-      if (!surfaceFilter.contains(d.rawData.surface)) {
-        return false;
-      }
-    }
-    if (distanceFilter.isNotEmpty) {
-      if (!distanceFilter.contains(d.rawData.distance)) {
-        return false;
-      }
-    }
-    if (ratingFilter.isNotEmpty) {
-      if (!ratingFilter.contains(d.rawData.rating)) {
-        return false;
-      }
-    }
-    if (regionFilter.isNotEmpty) {
-      if (!regionFilter.contains(d.rawData.region)) {
-        return false;
-      }
-    }
-    return true;
-  }
-}
-
-class _FilterDialog extends StatefulWidget {
-  final _Filters filters;
-
-  const _FilterDialog({ required this.filters });
-
-  @override
-  State<StatefulWidget> createState() => _FilterDialogState();
-}
-
-class _FilterDialogState extends State<_FilterDialog> {
-  _Filters get filters => widget.filters;
-
-  @override
-  Widget build(BuildContext context) => AlertDialog(
-    title: Text("フィルタ"),
-    content: SizedBox(
-      width: 600,
-      height: 280,
-      child: Column(
-        children: [
-          _buildFilterRow(
-            '性別',
-            {1: '牡', -1: '牝'},
-            filters.sexFilter,
-          ),
-          _buildFilterRow(
-            '成長型',
-            ['早熟','早め','遅め','覚醒','晩成'].asMap(),
-            filters.growthFilter,
-          ),
-          _buildFilterRow(
-            '馬場',
-            {1:' 芝 ', -1:'ダート', 0:'万能'},
-            filters.surfaceFilter,
-          ),
-          _buildFilterRow(
-            '距離',
-            ['短距離','マイル','中距離','クラシック','長距離'].asMap(),
-            filters.distanceFilter,
-          ),
-          _buildFilterRow(
-            '評価',
-            {4:'◎',3:'○',2:'▲',1:'△',0:'×'},
-            filters.ratingFilter,
-          ),
-          _buildFilterRow(
-            '所属',
-            {1:'日本', 2:'欧州', 3:'米国', 4:'クラブ'},
-            filters.regionFilter,
-          ),
-        ],
-      ),
-    ),
-    actions: [
-      TextButton(
-        child: Text("Cancel"),
-        onPressed: () => Navigator.pop(context),
-      ),
-      TextButton(
-        child: Text("OK"),
-        onPressed: () => Navigator.pop(context, filters),
-      ),
-    ],
-  );
-
-  Widget _buildFilterRow<T>(String title, Map<T,String> options, Set<T> selections, [Function(T key, bool value)? onSelect])
-    => Row(
-      children: [
-        SizedBox(
-          width: 100,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [Text('$title: ', style: TextStyle(fontSize: 18))],
-          ),
-        ),
-        ...options.entries.map<Widget>(
-          (e) => Padding(
-            padding: EdgeInsets.all(4),
-            child: GestureDetector(
-              child: Container(
-                padding: EdgeInsets.symmetric(vertical: 4, horizontal: 12),
-                decoration: BoxDecoration(
-                  border: BoxBorder.all(
-                    color: selections.contains(e.key) ? 
-                      Colors.blue : Color(0xffcccccc),
-                    width: 2,
-                  ),
-                  borderRadius: BorderRadius.all(Radius.circular(12)),
-                ),
-                child: Text(e.value,
-                  style: TextStyle(
-                    fontSize: 18,
-                  ),
-                ),
-              ),
-              onTap: () {
-                setState(() {
-                  if (onSelect != null) {
-                    onSelect(e.key, !selections.contains(e.key));
-                  }
-                  else {
-                    if (selections.contains(e.key)) {
-                      selections.remove(e.key);
-                    }
-                    else {
-                      selections.add(e.key);
-                    }
-                  }
-                });
-              },
-            ),
-          ),
-        ),
-        SizedBox(width: 8),
-        GestureDetector(
-          child: Text('Clear',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: Colors.blue,
-            ),
-          ),
-          onTap: () {
-            setState(() {
-              if (onSelect != null) {
-                for (final k in options.keys) {
-                  onSelect(k, false);
-                }
-              }
-              else {
-                selections.clear();
-              }
-            });
-          },
-        ),
-      ],
-    );
-}

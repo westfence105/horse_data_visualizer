@@ -123,10 +123,7 @@ abstract class EditHorsePageStateBase<T extends StatefulWidget> extends State<T>
           ),
           IconButton(
             tooltip: '未入力馬を非表示',
-            onPressed: () {
-              enableFilter = !enableFilter;
-              updateList();
-            },
+            onPressed: selectFilter,
             icon: Icon(
               enableFilter ? 
                 Icons.filter_alt : 
@@ -140,7 +137,7 @@ abstract class EditHorsePageStateBase<T extends StatefulWidget> extends State<T>
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.only(top: 8, left: 12, right: 12),
+      padding: EdgeInsets.only(top: 8, left: 4, right: 4),
       child: Row(
         spacing: 10,
         children: [
@@ -150,6 +147,7 @@ abstract class EditHorsePageStateBase<T extends StatefulWidget> extends State<T>
                 buildTopBar(),
                 Expanded(
                   child: CustomTable<HorseRaw>(
+                    columnSpacing: 8,
                     data: rows,
                     columns: columns,
                   ),
@@ -169,19 +167,21 @@ abstract class EditHorsePageStateBase<T extends StatefulWidget> extends State<T>
   })
     => DropdownButton<int>(
         isExpanded: true,
-        padding: EdgeInsets.only(left: 16),
         items: values.asMap().entries.map((e) {
           FontWeight fontWeight = (e.key == 0) ? FontWeight.w400 : FontWeight.w600;
           return DropdownMenuItem(
             value: e.key,
             alignment: Alignment.center,
-            child: Text(
-              e.value,
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: fontWeight,
-              ),
-              textAlign: TextAlign.center,
+            child: Padding(
+              padding: EdgeInsets.only(left: 8),
+              child: Text(
+                e.value,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: fontWeight,
+                ),
+                textAlign: TextAlign.center,
+              ),  
             ),
           );
         }).toList(growable: false),
@@ -192,4 +192,9 @@ abstract class EditHorsePageStateBase<T extends StatefulWidget> extends State<T>
           }
         },
       );
+  
+  void selectFilter() {
+    enableFilter = !enableFilter;
+    updateList();
+  }
 }

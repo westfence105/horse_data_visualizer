@@ -155,7 +155,7 @@ class _EditMatingPageState extends EditHorsePageStateBase<EditMatingPage> {
       name: '母',
       width: 200,
       headerAlignment: MainAxisAlignment.start,
-      bodyAlignment: Alignment.centerLeft,
+      bodyAlignment: MainAxisAlignment.start,
       valueBuilder: (d) => d.motherName,
       styleBuilder: (d, baseStyle) {
         if (matings[d.motherName]!.motherGradeWinner == true) {

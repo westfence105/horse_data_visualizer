@@ -196,7 +196,7 @@ class _MaresPageState extends State<MaresPage> {
                 name: '名前',
                 width: 220,
                 headerAlignment: MainAxisAlignment.start,
-                bodyAlignment: Alignment.centerLeft,
+                bodyAlignment: MainAxisAlignment.start,
                 valueBuilder: (s) => s.name,
               ),
               CustomTableColumnDefinition<MareSummary>(

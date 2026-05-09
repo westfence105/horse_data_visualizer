@@ -60,7 +60,7 @@ class _EditBirthPageState extends EditHorsePageStateBase<EditBirthPage> {
       name: '名前',
       width: 220,
       headerAlignment: MainAxisAlignment.start,
-      bodyAlignment: Alignment.centerLeft,
+      bodyAlignment: MainAxisAlignment.start,
       valueBuilder: (d) =>
         ((d.isHistorical == true) ? '☆' : '') +
         ((d.isHistorical == true && d.name?.isNotEmpty == true ) ? d.name! : '${d.motherName}${d.birthYear % 100}')
@@ -75,7 +75,7 @@ class _EditBirthPageState extends EditHorsePageStateBase<EditBirthPage> {
       name: '父',
       width: 200,
       headerAlignment: MainAxisAlignment.start,
-      bodyAlignment: Alignment.centerLeft,
+      bodyAlignment: MainAxisAlignment.start,
       valueBuilder: (d) => d.fatherName,
     ),
     CustomTableColumnDefinition(

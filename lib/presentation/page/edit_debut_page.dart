@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../data/entity/horse_raw.dart';
 import '../../data/repository/horses_repository.dart';
 import '../widget/custom_table.dart';
+import '../widget/filter_dialog.dart';
 import 'edit_horse_base.dart';
 
 class EditDebutPage extends StatefulWidget {
@@ -43,7 +44,9 @@ class _EditDebutPageState extends EditHorsePageStateBase<EditDebutPage> {
     _nameTextControllers = horses.map(
       (k, v) => MapEntry(k, TextEditingController(text: v.name ?? '')),
     );
-    enableFilter = (targetYear < maxYear - 2);
+    if (!_filters.isNotEmpty) {
+      enableFilter = (targetYear < maxYear - 2);
+    }
   }
 
   @override
@@ -64,8 +67,17 @@ class _EditDebutPageState extends EditHorsePageStateBase<EditDebutPage> {
     }
   }
 
+  HorseDataFilter _filters = HorseDataFilter();
+
   @override
-  bool filter(HorseRaw raw) => raw.rating != null;
+  bool filter(HorseRaw raw) {
+    if (raw.rating == null) {
+      return false;
+    }
+    else {
+      return _filters.filter(raw);
+    }
+  }
 
   @override
   Future<void> prepareUpdate() async {
@@ -98,26 +110,27 @@ class _EditDebutPageState extends EditHorsePageStateBase<EditDebutPage> {
               ),
             ),
           ),
+          SizedBox(width: 16),
         ],
       ),
     ),
     StaticTableColumnDefinition<HorseRaw>(
       name: '父',
-      width: 200,
+      width: 180,
       headerAlignment: MainAxisAlignment.start,
-      bodyAlignment: Alignment.centerLeft,
+      bodyAlignment: MainAxisAlignment.start,
       valueBuilder: (d) => d.fatherName,
     ),
     StaticTableColumnDefinition<HorseRaw>(
       name: '母',
-      width: 200,
+      width: 180,
       headerAlignment: MainAxisAlignment.start,
-      bodyAlignment: Alignment.centerLeft,
+      bodyAlignment: MainAxisAlignment.start,
       valueBuilder: (d) => d.motherName,
     ),
     CustomTableColumnDefinition(
-      name: '成長型  ',
-      width: 120,
+      name: '成長型   ',
+      width: 90,
       cellBuilder: (context, d)
         => buildDropdown(
           selectedIndex: (d.growth ?? -1) + 1,
@@ -129,8 +142,8 @@ class _EditDebutPageState extends EditHorsePageStateBase<EditDebutPage> {
         ),
     ),
     CustomTableColumnDefinition(
-      name: '馬場  ',
-      width: 120,
+      name: '馬場   ',
+      width: 90,
       cellBuilder: (context, d){
         final valueMap = <int>[-2, 1, -1, 0];
         return buildDropdown(
@@ -144,8 +157,8 @@ class _EditDebutPageState extends EditHorsePageStateBase<EditDebutPage> {
       },
     ),
     CustomTableColumnDefinition(
-      name: '距離  ',
-      width: 140,
+      name: '距離   ',
+      width: 100,
       cellBuilder: (context, d)
         => buildDropdown(
             selectedIndex: (d.distance ?? -1) + 1,
@@ -157,8 +170,8 @@ class _EditDebutPageState extends EditHorsePageStateBase<EditDebutPage> {
           ),
     ),
     CustomTableColumnDefinition<HorseRaw>(
-      name: '評価  ',
-      width: 100,
+      name: '評価   ',
+      width: 80,
       cellBuilder: (context, d)
         => buildDropdown(
             selectedIndex: 4 - (d.rating ?? -1),
@@ -171,7 +184,7 @@ class _EditDebutPageState extends EditHorsePageStateBase<EditDebutPage> {
     ),
     CustomTableColumnDefinition<HorseRaw>(
       name: '所属  ',
-      width: 120,
+      width: 100,
       cellBuilder: (context, d)
         => buildDropdown(
             selectedIndex: d.region ?? 0,
@@ -183,4 +196,21 @@ class _EditDebutPageState extends EditHorsePageStateBase<EditDebutPage> {
           ),
     ),
   ];
+  
+  @override
+  Future<void> selectFilter() async {
+    await showDialog(
+      context: context,
+      builder:  (context) => HorseDataFilterDialog(filters: _filters),
+    ).then((filters) {
+      if (filters != null) {
+        _filters = filters;
+        enableFilter = _filters.isNotEmpty;
+        updateList();
+      }
+      else {
+        enableFilter = false;
+      }
+    });
+  }
 }

@@ -1,3 +1,6 @@
+
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:two_dimensional_scrollables/two_dimensional_scrollables.dart';
 
@@ -60,6 +63,7 @@ class CustomTable<T> extends StatefulWidget {
 
 class _CustomTableState<T> extends State<CustomTable<T>> {
   final _verticalScrollController = ScrollController();
+  final _horizontalScrollController = ScrollController();
 
   double get _tableWidth
     => widget.columns.map((c) => c.width).reduce((a, b) => a + b);
@@ -67,21 +71,27 @@ class _CustomTableState<T> extends State<CustomTable<T>> {
   @override
   void dispose() {
     _verticalScrollController.dispose();
+    _horizontalScrollController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) => Align(
     alignment: widget.alignment,
-    child: SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
+    child: RawScrollbar(
+      thumbVisibility: true,
+      trackVisibility: false,
+      interactive: true,
+      controller: _horizontalScrollController,
+      scrollbarOrientation: ScrollbarOrientation.bottom,
+      padding: EdgeInsets.only(top: widget.rowHeight),
       child: SizedBox(
         width: _tableWidth + 16,
         child: RawScrollbar(
-          controller: _verticalScrollController,
           thumbVisibility: true,
           trackVisibility: false,
           interactive: true,
+          controller: _verticalScrollController,
           scrollbarOrientation: ScrollbarOrientation.right,
           padding: EdgeInsets.only(top: widget.rowHeight),
           child: TableView.builder(
@@ -90,6 +100,10 @@ class _CustomTableState<T> extends State<CustomTable<T>> {
             verticalDetails: ScrollableDetails.vertical(
               controller: _verticalScrollController,
             ),
+            horizontalDetails: ScrollableDetails.horizontal(
+              controller: _horizontalScrollController,
+            ),
+            
             columnCount: widget.columns.length,
             rowCount: widget.data.length + 1,
             columnBuilder: (col) => TableSpan(
@@ -107,15 +121,15 @@ class _CustomTableState<T> extends State<CustomTable<T>> {
                 content = _buildHeaderCell(col);
               }
               else {
-                content = widget.columns[col].buildCell(context, widget.data[row-1]);
-              }
-              return TableViewCell(
-                child: Padding(
+                content = Padding(
                   padding: EdgeInsets.symmetric(
                     horizontal: widget.columnSpacing * 0.5,
                   ),
-                  child: content,
-                ),
+                  child: widget.columns[col].buildCell(context, widget.data[row-1]),
+                );
+              }
+              return TableViewCell(
+                child: content,
               );
             },
           ),
@@ -124,32 +138,66 @@ class _CustomTableState<T> extends State<CustomTable<T>> {
     ),
   );
 
-  Widget _buildHeaderCell(int col) => GestureDetector(
-    behavior: HitTestBehavior.opaque,
-    onTap: () {
-      if (widget.onSort != null && widget.sortableColumns.contains(col)) {
-        widget.onSort!(col, (widget.sortColumn == col) ? widget.sortAscending == false : true);
-      }
-    },
-    child: Row(
-      mainAxisAlignment: widget.columns[col].headerAlignment,
-      children: [
-        if (widget.sortColumn == col && widget.columns[col].headerAlignment == MainAxisAlignment.center)
-          const SizedBox(width: 32),
-        
-        Text(widget.columns[col].name),
+  Widget _buildHeaderCell(int col) {
+    final column = widget.columns[col];
+    final sorted = widget.sortColumn == col;
+    final center = column.headerAlignment == MainAxisAlignment.center;
 
-        if (widget.sortColumn == col)
-          const SizedBox(width: 8),
-        if (widget.sortColumn == col)
-          Icon(
-            (widget.sortAscending == true) ?
-              Icons.arrow_drop_up : Icons.arrow_drop_down,
-            size: 24,
-          ),
-      ],
-    ),
-  );
+    final content = Text(widget.columns[col].name);
+
+    late final List<Widget> widgets;
+    if (sorted) {
+      late double spacing;
+      if (center) {
+        spacing = max(widget.columnSpacing * 0.5, 8);
+      }
+      else {
+        spacing = widget.columnSpacing;
+      }
+      final sortIcon = SizedBox(
+        width: 8,
+        child: Icon(
+          (widget.sortAscending == true) ?
+            Icons.arrow_drop_up : Icons.arrow_drop_down,
+        ),
+      );
+      widgets = [
+        SizedBox(width: spacing),
+        content,
+        sortIcon,
+      ];
+      if (center) {
+        widgets.add(SizedBox(width: spacing - 8));
+      }
+    }
+    else {
+      if (center) {
+        widgets = [content];
+      }
+      else {
+        widgets = [
+          SizedBox(width: widget.columnSpacing * 0.5),
+          content,
+        ];
+      }
+    }
+
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () {
+        if (widget.onSort != null && widget.sortableColumns.contains(col)) {
+          widget.onSort!(col, sorted ? widget.sortAscending == false : true);
+        }
+      },
+      child: SizedBox(
+        width: column.width - widget.columnSpacing,
+        child: Row(
+        mainAxisAlignment: column.headerAlignment,
+        children: widgets,
+      ),
+      ),
+    );
+  }
 }
 
 class StaticTableColumnDefinition<T> extends CustomTableColumnDefinitionBase<T> {
@@ -157,7 +205,7 @@ class StaticTableColumnDefinition<T> extends CustomTableColumnDefinitionBase<T> 
   final double fontSize;
   final FontWeight fontWeight;
   final Color? fontColor;
-  final Alignment bodyAlignment;
+  final MainAxisAlignment bodyAlignment;
   final TextDecoration? textDecoration;
   final TextStyle Function(T rowData, TextStyle baseStyle)? styleBuilder;
 
@@ -170,7 +218,7 @@ class StaticTableColumnDefinition<T> extends CustomTableColumnDefinitionBase<T> 
     this.fontColor,
     this.textDecoration,
     super.headerAlignment,
-    this.bodyAlignment = Alignment.center,
+    this.bodyAlignment = MainAxisAlignment.center,
     this.styleBuilder,
   });
 
@@ -182,13 +230,17 @@ class StaticTableColumnDefinition<T> extends CustomTableColumnDefinitionBase<T> 
       color: fontColor,
       decoration: textDecoration,
     );
-    return Container(
+    return SizedBox(
       width: width,
-      alignment: bodyAlignment,
-      child: Text(
-        valueBuilder(rowData),
-        style: styleBuilder != null ?
-          styleBuilder!(rowData, baseStyle) : baseStyle,
+      child: Row(
+        mainAxisAlignment: bodyAlignment,
+        children: [
+          Text(
+            valueBuilder(rowData),
+            style: styleBuilder != null ?
+              styleBuilder!(rowData, baseStyle) : baseStyle,
+          ),
+        ],
       ),
     );
   }

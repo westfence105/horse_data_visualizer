@@ -159,7 +159,7 @@ class _SiresPageState extends State<SiresPage> {
                 name: '名前',
                 width: 240,
                 headerAlignment: MainAxisAlignment.start,
-                bodyAlignment: Alignment.centerLeft,
+                bodyAlignment: MainAxisAlignment.start,
                 valueBuilder: (d) => d.name,
               ),
               CustomTableColumnDefinition<SireSummary>(
