@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 
+import '../../data/entity/horse_enums.dart';
 import '../../data/entity/horse_raw.dart';
 import '../../data/repository/horses_repository.dart';
 import '../misc/notifier_util.dart';
 import '../widget/custom_table.dart';
 import '../widget/filter_dialog.dart';
 import '../widget/foal_info_dialog.dart';
+import '../widget/status_dropdown.dart';
 import 'edit_horse_base.dart';
 
 class EditDebutPage extends StatefulWidget {
@@ -144,40 +146,41 @@ class _EditDebutPageState extends EditHorsePageStateBase<EditDebutPage> {
       name: '成長型   ',
       width: 90,
       cellBuilder: (context, d)
-        => buildDropdown(
-          selectedIndex: (d.growth ?? -1) + 1,
-          values: ['-','早熟','早め','遅め','覚醒','晩成'],
-          onChanged: (v) => updateData(
-            d.motherName,
-            growth: v - 1,
+        => StatusDropdown(
+            value: d.growth ?? -1,
+            emptyValue: -1,
+            options: HorseGrowth.values,
+            onChanged: (v) => updateData(
+              d.motherName,
+              growth: v,
+            ),
           ),
-        ),
     ),
     CustomTableColumnDefinition(
       name: '馬場   ',
       width: 90,
-      cellBuilder: (context, d){
-        final valueMap = <int>[-2, 1, -1, 0];
-        return buildDropdown(
-          selectedIndex: valueMap.indexOf(d.surface ?? -2),
-          values: ['-','芝','ダート','万能'],
-          onChanged: (v) => updateData(
-            d.motherName,
-            surface: valueMap[v],
+      cellBuilder: (context, d)
+        => StatusDropdown(
+            value: d.surface ?? -2,
+            emptyValue: -2,
+            options: HorseSurface.values,
+            onChanged: (v) => updateData(
+              d.motherName,
+              surface: v,
+            ),
           ),
-        );
-      },
     ),
     CustomTableColumnDefinition(
       name: '距離   ',
       width: 100,
       cellBuilder: (context, d)
-        => buildDropdown(
-            selectedIndex: (d.distance ?? -1) + 1,
-            values: ['-','短距離','マイル','中距離','クラシック','長距離'],
+        => StatusDropdown(
+            value: d.distance ?? -1,
+            emptyValue: -1,
+            options: HorseDistance.values,
             onChanged: (v) => updateData(
               d.motherName,
-              distance: v - 1,
+              distance: v,
             ),
           ),
     ),
@@ -185,9 +188,10 @@ class _EditDebutPageState extends EditHorsePageStateBase<EditDebutPage> {
       name: '評価   ',
       width: 80,
       cellBuilder: (context, d)
-        => buildDropdown(
-            selectedIndex: 4 - (d.rating ?? -1),
-            values: ['◎','○','▲','△','×','-'],
+        => StatusDropdown(
+            value: d.rating ?? -1,
+            emptyValue: -1,
+            options: HorseRating.values,
             onChanged: (v) => updateData(
               d.motherName,
               rating: v,
@@ -198,9 +202,10 @@ class _EditDebutPageState extends EditHorsePageStateBase<EditDebutPage> {
       name: '所属  ',
       width: 100,
       cellBuilder: (context, d)
-        => buildDropdown(
-            selectedIndex: d.region ?? 0,
-            values: ['-','日本','欧州','米国','クラブ'],
+        => StatusDropdown(
+            value: d.region ?? 0,
+            emptyValue: 0,
+            options: HorseRegion.values,
             onChanged: (v) => updateData(
               d.motherName,
               region: v,

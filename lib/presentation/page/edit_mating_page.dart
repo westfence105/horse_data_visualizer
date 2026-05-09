@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../data/entity/horse_enums.dart';
 import '../../data/entity/horse_raw.dart';
 import '../../data/entity/mating_data.dart';
 import '../../data/repository/horses_repository.dart';
@@ -8,6 +9,7 @@ import '../../data/repository/mares_repository.dart';
 import '../misc/notifier_util.dart';
 import '../widget/custom_table.dart';
 import '../widget/sire_name_input.dart';
+import '../widget/status_dropdown.dart';
 import 'edit_horse_base.dart';
 
 class EditMatingPage extends StatefulWidget {
@@ -181,9 +183,10 @@ class _EditMatingPageState extends EditHorsePageStateBase<EditMatingPage> {
       width: 90,
       cellBuilder: (context, d) {
         final md = matings[d.motherName]!;
-        return buildDropdown(
-          selectedIndex: md.isHistorical == true ? 6 : (md.matingRank ?? 0),
-          values: ['-','S','A','B','C','D','☆'],
+        return StatusDropdown(
+          value: md.matingRank ?? 0,
+          emptyValue: 0,
+          options: HorseMatingRank.values,
           onChanged: (v) => setState(() {
             if (v < 6) {
               matings[d.motherName] = md.copyMatingDataWith(

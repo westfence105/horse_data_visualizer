@@ -93,6 +93,9 @@ abstract class EditHorsePageStateBase<T extends StatefulWidget> extends State<T>
   void initState() {
     super.initState();
     loadYears().then((_) {
+      setState(() {
+        targetYear = targetYear;
+      });
       fetch();
     });
   }

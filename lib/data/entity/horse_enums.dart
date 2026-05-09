@@ -36,7 +36,7 @@ enum HorseSex implements EnumBase {
 
 enum HorseRating implements EnumBase {
   exceptional(4, '◎'),
-  major(3, '〇'),
+  major(3, '○'),
   promising(2, '▲'),
   positive(1, '△'),
   noHighlight(0, '×');
@@ -59,7 +59,7 @@ enum HorseRating implements EnumBase {
 
 enum FoalRating implements EnumBase {
   exceptional(4, '◎'),
-  major(3, '〇'),
+  major(3, '○'),
   promising(2, '▲'),
   positive(1, '△'),
   noHighlight(0, '-');
@@ -152,7 +152,8 @@ enum HorseMatingRank implements EnumBase {
   A(2, 'A'),
   B(3, 'B'),
   C(4, 'C'),
-  D(4, 'D');
+  D(5, 'D'),
+  historical(6, '☆');
 
   @override
   final int value;

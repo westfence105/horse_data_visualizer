@@ -43,6 +43,12 @@ class _SpinBoxState extends State<SpinBox> {
   }
 
   @override
+  void didUpdateWidget(covariant SpinBox oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _textController.text = value.toString();
+  }
+
+  @override
   void dispose() {
     _textController.dispose();
     super.dispose();
@@ -82,6 +88,7 @@ class _SpinBoxState extends State<SpinBox> {
           alignment: AlignmentGeometry.centerLeft,
           child: GestureDetector(
             onTap: min < value ? () {
+              _textController.text = (value - 1).toString();
               onChanged(value - 1);
             } : null,
             child: Padding(
@@ -98,6 +105,7 @@ class _SpinBoxState extends State<SpinBox> {
           alignment: AlignmentGeometry.centerRight,
           child: GestureDetector(
             onTap: max > value ? () {
+              _textController.text = (value + 1).toString();
               onChanged(value + 1);
             } : null,
             child: Padding(

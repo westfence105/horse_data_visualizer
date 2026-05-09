@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../../data/entity/horse_enums.dart';
 import '../../data/entity/horse_raw.dart';
 import '../../data/repository/horses_repository.dart';
 import '../widget/custom_table.dart';
+import '../widget/status_dropdown.dart';
 import 'edit_horse_base.dart';
 
 class EditBirthPage extends StatefulWidget {
@@ -81,191 +83,86 @@ class _EditBirthPageState extends EditHorsePageStateBase<EditBirthPage> {
     CustomTableColumnDefinition(
       name: '性別',
       width: 90,
-      cellBuilder: (context, d) {
-        final valueMap = <int>[-2, 1, -1];
-        return buildDropdown(
-          selectedIndex: valueMap.indexOf(d.sex ?? -2),
-          values: ['-','牡','牝'],
-          onChanged: (v) => updateData(
-            d.motherName,
-            sex: valueMap[v],
+      cellBuilder: (context, d)
+        => StatusDropdown(
+            value: d.sex ?? 0,
+            emptyValue: 0,
+            options: HorseSex.values,
+            onChanged: (v) => updateData(
+              d.motherName,
+              sex: v,
+            ),
           ),
-        );
-      },
     ),
     CustomTableColumnDefinition(
       name: '秘書',
       width: 90,
       cellBuilder: (context, d)
-        => buildDropdown(
-            selectedIndex: 4 - (d.rating01),
-            values: ['◎','○','▲','△','-',' '],
-            onChanged: (v) => updateData(
-              d.motherName,
-              rating01: v,
-            ),
+        => StatusDropdown(
+          value: d.rating01,
+          emptyValue: -1,
+          options: FoalRating.values,
+          onChanged: (v) => updateData(
+            d.motherName,
+            rating01: v,
           ),
+        ),
     ),
     CustomTableColumnDefinition(
       name: '牧場長',
       width: 90,
       cellBuilder: (context, d)
-        => buildDropdown(
-            selectedIndex: 4 - (d.rating02),
-            values: ['◎','○','▲','△','-',' '],
-            onChanged: (v) => updateData(
-              d.motherName,
-              rating02: v,
-            ),
+        => StatusDropdown(
+          value: d.rating02,
+          emptyValue: -1,
+          options: FoalRating.values,
+          onChanged: (v) => updateData(
+            d.motherName,
+            rating02: v,
           ),
+        ),
     ),
     CustomTableColumnDefinition(
       name: '河童木',
       width: 90,
       cellBuilder: (context, d)
-        => buildDropdown(
-            selectedIndex: 4 - (d.rating03),
-            values: ['◎','○','▲','△','-',' '],
-            onChanged: (v) => updateData(
-              d.motherName,
-              rating03: v,
-            ),
+        => StatusDropdown(
+          value: d.rating03,
+          emptyValue: -1,
+          options: FoalRating.values,
+          onChanged: (v) => updateData(
+            d.motherName,
+            rating03: v,
           ),
+        ),
     ),
     CustomTableColumnDefinition(
       name: '長峰',
       width: 90,
       cellBuilder: (context, d)
-        => buildDropdown(
-            selectedIndex: 4 - (d.rating04),
-            values: ['◎','○','▲','△','-',' '],
-            onChanged: (v) => updateData(
-              d.motherName,
-              rating04: v,
-            ),
+        => StatusDropdown(
+          value: d.rating04,
+          emptyValue: -1,
+          options: FoalRating.values,
+          onChanged: (v) => updateData(
+            d.motherName,
+            rating04: v,
           ),
+        ),
     ),
     CustomTableColumnDefinition(
       name: '美香',
       width: 90,
       cellBuilder: (context, d)
-        => buildDropdown(
-            selectedIndex: 4 - (d.rating05),
-            values: ['◎','○','▲','△','-',' '],
-            onChanged: (v) => updateData(
-              d.motherName,
-              rating05: v,
-            ),
-          ),
-    ),
-  ];
-
-  List<DataColumn> get dataColumns => <DataColumn>[
-    DataColumn(
-      label: Text(' 秘書'),
-      columnWidth: FixedColumnWidth(90),
-    ),
-    DataColumn(
-      label: Text('牧場長'),
-      columnWidth: FixedColumnWidth(90),
-    ),
-    DataColumn(
-      label: Text('河童木'),
-      columnWidth: FixedColumnWidth(90),
-    ),
-    DataColumn(
-      label: Text('長峰'),
-      columnWidth: FixedColumnWidth(90),
-    ),
-    DataColumn(
-      label: Text('美香'),
-      columnWidth: FixedColumnWidth(90),
-    ),
-  ];
-
-  DataRow buildRow(HorseRaw raw) {
-    final d = HorseData.fromRaw(raw);
-    final motherName = d.motherName;
-    final named = (d.isHistorical == true && d.name?.isNotEmpty == true);
-    String prefix = '   ';
-    if (raw.isHistorical == true) {
-      prefix = '☆';
-    }
-    return DataRow(
-      cells: [
-        DataCell(
-          Text(
-            named ?
-              '$prefix${d.name}' :
-              '$prefix${d.motherName}${d.birthYear % 100}',
-            style: TextStyle(
-              fontSize: 16,
-            ),
-          ),
-        ),
-        DataCell(
-          Text(
-            d.fatherName,
-            style: TextStyle(
-              fontSize: 16,
-            ),
-          ),
-        ),
-        DataCell(
-          Padding(
-            padding: EdgeInsets.only(left: 2),
-            child: (){
-            }(),
-          ),
-        ),
-        _buildRatingCell(
-          raw.rating01,
-          (v) => updateData(
-            motherName,
-            rating01: v,
-          ),
-        ),
-        _buildRatingCell(
-          raw.rating02,
-          (v) => updateData(
-            motherName,
-            rating02: v,
-          ),
-        ),
-        _buildRatingCell(
-          raw.rating03,
-          (v) => updateData(
-            motherName,
-            rating03: v,
-          ),
-        ),
-        _buildRatingCell(
-          raw.rating04,
-          (v) => updateData(
-            motherName,
-            rating04: v,
-          ),
-        ),
-        _buildRatingCell(
-          raw.rating05,
-          (v) => updateData(
-            motherName,
+        => StatusDropdown(
+          value: d.rating05,
+          emptyValue: -1,
+          options: FoalRating.values,
+          onChanged: (v) => updateData(
+            d.motherName,
             rating05: v,
           ),
         ),
-      ],
-    );
-  }
-  
-  DataCell _buildRatingCell(int? value, Function(int value) onChanged)
-    => DataCell(
-        Padding(
-          padding: EdgeInsets.only(left: 2),
-          child: buildDropdown(
-            selectedIndex: 4 - (value ?? -1),
-            values: ['◎','○','▲','△','-',' '],
-            onChanged: (v) => onChanged(4 - v),
-          ),
-        ),
-      );
+    ),
+  ];
 }
