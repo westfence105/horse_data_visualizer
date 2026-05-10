@@ -184,18 +184,19 @@ class _EditMatingPageState extends EditHorsePageStateBase<EditMatingPage> {
       cellBuilder: (context, d) {
         final md = matings[d.motherName]!;
         return StatusDropdown(
-          value: md.matingRank ?? 0,
+          value: (md.isHistorical == true) ? 6 : (md.matingRank ?? 0),
           emptyValue: 0,
           options: HorseMatingRank.values,
           onChanged: (v) => setState(() {
             if (v < 6) {
               matings[d.motherName] = md.copyMatingDataWith(
                 matingRank: v,
-                isHistorical: false,
+                isHistorical: v == 6,
               );
             }
             else {
               matings[d.motherName] = md.copyMatingDataWith(
+
                 isHistorical: true,
               );
             }
@@ -234,4 +235,62 @@ class _EditMatingPageState extends EditHorsePageStateBase<EditMatingPage> {
 
   @override
   bool filter(HorseRaw raw) => raw.matingRank != null;
+
+  @override
+  List<Widget> get topBarIcons => [
+    IconButton(
+      tooltip: '種付け頭数を集計',
+      onPressed: () => _showSireBreedingCounts(context),
+      icon: Icon(Icons.format_list_numbered),
+    ),
+  ];
+
+  void _showSireBreedingCounts(BuildContext context) {
+    final sires = <String,List<HorseRaw>>{};
+    for (final h in horses.values) {
+      if (h.fatherName.isNotEmpty) {
+        (sires[h.fatherName] ??= []).add(h);
+      }
+    }
+    final entries = sires.entries.toList();
+    entries.sort((a, b) => b.value.length - a.value.length);
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('種付け頭数', style: TextStyle(fontSize: 20)),
+        content: ConstrainedBox(
+          constraints: BoxConstraints(
+            minWidth: 200,
+            maxHeight: 600,
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              children: entries.map(
+                (e) => Row(
+                  children: [
+                    Expanded(child: SizedBox.shrink()),
+                    SizedBox(
+                      width: 160,
+                      child: Text(e.key, style: TextStyle(fontSize: 17)),
+                    ),
+                    SizedBox(
+                      width: 32,
+                      child: Text(e.value.length.toString(), textAlign: TextAlign.end),
+                    ),
+                    Expanded(child: SizedBox.shrink()),
+                  ],
+                ),
+              ).toList(),
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            child: Text("Close"),
+            onPressed: () => Navigator.pop(context, true),
+          ),
+        ],
+      ),
+    );
+  }
 }

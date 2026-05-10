@@ -111,6 +111,8 @@ abstract class EditHorsePageStateBase<T extends StatefulWidget> extends State<T>
         },
       );
 
+  List<Widget> get topBarIcons => [];
+
   Widget buildTopBar()
     => SizedBox(
       width: tableWidth,
@@ -133,6 +135,7 @@ abstract class EditHorsePageStateBase<T extends StatefulWidget> extends State<T>
                 Icons.filter_alt_off,
             )
           ),
+          ...topBarIcons,
         ],
       ),
     );
