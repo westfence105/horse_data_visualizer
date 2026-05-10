@@ -263,7 +263,8 @@ class _ChildListPageState extends State<ChildListPage> {
                           ownedHorses: _childrenData,
                           foals: _foalData,
                           mares: _mareData,
-                          showFatherName: _aggMode != AggregationMode.sire
+                          showFatherName: _aggMode != AggregationMode.sire,
+                          showMatingRank: _aggMode == AggregationMode.mare,
                         ),
                       ),
                     ),

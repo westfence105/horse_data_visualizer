@@ -124,9 +124,13 @@ class _EditDebutPageState extends EditHorsePageStateBase<EditDebutPage> {
               ),
             ),
           ),
-          SizedBox(width: 16),
         ],
       ),
+    ),
+    StaticTableColumnDefinition(
+      name: '性別',
+      width: 60,
+      valueBuilder: (d) => HorseSex.labelOf(d.sex) ?? '',
     ),
     StaticTableColumnDefinition<HorseRaw>(
       name: '父',
@@ -223,28 +227,21 @@ class _EditDebutPageState extends EditHorsePageStateBase<EditDebutPage> {
   ];
   
   void _showFoalInfoDialog(HorseRaw d) {
-    showDialog<(HorseRaw,int)>(
+    showDialog<HorseRaw>(
       context: context,
-      builder: (context) => FoalInfoDialog(horse: d),
-    ).then((result) {
-      if (result?.$1 != null) {
-        horses[d.motherName] = result!.$1;
-      }
-      if (result?.$2 != null) {
-        final next = result!.$2;
-        if (next != 0) {
-          int idx = rows.indexOf(d);
-          idx += next;
-          if (idx < 0) {
-            idx = rows.length - 1;
-          }
-          else if (idx > rows.length) {
-            idx = 0;
-          }
-          _showFoalInfoDialog(rows[idx]);
-        }
-      }
-    });
+      builder: (context) => FoalInfoDialog(
+        horses: rows,
+        initialIndex: rows.indexWhere((e) => d.motherName == e.motherName),
+        onChanged: (h) {
+          _nameTextControllers[h.motherName]!.text = h.name ?? '';
+          updateData(
+            h.motherName,
+            name: h.name,
+            region: h.region,
+          );
+        },
+      ),
+    );
   }
 
   @override

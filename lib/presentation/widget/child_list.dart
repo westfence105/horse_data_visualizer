@@ -12,6 +12,7 @@ class ChildList extends StatelessWidget {
   final List<MareSummary> mares;
   final bool showFatherName;
   final bool showMotherName;
+  final bool showMatingRank;
   final double width;
   final double fontSize;
   final EdgeInsets contentPadding;
@@ -23,13 +24,15 @@ class ChildList extends StatelessWidget {
     this.mares = const [],
     bool? showFatherName,
     bool? showMotherName,
+    bool? showMatingRank,
     double width = 640,
     this.fontSize = 16,
-    this.contentPadding = const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+    this.contentPadding = const EdgeInsets.symmetric(vertical: 6, horizontal: 16),
   }) : assert(width > 32),
        width = width - 32,
        showFatherName = showFatherName ?? false,
-       showMotherName = showMotherName ?? (showFatherName != true);
+       showMotherName = showMotherName ?? (showFatherName != true),
+       showMatingRank = showMatingRank ?? false;
 
   static ChildList builder({
     Key? key,
@@ -38,9 +41,10 @@ class ChildList extends StatelessWidget {
     List<MareSummary> mares = const [],
     bool? showFatherName,
     bool? showMotherName,
+    bool? showMatingRank,
     double width = 640,
     double fontSize = 16,
-    EdgeInsets contentPadding = const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+    EdgeInsets contentPadding = const EdgeInsets.symmetric(vertical: 6, horizontal: 16),
   }) {
     final ownedHorseMap = <int,SexPair<List<OwnedHorseData>>>{};
     final foalMap = <int,SexPair<List<FoalData>>>{};
@@ -72,6 +76,7 @@ class ChildList extends StatelessWidget {
       mares: mares,
       showFatherName: showFatherName,
       showMotherName: showMotherName,
+      showMatingRank: showMatingRank,
       width: width,
       fontSize: fontSize,
       contentPadding: contentPadding,
@@ -125,22 +130,29 @@ class ChildList extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         spacing: fontSize * 0.8,
-        children: horses.where((r) => r.name.isNotEmpty)
-          .map<Widget>((r) {
-            late final String pair;
+        children: horses.map<Widget>((r) {
+            final name = r.name.isNotEmpty ? r.name : '${r.motherName}${r.birthYear % 100}';
+            final suffix = <String>[
+              '(${r.birthYear})',
+            ];
             if (showFatherName) {
-              pair = '[${r.fatherName}]';
+              suffix.add('[${r.fatherName}]');
             }
             else if (showMotherName) {
-              pair = '[${r.motherName}]';
+              suffix.add('[${r.motherName}]');
             }
-            else {
-              pair = '';
+            if (showMatingRank) {
+              if (r.isHistorical == true) {
+                suffix.add('[☆]');
+              }
+              else if (r.matingRank != null && r.explosionPower != null) {              
+                suffix.add('[${HorseMatingRank.labelOf(r.matingRank)}${r.explosionPower}]');
+              }
             }
             return _createNameText(
               mark: HorseRating.labelOf(r.rating),
-              name: r.name,
-              suffix: '(${r.birthYear}) $pair',
+              name: name,
+              suffix: suffix.join(' '),
               color: (r.sex == 1) ? 
                 Color(0xff000080) : 
                 Color(0xffff0000),
@@ -156,15 +168,28 @@ class ChildList extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         spacing: fontSize * 0.8,
-        children: foals.map<Widget>(
-          (r) => _createNameText(
-            mark: HorseRating.labelOf(r.foalRating),
-            name: '${r.motherName}${r.birthYear % 100}',
-            suffix: showFatherName ? '[${r.fatherName}]' : '',
-            color: (r.sex == 1) ? 
-              Color(0xff000080) : 
-              Color(0xffff0000),
-          )).toList(growable: false),
+        children: foals.map<Widget>((r) {
+            final suffix = <String>[];
+            if (showFatherName) {
+              suffix.add('[${r.fatherName}]');
+            }
+            if (showMatingRank) {
+              if (r.isHistorical == true) {
+                suffix.add('[☆]');
+              }
+              else if (r.matingRank != null && r.explosionPower != null) {              
+                suffix.add('[${HorseMatingRank.labelOf(r.matingRank)}${r.explosionPower}]');
+              }
+            }
+            return _createNameText(
+              mark: HorseRating.labelOf(r.foalRating),
+              name: '${r.motherName}${r.birthYear % 100}',
+              suffix: suffix.join(' '),
+              color: (r.sex == 1) ? 
+                Color(0xff000080) : 
+                Color(0xffff0000),
+            );
+          }).toList(growable: false),
       ),
     );
   }
@@ -203,7 +228,7 @@ class ChildList extends StatelessWidget {
           TextSpan(
             text: name,
             style: styleBase.copyWith(
-              fontWeight: FontWeight.bold,
+              fontWeight: FontWeight.w600,
             ),
           ),
           const TextSpan(text: ' '),

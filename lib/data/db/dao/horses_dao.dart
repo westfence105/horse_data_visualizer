@@ -121,7 +121,7 @@ class HorsesDao extends DatabaseAccessor<AppDb> with _$HorsesDaoMixin {
       SELECT
         $horseIdentityColumns,
         $horseStatusColumns,
-        h.region,
+        $horseExtraColumns,
         $breedingExistsExpr
       FROM horses AS h
       LEFT JOIN sires AS f ON h.father_id = f.id
@@ -147,7 +147,8 @@ class HorsesDao extends DatabaseAccessor<AppDb> with _$HorsesDaoMixin {
       '''
       SELECT
         $horseIdentityColumns,
-        $foalRatingColumns
+        $foalRatingColumns,
+        $horseExtraColumns
       FROM horses AS h
       LEFT JOIN sires AS f ON h.father_id = f.id
       LEFT JOIN mares AS b ON h.mother_id = b.id

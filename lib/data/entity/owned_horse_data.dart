@@ -11,6 +11,9 @@ class OwnedHorseData {
   final int distance;
   final int rating;
   final bool breeding;
+  final int? matingRank;
+  final int? explosionPower;
+  final bool? isHistorical;
 
   const OwnedHorseData({
     required this.birthYear,
@@ -23,6 +26,9 @@ class OwnedHorseData {
     required this.distance,
     required this.rating,
     required this.breeding,
+    this.matingRank,
+    this.explosionPower,
+    this.isHistorical,
   });
 
   OwnedHorseData.fromRow(QueryRow r) : this(
@@ -36,5 +42,8 @@ class OwnedHorseData {
     distance: r.read('distance'),
     rating: r.read('rating'),
     breeding: r.read('breeding'),
+    matingRank: r.read('mating_rank'),
+    explosionPower: r.read('explosion_power'),
+    isHistorical: r.read('is_historical'),
   );
 }

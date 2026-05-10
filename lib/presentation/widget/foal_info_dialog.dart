@@ -11,11 +11,15 @@ import '../../data/repository/sires_repository.dart';
 import 'child_list.dart';
 
 class FoalInfoDialog extends StatefulWidget {
-  final HorseRaw horse;
+  final List<HorseRaw> horses;
+  final int initialIndex;
+  final Function(HorseRaw h) onChanged;
 
   const FoalInfoDialog({
     super.key,
-    required this.horse,
+    required this.horses,
+    required this.initialIndex,
+    required this.onChanged,
   });
 
   @override
@@ -23,7 +27,10 @@ class FoalInfoDialog extends StatefulWidget {
 }
 
 class _FoalInfoDialogState extends State<FoalInfoDialog> {
-  late HorseRaw horse;
+  late int _index;
+
+  HorseRaw get horse => widget.horses[_index];
+  set horse(HorseRaw h) => widget.horses[_index] = h;
 
   final _nameController = TextEditingController();
 
@@ -48,7 +55,7 @@ class _FoalInfoDialogState extends State<FoalInfoDialog> {
       }),
       HorsesRepository.fetchOwnedHorseData(null, motherId).then((result) {
         setState(() {
-          siblingOwnedHorses = result.toList();
+          siblingOwnedHorses = result.where((h) => h.birthYear != horse.birthYear).toList();
         });
       }),
       HorsesRepository.fetchFoalData(fatherId, null).then((result) {
@@ -83,7 +90,7 @@ class _FoalInfoDialogState extends State<FoalInfoDialog> {
   @override
   void initState() {
     super.initState();
-    horse = widget.horse;
+    _index = widget.initialIndex;
     _nameController.text = horse.name ?? '';
     _fetch();
   }
@@ -99,7 +106,7 @@ class _FoalInfoDialogState extends State<FoalInfoDialog> {
     title: Text('新馬情報', style: TextStyle(fontSize: 20)),
     contentPadding: EdgeInsets.fromLTRB(24, 12, 24, 8),
     content: SizedBox(
-      width: 900,
+      width: 940,
       height: 600,
       child: Column(
         children: [
@@ -121,7 +128,9 @@ class _FoalInfoDialogState extends State<FoalInfoDialog> {
                   ),
                 ),
               ),
-              SizedBox(width: 24),
+              SizedBox(width: 16),
+              Text('性別: ${HorseSex.labelOf(horse.sex)}'),
+              Text('   /   '),
               Text('成長型: ${HorseGrowth.labelOf(horse.growth)}'),
               Text('   /   '),
               Text('馬場: ${HorseSurface.labelOf(horse.surface)}'),
@@ -137,9 +146,11 @@ class _FoalInfoDialogState extends State<FoalInfoDialog> {
                   selectedIndex: horse.region ?? 0,
                   values: ['-', ...HorseRegion.values.map((e) => e.label)],
                   onChanged: (v) {
-                    horse = horse.copyWith(
-                      region: v,
-                    );
+                    setState(() {
+                      horse = horse.copyWith(
+                        region: v,
+                      );
+                    });
                   },
                 ),
               ),
@@ -160,7 +171,7 @@ class _FoalInfoDialogState extends State<FoalInfoDialog> {
           ),
           Expanded(
             child: Padding(
-              padding: EdgeInsetsGeometry.only(top: 24, left: 32, right: 32),
+              padding: EdgeInsetsGeometry.only(top: 24, left: 48, right: 48),
               child: Row(
                 children: [
                   SizedBox(
@@ -192,6 +203,7 @@ class _FoalInfoDialogState extends State<FoalInfoDialog> {
                         Expanded(
                           child: Container(
                             margin: EdgeInsets.only(left: 8, top: 8),
+                            padding: EdgeInsets.fromLTRB(0, 6, 0, 12),
                             decoration: BoxDecoration(
                               border: BoxBorder.all(
                                 color: Colors.grey,
@@ -205,6 +217,7 @@ class _FoalInfoDialogState extends State<FoalInfoDialog> {
                                 width: 390,
                                 showFatherName: false,
                                 showMotherName: false,
+                                contentPadding: EdgeInsets.only(top: 10, bottom: 2, left: 16, right: 16),
                               ),
                             ),
                           ),
@@ -212,7 +225,7 @@ class _FoalInfoDialogState extends State<FoalInfoDialog> {
                       ],
                     ),
                   ),
-                  SizedBox(width: 36),
+                  SizedBox(width: 44),
                   SizedBox(
                     width: 400,
                     child: Column(
@@ -244,6 +257,7 @@ class _FoalInfoDialogState extends State<FoalInfoDialog> {
                         Expanded(
                           child: Container(
                             margin: EdgeInsets.only(left: 8, top: 8),
+                            padding: EdgeInsets.fromLTRB(0, 6, 0, 12),
                             decoration: BoxDecoration(
                               border: BoxBorder.all(
                                 color: Colors.grey,
@@ -288,7 +302,26 @@ class _FoalInfoDialogState extends State<FoalInfoDialog> {
         name: name,
       );
     }
-    Navigator.pop(context, (horse, next));
+    widget.onChanged(horse);
+
+    if (next == 0) {    
+      Navigator.pop(context);
+    }
+    else {
+      if (next != 0) {
+        setState(() {
+          _index += next;
+          if (_index < 0) {
+            _index = widget.horses.length - 1;
+          }
+          else if (_index >= widget.horses.length) {
+            _index = 0;
+          }
+          _nameController.text = horse.name ?? '';
+          _fetch();
+        });
+      }
+    }
   }
 
   Widget _buildDropdown({
