@@ -217,16 +217,36 @@ class _EditDebutPageState extends EditHorsePageStateBase<EditDebutPage> {
       width: 40,
       cellBuilder: (context, d) => GestureDetector(
         child: Icon(Icons.info_outline),
-        onTap: () {
-          showDialog(
-            context: context,
-            builder: (context) => FoalInfoDialog(horse: d),
-          );
-        },
+        onTap: () => _showFoalInfoDialog(d),
       ),
     ),
   ];
   
+  void _showFoalInfoDialog(HorseRaw d) {
+    showDialog<(HorseRaw,int)>(
+      context: context,
+      builder: (context) => FoalInfoDialog(horse: d),
+    ).then((result) {
+      if (result?.$1 != null) {
+        horses[d.motherName] = result!.$1;
+      }
+      if (result?.$2 != null) {
+        final next = result!.$2;
+        if (next != 0) {
+          int idx = rows.indexOf(d);
+          idx += next;
+          if (idx < 0) {
+            idx = rows.length - 1;
+          }
+          else if (idx > rows.length) {
+            idx = 0;
+          }
+          _showFoalInfoDialog(rows[idx]);
+        }
+      }
+    });
+  }
+
   @override
   Future<void> selectFilter() async {
     await showDialog(

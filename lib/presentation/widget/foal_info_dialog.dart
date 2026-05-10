@@ -143,6 +143,19 @@ class _FoalInfoDialogState extends State<FoalInfoDialog> {
                   },
                 ),
               ),
+              Expanded(child: SizedBox.shrink()),
+              IconButton(
+                onPressed: () {
+                  _accept(-1);
+                },
+                icon: Icon(Icons.keyboard_arrow_left),
+              ),
+              IconButton(
+                onPressed: () {
+                  _accept(1);
+                },
+                icon: Icon(Icons.keyboard_arrow_right),
+              ),
             ],
           ),
           Expanded(
@@ -261,24 +274,22 @@ class _FoalInfoDialogState extends State<FoalInfoDialog> {
     ),
     actions: [
       TextButton(
-        child: Text("Cancel"),
-        onPressed: () => Navigator.pop(context),
-      ),
-      TextButton(
         child: Text("OK"),
-        onPressed: () {
-          final name = _nameController.text;
-          if (name != horse.name) {
-            horse = horse.copyWith(
-              name: name,
-            );
-          }
-          Navigator.pop(context, horse);
-        },
+        onPressed: () => _accept(0),
       ),
     ],
     actionsPadding: EdgeInsets.only(bottom: 32, right: 32),
   );
+
+  void _accept(int next) {
+    final name = _nameController.text;
+    if (name != horse.name) {
+      horse = horse.copyWith(
+        name: name,
+      );
+    }
+    Navigator.pop(context, (horse, next));
+  }
 
   Widget _buildDropdown({
     required int selectedIndex,
