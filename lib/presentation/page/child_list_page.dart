@@ -50,7 +50,7 @@ class _ChildListPageState extends State<ChildListPage> {
           .where((e) => (e.ownCount ?? 0) + (e.foalCount ?? 0) > 0).toList()
           ..sort(_compareMares);
         _lineageSummaries = result[2].cast<LineageSummary>()
-          .where((e) => e.descendantCount > 0).toList();
+          .where((e) => e.lineageStatus > 0 || e.directChildCount > 0 || e.progenitorId == null).toList();
       });
     });
   }
@@ -89,11 +89,7 @@ class _ChildListPageState extends State<ChildListPage> {
       future = HorsesRepository.fetchOwnedHorseData(_selectedParent, null);
       foalFuture = HorsesRepository.fetchFoalData(_selectedParent, null);
       mareFuture = MaresRepository.fetchMareSummaries(fatherId: _selectedParent);
-      SiresRepository.fetchSireSummary(_selectedParent!).then((s) async {
-        if (s?.fatherId != null) {
-          _lineages = await SiresRepository.findBelongingLineages(s!.fatherId!);
-        }
-      });
+      _fetchLineage(_selectedParent!);
     }
     else if (_aggMode == AggregationMode.mare){
       future = HorsesRepository.fetchOwnedHorseData(null, _selectedParent);
@@ -101,7 +97,7 @@ class _ChildListPageState extends State<ChildListPage> {
       mareFuture = MaresRepository.fetchMareSummaries(motherId: _selectedParent);
       MaresRepository.fetchMareSummary(_selectedParent!).then((s) async {
         if (s?.fatherId != null) {
-          _lineages = await SiresRepository.findBelongingLineages(s!.fatherId!);
+          _fetchLineage(s!.fatherId!);
         }
       });
     }
@@ -122,6 +118,18 @@ class _ChildListPageState extends State<ChildListPage> {
                 ((m.childCount ?? 0) > 0)
         ).toList(growable: false);
     }));
+  }
+
+  Future<void> _fetchLineage(int sireId) async {
+    final s = await SiresRepository.fetchSireSummary(sireId);
+    if (s != null) {
+      if (s.majorLine == s.minorLine) {
+        _lineages = ['${s.majorLine}系'];
+      }
+      else {
+        _lineages = ['${s.majorLine}系', '${s.minorLine}系'];
+      }
+    }
   }
 
   @override

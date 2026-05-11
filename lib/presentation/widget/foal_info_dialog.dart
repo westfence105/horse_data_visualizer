@@ -73,9 +73,9 @@ class _FoalInfoDialogState extends State<FoalInfoDialog> {
           siblingMares = result.toList();
         });
       }),
-      SiresRepository.findBelongingLineages(fatherId).then((result) {
+      SiresRepository.fetchSireSummary(fatherId).then((result) {
         setState(() {
-          lineage = result.lastOrNull ?? '';
+          lineage = result!.minorLine!;
         });
       }),
       MaresRepository.fetchMareSummary(motherId).then((result) {
