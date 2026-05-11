@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../data/entity/horse_raw.dart';
 import '../../data/repository/horses_repository.dart';
+import '../misc/string_extension.dart';
 import '../theme/button_style.dart';
 import '../widget/custom_table.dart';
 import '../widget/spin_box.dart';
@@ -71,7 +72,7 @@ abstract class EditHorsePageStateBase<T extends StatefulWidget> extends State<T>
   }
 
   int compareHorses(HorseRaw a, HorseRaw b)
-    => a.motherName.compareTo(b.motherName);
+    => a.motherName.compareKanaTo(b.motherName);
 
   bool hideUnsetRows = false;
 

@@ -5,6 +5,7 @@ import '../../data/repository/sires_repository.dart';
 import '../../data/repository/horses_repository.dart';
 import '../../data/repository/mares_repository.dart';
 import '../misc/enums.dart';
+import '../misc/string_extension.dart';
 import '../widget/aggregation_mode_selector.dart';
 import '../widget/period_widget.dart';
 
@@ -116,7 +117,7 @@ class _StatsPageState extends State<StatsPage> {
             return b.childCount - a.childCount;
           }
           else {
-            return a.name.compareTo(b.name);
+            return a.name.compareKanaTo(b.name);
           }
         }
         else if (aVal?.isFinite != true) {

@@ -6,6 +6,7 @@ import '../../data/repository/mares_repository.dart';
 import '../../data/service/store/mare_name_store.dart';
 import '../../data/service/store/sire_name_store.dart';
 import '../misc/notifier_util.dart';
+import '../misc/string_extension.dart';
 import '../theme/button_style.dart';
 import '../widget/action_buttons.dart';
 import '../widget/add_record_button.dart';
@@ -85,7 +86,7 @@ class _MaresPageState extends State<MaresPage> {
     int d = _sortAscending ? -1 : 1;
     switch (_sortColumn) {
       case 0: {
-        return a.name.compareTo(b.name) * d;
+        return a.name.compareKanaTo(b.name) * d;
       }
       case 1: {
         if (a.fatherName != b.fatherName) {
@@ -94,7 +95,7 @@ class _MaresPageState extends State<MaresPage> {
         if (a.motherName != b.motherName) {
           return ((a.motherName ?? '').compareTo(b.motherName ?? '')) * d;
         }
-        return a.name.compareTo(b.name) * d;
+        return a.name.compareKanaTo(b.name) * d;
       }
       case 2: {
         if (a.motherName != b.motherName) {
@@ -103,13 +104,13 @@ class _MaresPageState extends State<MaresPage> {
         if (a.fatherName != b.fatherName) {
           return ((a.fatherName ?? '').compareTo(b.fatherName ?? '')) * d;
         }
-        return a.name.compareTo(b.name) * d;
+        return a.name.compareKanaTo(b.name) * d;
       }
       case 6: {
         if (a.farm != null && a.farm! > 0) {
           if (b.farm != null && b.farm! > 0) {
             if (a.farm == b.farm) {
-              return a.name.compareTo(b.name);
+              return a.name.compareKanaTo(b.name);
             }
             else {
               return (a.farm! - b.farm!) * d;
@@ -123,7 +124,7 @@ class _MaresPageState extends State<MaresPage> {
           return d;
         }
         else {
-          return a.name.compareTo(b.name);
+          return a.name.compareKanaTo(b.name);
         }
       }
       default: return 0;

@@ -5,6 +5,7 @@ import '../../data/entity/sire_summary.dart';
 import '../../data/repository/sires_repository.dart';
 import '../../data/service/store/sire_name_store.dart';
 import '../misc/notifier_util.dart';
+import '../misc/string_extension.dart';
 import '../theme/button_style.dart';
 import '../widget/action_buttons.dart';
 import '../widget/add_record_button.dart';
@@ -74,7 +75,7 @@ class _SiresPageState extends State<SiresPage> {
   int _compareSires(SireSummary a, SireSummary b) {
     int d = _sortAscending ? -1 : 1;
     if (_sortColumn == 1 || a.fatherName == b.fatherName) {
-      return a.name.compareTo(b.name) * d;
+      return a.name.compareKanaTo(b.name) * d;
     }
     else if (a.fatherName == null) {
       return d;

@@ -10,6 +10,7 @@ import '../misc/notifier_util.dart';
 import '../widget/custom_table.dart';
 import '../widget/sire_name_input.dart';
 import '../widget/status_dropdown.dart';
+import '../misc/string_extension.dart';
 import 'edit_horse_base.dart';
 
 class EditMatingPage extends StatefulWidget {
@@ -138,7 +139,7 @@ class _EditMatingPageState extends EditHorsePageStateBase<EditMatingPage> {
       return am.farm - bm.farm;
     }
     else {
-      return a.motherName.compareTo(b.motherName);
+      return a.motherName.compareKanaTo(b.motherName);
     }
   }
 

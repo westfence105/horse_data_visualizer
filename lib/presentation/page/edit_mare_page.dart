@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../data/entity/mare_raw.dart';
 import '../../data/entity/mare_summary.dart';
 import '../../data/repository/mares_repository.dart';
+import '../misc/string_extension.dart';
 import '../widget/add_record_button.dart';
 
 class EditMarePage extends StatefulWidget {
@@ -47,7 +48,7 @@ class _EditMarePageState extends State<EditMarePage> {
       listElements[e.value].add(_mares[e.key]!);
     }
     for (final l in listElements) {
-      l.sort((a, b) => a.name.compareTo(b.name));
+      l.sort((a, b) => a.name.compareKanaTo(b.name));
     }
     return Padding(
       padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),

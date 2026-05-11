@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../data/entity/horse_raw.dart';
 import '../../data/repository/horses_repository.dart';
+import '../misc/string_extension.dart';
 import '../widget/custom_table.dart';
 import '../widget/filter_dialog.dart';
 import '../widget/spin_box.dart';
@@ -63,7 +64,7 @@ class _HorseListPageState extends State<HorseListPage> {
     }
     else if (_sortColumn == 3) {
       if (a.fatherName != b.fatherName) {
-        return a.fatherName.compareTo(b.fatherName) * d;
+        return a.fatherName.compareKanaTo(b.fatherName) * d;
       }
       else if (a.birthYear != b.birthYear) {
         return (a.birthYear - b.birthYear) * d;
@@ -71,7 +72,7 @@ class _HorseListPageState extends State<HorseListPage> {
     }
     else if (_sortColumn == 4) {
       if (a.motherName != b.motherName) {
-        return a.motherName.compareTo(b.motherName) * d;
+        return a.motherName.compareKanaTo(b.motherName) * d;
       }
       else if (a.birthYear != b.birthYear) {
         return (a.birthYear - b.birthYear) * d;
@@ -100,14 +101,14 @@ class _HorseListPageState extends State<HorseListPage> {
         return (a.birthYear - b.birthYear) * d;
       }
       else {
-        return a.motherName.compareTo(b.motherName) * d;
+        return a.motherName.compareKanaTo(b.motherName) * d;
       }
     }
     else if (b.name == null) {
       return d;
     }
     else {
-      return a.name!.compareTo(b.name!) * d;
+      return a.name!.compareKanaTo(b.name!) * d;
     }
   }
 

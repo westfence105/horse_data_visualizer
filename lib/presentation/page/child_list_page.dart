@@ -9,6 +9,7 @@ import '../../data/repository/horses_repository.dart';
 import '../../data/repository/mares_repository.dart';
 import '../../data/repository/sires_repository.dart';
 import '../misc/enums.dart';
+import '../misc/string_extension.dart';
 import '../widget/action_buttons.dart';
 import '../widget/aggregation_mode_selector.dart';
 import '../widget/child_list.dart';
@@ -66,12 +67,12 @@ class _ChildListPageState extends State<ChildListPage> {
       return b.mareCount! - a.mareCount!;
     }
     else {
-      return a.name.compareTo(b.name);
+      return a.name.compareKanaTo(b.name);
     }
   }
 
   int _compareMares(MareSummary a, MareSummary b) {
-    return a.name.compareTo(b.name);
+    return a.name.compareKanaTo(b.name);
   }
 
   void _fetchChildrenData() {

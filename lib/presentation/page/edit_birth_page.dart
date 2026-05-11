@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../data/entity/horse_enums.dart';
 import '../../data/entity/horse_raw.dart';
 import '../../data/repository/horses_repository.dart';
+import '../misc/string_extension.dart';
 import '../widget/custom_table.dart';
 import '../widget/status_dropdown.dart';
 import 'edit_horse_base.dart';
@@ -50,7 +51,7 @@ class _EditBirthPageState extends EditHorsePageStateBase<EditBirthPage> {
 
   @override
   int compareHorses(HorseRaw a, HorseRaw b) {
-    return a.motherName.compareTo(b.motherName);
+    return a.motherName.compareKanaTo(b.motherName);
   }
 
   @override

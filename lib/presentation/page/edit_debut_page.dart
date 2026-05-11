@@ -4,6 +4,7 @@ import '../../data/entity/horse_enums.dart';
 import '../../data/entity/horse_raw.dart';
 import '../../data/repository/horses_repository.dart';
 import '../misc/notifier_util.dart';
+import '../misc/string_extension.dart';
 import '../widget/custom_table.dart';
 import '../widget/filter_dialog.dart';
 import '../widget/foal_info_dialog.dart';
@@ -77,7 +78,7 @@ class _EditDebutPageState extends EditHorsePageStateBase<EditDebutPage> {
       return 1;
     }
     else {
-      return a.motherName.compareTo(b.motherName);
+      return a.motherName.compareKanaTo(b.motherName);
     }
   }
 

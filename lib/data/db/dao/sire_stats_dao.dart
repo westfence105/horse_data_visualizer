@@ -12,6 +12,7 @@ import '../../entity/sire_summary.dart';
 import '../../entity/lineage_summary.dart';
 import '../../entity/horse_status_distribution.dart';
 import './dao_util.dart';
+import '../../../presentation/misc/string_extension.dart';
 import 'column_groups.dart';
 import 'cte_defines.dart';
 
@@ -217,7 +218,9 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
       return b.descendantCount - a.descendantCount;
     }
     else {
-      return a.lineageName.compareTo(b.lineageName);
+      final String al = a.lineageName;
+      final String bl = b.lineageName;
+      return al.compareKanaTo(bl);
     }
   }
 
