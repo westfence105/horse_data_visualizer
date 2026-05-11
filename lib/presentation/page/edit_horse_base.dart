@@ -8,7 +8,6 @@ import '../widget/spin_box.dart';
 
 abstract class EditHorsePageStateBase<T extends StatefulWidget> extends State<T> {
   Map<String,HorseRaw> horses = {};
-  bool enableFilter = false;
 
   int get minYear;
   int get maxYear;
@@ -74,7 +73,11 @@ abstract class EditHorsePageStateBase<T extends StatefulWidget> extends State<T>
   int compareHorses(HorseRaw a, HorseRaw b)
     => a.motherName.compareTo(b.motherName);
 
-  bool filter(HorseRaw raw);
+  bool hideUnsetRows = false;
+
+  bool isHorseSet(HorseRaw d);
+
+  bool filter(HorseRaw d) => true;
 
   List<CustomTableColumnDefinitionBase<HorseRaw>> get columns;
 
@@ -84,7 +87,8 @@ abstract class EditHorsePageStateBase<T extends StatefulWidget> extends State<T>
 
   void updateList() => setState(() {
     rows = horses.values
-      .where((r) => !enableFilter || filter(r))
+      .where((r) => !hideUnsetRows || isHorseSet(r))
+      .where((r) => filter(r))
       .toList(growable: false)
       ..sort(compareHorses);
   });
@@ -121,21 +125,24 @@ abstract class EditHorsePageStateBase<T extends StatefulWidget> extends State<T>
           SizedBox(height: 16),
           buildYearSelect(),
           Expanded(child: SizedBox.shrink()),
-          ElevatedButton(
-            style: elevatedButtonStyleFirst,
-            onPressed: applyUpdate,
-            child: const Text('編集を適用'),
-          ),
           IconButton(
             tooltip: '未入力馬を非表示',
-            onPressed: selectFilter,
+            onPressed: () {
+              hideUnsetRows = !hideUnsetRows;
+              updateList();
+            },
             icon: Icon(
-              enableFilter ? 
+              hideUnsetRows ? 
                 Icons.filter_alt : 
                 Icons.filter_alt_off,
             )
           ),
           ...topBarIcons,
+          ElevatedButton(
+            style: elevatedButtonStyleFirst,
+            onPressed: applyUpdate,
+            child: const Text('編集を適用'),
+          ),
         ],
       ),
     );
@@ -198,9 +205,4 @@ abstract class EditHorsePageStateBase<T extends StatefulWidget> extends State<T>
           }
         },
       );
-  
-  void selectFilter() {
-    enableFilter = !enableFilter;
-    updateList();
-  }
 }

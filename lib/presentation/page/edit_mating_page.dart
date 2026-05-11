@@ -83,10 +83,10 @@ class _EditMatingPageState extends EditHorsePageStateBase<EditMatingPage> {
     _explosionTextControllers.removeWhere(testAndDispose(validKeys));
 
     if (targetYear == maxYear) {
-      enableFilter = false;
+      hideUnsetRows = false;
     }
     else {
-      enableFilter = matings.values.where((d) => d.fatherName.isNotEmpty == true).isNotEmpty;
+      hideUnsetRows = matings.values.where((d) => d.fatherName.isNotEmpty == true).isNotEmpty;
     }
   }
 
@@ -234,7 +234,7 @@ class _EditMatingPageState extends EditHorsePageStateBase<EditMatingPage> {
   ];
 
   @override
-  bool filter(HorseRaw raw) => raw.matingRank != null;
+  bool isHorseSet(HorseRaw raw) => raw.matingRank != null;
 
   @override
   List<Widget> get topBarIcons => [

@@ -53,7 +53,7 @@ class _EditDebutPageState extends EditHorsePageStateBase<EditDebutPage> {
     _nameTextControllers.removeWhere(testAndDispose(validKeys));
 
     if (!_filters.isNotEmpty) {
-      enableFilter = (targetYear < maxYear - 2);
+      hideUnsetRows = (targetYear < maxYear - 2);
     }
   }
 
@@ -84,13 +84,11 @@ class _EditDebutPageState extends EditHorsePageStateBase<EditDebutPage> {
   HorseDataFilter _filters = HorseDataFilter();
 
   @override
-  bool filter(HorseRaw raw) {
-    if (raw.rating == null) {
-      return false;
-    }
-    else {
-      return _filters.filter(raw);
-    }
+  bool isHorseSet(HorseRaw raw) => raw.rating != null;
+
+  @override
+  bool filter(HorseRaw d) {
+    return _filters.filter(d);
   }
 
   @override
@@ -219,9 +217,9 @@ class _EditDebutPageState extends EditHorsePageStateBase<EditDebutPage> {
     CustomTableColumnDefinition<HorseRaw>(
       name: '',
       width: 40,
-      cellBuilder: (context, d) => GestureDetector(
-        child: Icon(Icons.info_outline),
-        onTap: () => _showFoalInfoDialog(d),
+      cellBuilder: (context, d) => IconButton(
+        onPressed: () => _showFoalInfoDialog(d),
+        icon: Icon(Icons.info_outline),
       ),
     ),
   ];
@@ -245,18 +243,26 @@ class _EditDebutPageState extends EditHorsePageStateBase<EditDebutPage> {
   }
 
   @override
-  Future<void> selectFilter() async {
+  List<Widget> get topBarIcons => [
+    IconButton(
+      tooltip: '絞り込み',
+      onPressed: _selectFilter,
+      icon: Icon(Icons.tune),
+    ),
+  ];
+
+  Future<void> _selectFilter() async {
     await showDialog(
       context: context,
       builder:  (context) => HorseDataFilterDialog(filters: _filters),
     ).then((filters) {
       if (filters != null) {
         _filters = filters;
-        enableFilter = _filters.isNotEmpty;
+        hideUnsetRows = _filters.isNotEmpty;
         updateList();
       }
       else {
-        enableFilter = false;
+        hideUnsetRows = false;
       }
     });
   }

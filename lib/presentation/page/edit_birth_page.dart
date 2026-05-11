@@ -41,10 +41,10 @@ class _EditBirthPageState extends EditHorsePageStateBase<EditBirthPage> {
   @override
   Future<void> onFetchCompleted() async {
     if (targetYear == maxYear) {
-      enableFilter = false;
+      hideUnsetRows = false;
     }
     else {
-      enableFilter = horses.values.where((d) => (d.sex ?? 0) != 0).isNotEmpty;
+      hideUnsetRows = horses.values.where((d) => (d.sex ?? 0) != 0).isNotEmpty;
     }
   }
 
@@ -54,7 +54,7 @@ class _EditBirthPageState extends EditHorsePageStateBase<EditBirthPage> {
   }
 
   @override
-  bool filter(HorseRaw raw) => raw.sex != null;
+  bool isHorseSet(HorseRaw raw) => raw.sex != null;
 
   @override
   List<CustomTableColumnDefinitionBase<HorseRaw>> get columns => [
