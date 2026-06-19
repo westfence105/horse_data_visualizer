@@ -90,19 +90,19 @@ class _MaresPageState extends State<MaresPage> {
       }
       case 1: {
         if (a.fatherName != b.fatherName) {
-          return ((a.fatherName ?? '').compareTo(b.fatherName ?? '')) * d;
+          return ((a.fatherName ?? '').compareKanaTo(b.fatherName ?? '')) * d;
         }
         if (a.motherName != b.motherName) {
-          return ((a.motherName ?? '').compareTo(b.motherName ?? '')) * d;
+          return ((a.motherName ?? '').compareKanaTo(b.motherName ?? '')) * d;
         }
         return a.name.compareKanaTo(b.name) * d;
       }
       case 2: {
         if (a.motherName != b.motherName) {
-          return ((a.motherName ?? '').compareTo(b.motherName ?? '')) * d;
+          return ((a.motherName ?? '').compareKanaTo(b.motherName ?? '')) * d;
         }
         if (a.fatherName != b.fatherName) {
-          return ((a.fatherName ?? '').compareTo(b.fatherName ?? '')) * d;
+          return ((a.fatherName ?? '').compareKanaTo(b.fatherName ?? '')) * d;
         }
         return a.name.compareKanaTo(b.name) * d;
       }

@@ -84,7 +84,7 @@ class _SiresPageState extends State<SiresPage> {
       return -d;
     }
     else {
-      return a.fatherName!.compareTo(b.fatherName!) * d;
+      return a.fatherName!.compareKanaTo(b.fatherName!) * d;
     }
   }
 

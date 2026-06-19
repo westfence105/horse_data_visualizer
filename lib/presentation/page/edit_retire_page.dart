@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../data/entity/horse_raw.dart';
 import '../../data/repository/horses_repository.dart';
 import '../widget/spin_box.dart';
+import '../misc/string_extension.dart';
 
 class EditRetirePage extends StatefulWidget {
   const EditRetirePage({ super.key });
@@ -74,7 +75,7 @@ class _EditRetirePageState extends State<EditRetirePage> {
     );
 
   int _compareHorses(HorseRaw a, HorseRaw b) {
-    return a.name!.compareTo(b.name!);
+    return a.name!.compareKanaTo(b.name!);
   }
 
   @override
