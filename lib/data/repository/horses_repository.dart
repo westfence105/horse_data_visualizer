@@ -1,3 +1,4 @@
+import '../../presentation/misc/string_extension.dart';
 import '../db/app_database.dart';
 import '../db/dao/horses_dao.dart';
 import '../db/dao/sires_dao.dart';
@@ -35,6 +36,15 @@ class HorsesRepository {
     final headers = ["生年","名前","性別","父","母","配合","秘書","牧場長","河童木","長峰","美香","成長型","馬場","距離","評価","所属","引退年"];
     result.add(headers);
     final data = await fetchHorseData();
+    data.sort((a, b) {
+      if (a.motherName != b.motherName)
+      {
+        return a.motherName.compareKanaTo(b.motherName);
+      }
+      else {
+        return a.birthYear - b.birthYear;
+      }
+    });
     for (final d in data) {
       final m = d.toMap();
       final row = <String>[];
