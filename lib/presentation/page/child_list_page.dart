@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../data/entity/family_summary.dart';
 import '../../data/entity/foal_data.dart';
 import '../../data/entity/lineage_summary.dart';
 import '../../data/entity/owned_horse_data.dart';
@@ -26,6 +27,7 @@ class _ChildListPageState extends State<ChildListPage> {
   List<SireSummary> _sireSummaries = [];
   List<MareSummary> _mareSummaries = [];
   List<LineageSummary> _lineageSummaries = [];
+  List<FamilySummary> _familySummaries = [];
 
   List<String> _lineages = [];
   
@@ -42,6 +44,7 @@ class _ChildListPageState extends State<ChildListPage> {
       SiresRepository.fetchAllSireSummaries(),
       MaresRepository.fetchAllMareSummaries(),
       SiresRepository.fetchAllLineageSummaries(),
+      MaresRepository.fetchAllFamilySummaries(),
     ]).then((result) {
       setState(() {
         _sireSummaries = result[0].cast<SireSummary>()
@@ -52,6 +55,9 @@ class _ChildListPageState extends State<ChildListPage> {
           ..sort(_compareMares);
         _lineageSummaries = result[2].cast<LineageSummary>()
           .where((e) => e.lineageStatus > 0 || e.directChildCount > 0 || e.progenitorId == null).toList();
+        _familySummaries = result[3].cast<FamilySummary>()
+          .where((e) => e.descendantCount > 0 || e.bloodmareCount > 0).toList()
+          ..sort(_compareFamilies);
       });
     });
   }
@@ -73,6 +79,18 @@ class _ChildListPageState extends State<ChildListPage> {
 
   int _compareMares(MareSummary a, MareSummary b) {
     return a.name.compareKanaTo(b.name);
+  }
+
+  int _compareFamilies(FamilySummary a, FamilySummary b) {
+    if (a.hasFounder != b.hasFounder) {
+      return a.hasFounder ? -1 : 1;
+    }
+    else if (a.descendantCount != b.descendantCount) {
+      return b.descendantCount - a.descendantCount;
+    }
+    else {
+      return a.familyName.compareKanaTo(b.familyName);
+    }
   }
 
   void _fetchChildrenData() {
@@ -102,10 +120,19 @@ class _ChildListPageState extends State<ChildListPage> {
         }
       });
     }
-    else {
-      future = HorsesRepository.fetchLineageOwnedHorseData(_selectedParent!);
+    else if (_aggMode == AggregationMode.lineage ) {
+      future = SiresRepository.fetchLineageOwnedHorseData(_selectedParent!);
       foalFuture = SiresRepository.fetchLineageFoalData(_selectedParent!);
       mareFuture = SiresRepository.fetchLineageMares(_selectedParent!);
+    }
+    else if (_aggMode == AggregationMode.family) {
+      future = MaresRepository.fetchFamilyOwnedHorseData(_selectedParent!);
+      foalFuture = MaresRepository.fetchFamilyFoalData(_selectedParent!);
+      mareFuture = MaresRepository.fetchFamilyMares(_selectedParent!);
+    }
+    else {
+      // aggModeが不正
+      return;
     }
     future.then((result) => setState(() {
       _childrenData = result;
@@ -154,8 +181,15 @@ class _ChildListPageState extends State<ChildListPage> {
     else if (_aggMode == AggregationMode.mare){
       parents = _mareSummaries.map((e) => MapEntry(e.id, e.name)).toList(growable: false);
     }
-    else {
+    else if (_aggMode == AggregationMode.lineage) {
       parents = _lineageSummaries.map((e) => MapEntry(e.founderId, e.lineageName)).toList(growable: false);
+    }
+    else if (_aggMode == AggregationMode.family) {
+      parents = _familySummaries.map((e) => MapEntry(e.founderId, e.familyName)).toList(growable: false);
+    }
+    else {
+      // aggModeが不正
+      parents = [];
     }
 
     return Padding(

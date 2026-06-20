@@ -46,8 +46,14 @@ class _StatsPageState extends State<StatsPage> {
     else if (_aggMode == AggregationMode.mare) {
       future = MaresRepository.fetchAllMareStats(_beginYear, _endYear);
     }
-    else {
+    else if (_aggMode == AggregationMode.lineage) {
       future = SiresRepository.fetchAllLineageStats(_beginYear, _endYear);
+    }
+    else if (_aggMode == AggregationMode.family) {
+      future = MaresRepository.fetchAllFamilyStats(_beginYear, _endYear);
+    }
+    else {
+      return;
     }
     future.then((value) => setState(() => _stats = value));
   }

@@ -123,19 +123,7 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
       '''
       SELECT
         s.name          AS name,
-        COUNT(h.sex)    AS child_count,
-        AVG(h.sex)      AS sex,
-        AVG(h.rating01) AS rating01,
-        AVG(h.rating02) AS rating02,
-        AVG(h.rating03) AS rating03,
-        AVG(h.rating04) AS rating04,
-        AVG(h.rating05) AS rating05,
-        AVG(h.growth)   AS growth,
-        AVG(h.surface)  AS surface,
-        AVG(h.distance) AS distance,
-        AVG(h.rating)   AS rating,
-        SUM(CASE WHEN h.rating IS NOT NULL THEN 1 ELSE 0 END) AS own_count,
-        SUM(CASE WHEN h.birth_year > :year THEN 1 ELSE 0 END) AS foal_count
+        $parentStats
       FROM horses AS h
       JOIN sires AS s
         ON h.father_id = s.id
@@ -294,24 +282,12 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
         l.direct_child_count,
         l.is_founder_line,
         d.depth,
-        COUNT(h.sex)    AS child_count,
         COUNT(h.sex)    AS descendant_count,
-        COUNT(h.rating) AS own_count,
         COUNT(h.rating) AS own_descendant_count,
         COUNT(DISTINCT l.id)  AS active_sire_count,
         lm.mare_count,
         lm.direct_mare_count,
-        AVG(h.sex)      AS sex,
-        AVG(h.rating01) AS rating01,
-        AVG(h.rating02) AS rating02,
-        AVG(h.rating03) AS rating03,
-        AVG(h.rating04) AS rating04,
-        AVG(h.rating05) AS rating05,
-        AVG(h.growth)   AS growth,
-        AVG(h.surface)  AS surface,
-        AVG(h.distance) AS distance,
-        AVG(h.rating)   AS rating,
-        SUM(CASE WHEN h.birth_year > :year THEN 1 ELSE 0 END) AS foal_count
+        $parentStats
       FROM horses AS h
       LEFT JOIN lineage AS l ON l.id = h.father_id
       LEFT JOIN depths d ON l.founder_id = d.id

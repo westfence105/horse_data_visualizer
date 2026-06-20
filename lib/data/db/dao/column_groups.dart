@@ -68,3 +68,20 @@ SUM(COALESCE(sc.own_count,   0))  AS own_descendant_count,
 SUM(COALESCE(sm.mare_count,  0))  AS mare_count,
 COALESCE(dcm.mare_count, 0) AS direct_mare_count
 ''';
+
+const parentStats =
+'''
+COUNT(h.sex)    AS child_count,
+AVG(h.sex)      AS sex,
+AVG(h.rating01) AS rating01,
+AVG(h.rating02) AS rating02,
+AVG(h.rating03) AS rating03,
+AVG(h.rating04) AS rating04,
+AVG(h.rating05) AS rating05,
+AVG(h.growth)   AS growth,
+AVG(h.surface)  AS surface,
+AVG(h.distance) AS distance,
+AVG(h.rating)   AS rating,
+SUM(CASE WHEN h.rating IS NOT NULL THEN 1 ELSE 0 END) AS own_count,
+SUM(CASE WHEN h.birth_year > :year THEN 1 ELSE 0 END) AS foal_count
+''';

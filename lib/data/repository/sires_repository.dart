@@ -5,6 +5,7 @@ import '../db/dao/sires_dao.dart';
 import '../db/dao/sire_stats_dao.dart';
 import '../entity/foal_data.dart';
 import '../entity/mare_summary.dart';
+import '../entity/owned_horse_data.dart';
 import '../entity/sire_raw.dart';
 import '../entity/sire_summary.dart';
 import '../entity/lineage_summary.dart';
@@ -72,6 +73,10 @@ class SiresRepository {
 
   static Future<List<FoalData>> fetchLineageFoalData(int founderId) {
     return _sireStatsDao.fetchLineageFoalData(founderId);
+  }
+
+  static Future<List<OwnedHorseData>> fetchLineageOwnedHorseData(int founderId) {
+    return _sireStatsDao.fetchLineageOwnedHorseData(founderId);
   }
 
   static Future<List<SireSummary>> fetchAllSireSummaries([int? beginYear, int? endYear]) {

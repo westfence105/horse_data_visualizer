@@ -3,8 +3,11 @@ import 'dart:math';
 import '../db/app_database.dart';
 import '../db/dao/mares_dao.dart';
 import '../db/dao/mare_stats_dao.dart';
+import '../entity/family_summary.dart';
+import '../entity/foal_data.dart';
 import '../entity/mare_raw.dart';
 import '../entity/mating_data.dart';
+import '../entity/owned_horse_data.dart';
 import '../entity/parent_stats.dart';
 import '../entity/mare_summary.dart';
 
@@ -80,5 +83,25 @@ class MaresRepository {
 
   static Future<List<MatingData>> fetchMatingData(int year) {
     return _mareStatsDao.fetchMatingData(year);
+  }
+
+  static Future<List<FamilySummary>> fetchAllFamilySummaries() {
+    return _mareStatsDao.fetchAllFamilySummaries();
+  }
+
+  static Future<List<OwnedHorseData>> fetchFamilyOwnedHorseData(int founderId) {
+    return _mareStatsDao.fetchFamilyOwnedHorseData(founderId);
+  }
+
+  static Future<List<FoalData>> fetchFamilyFoalData(int founderId) {
+    return _mareStatsDao.fetchFamilyFoalData(founderId);
+  }
+
+  static Future<List<MareSummary>> fetchFamilyMares(int founderId) {
+    return _mareStatsDao.fetchFamilyMares(founderId);
+  }
+
+  static Future<List<ParentStats>> fetchAllFamilyStats([int? beginYear, int? endYear]) {
+    return _mareStatsDao.fetchAllFamilyStats(beginYear, endYear);
   }
 }

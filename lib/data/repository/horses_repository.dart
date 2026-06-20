@@ -94,10 +94,6 @@ class HorsesRepository {
     return _horsesDao.fetchFoalData(fatherId, motherId);
   }
 
-  static Future<List<OwnedHorseData>> fetchLineageOwnedHorseData(int founderId) {
-    return _sireStatsDao.fetchLineageOwnedHorseData(founderId);
-  }
-
   static Future<HorseStatusDistribution?> fetchHorseStatusDistribution(int founderId, String key, [int? beginYear, int? endYear]) {
     return _sireStatsDao.fetchHorseStatusDistribution(founderId, key, beginYear, endYear);
   }

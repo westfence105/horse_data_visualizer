@@ -122,9 +122,10 @@ const familiesTable =
 '''
 families AS (
   SELECT
-    id    AS founder_id,
-    name  AS family_name,
-    id    AS mare_id
+    id         AS founder_id,
+    name       AS family_name,
+    id         AS mare_id,
+    is_founder AS has_founder
   FROM mares
   WHERE is_founder = TRUE OR mother_id IS NULL
 
@@ -133,7 +134,8 @@ families AS (
   SELECT
     f.founder_id,
     f.family_name,
-    h.id AS mare_id
+    h.id AS mare_id,
+    f.has_founder
   FROM mares h
   INNER JOIN families f ON h.mother_id = f.mare_id AND h.is_founder = FALSE
 )
