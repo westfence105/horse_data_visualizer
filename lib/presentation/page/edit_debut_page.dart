@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../data/entity/horse_enums.dart';
 import '../../data/entity/horse_raw.dart';
@@ -20,6 +21,7 @@ class EditDebutPage extends StatefulWidget {
 
 class _EditDebutPageState extends EditHorsePageStateBase<EditDebutPage> {
   final Map<String,TextEditingController> _nameTextControllers = {};
+  final Map<String,FocusNode> _nameFocusNodes = {};
 
   @override
   int minYear = 1968;
@@ -50,8 +52,10 @@ class _EditDebutPageState extends EditHorsePageStateBase<EditDebutPage> {
     for (final e in horses.entries) {
       validKeys.add(e.key);
       updateTextEditingControllerMap(_nameTextControllers, e.key, e.value.name ?? '');
+      _nameFocusNodes[e.key] ??= FocusNode();
     }
     _nameTextControllers.removeWhere(testAndDispose(validKeys));
+    _nameFocusNodes.removeWhere(testAndDispose(validKeys));
 
     if (!_filters.isNotEmpty) {
       hideUnsetRows = (targetYear < maxYear - 2);
@@ -61,6 +65,7 @@ class _EditDebutPageState extends EditHorsePageStateBase<EditDebutPage> {
   @override
   void dispose() {
     disposeAll(_nameTextControllers.values);
+    disposeAll(_nameFocusNodes.values);
     super.dispose();
   }
 
@@ -99,6 +104,42 @@ class _EditDebutPageState extends EditHorsePageStateBase<EditDebutPage> {
     }
   }
 
+  void _moveNameFocus(HorseRaw current, int move) {
+    final currentController = _nameTextControllers[current.motherName];
+    if (currentController?.value.composing.isValid == true &&
+        currentController?.value.composing.isCollapsed == false) {
+      return;
+    }
+
+    // 現在の行番号を取得
+    final currentIndex = rows.indexWhere((e) => e.motherName == current.motherName);
+    if (currentIndex < 0) {
+      return;
+    }
+
+    // 移動先の行番号を計算
+    final nextIndex = currentIndex + move;
+    if (nextIndex < 0 || rows.length <= nextIndex) {
+      return;
+    }
+
+    // 移動先を取得
+    final nextHorse = rows[nextIndex];
+    final nextController = _nameTextControllers[nextHorse.motherName];
+    final nextFocusNode = _nameFocusNodes[nextHorse.motherName];
+    if (nextController == null || nextFocusNode == null) {
+      return;
+    }
+
+    // フォーカス移動
+    nextFocusNode.requestFocus();
+
+    // カーソルを末尾に移動
+    nextController.selection = TextSelection.collapsed(
+      offset: nextController.text.length,
+    );
+  }
+
   @override
   List<CustomTableColumnDefinitionBase<HorseRaw>> get columns => [
     CustomTableColumnDefinition<HorseRaw>(
@@ -113,12 +154,19 @@ class _EditDebutPageState extends EditHorsePageStateBase<EditDebutPage> {
             child: Text(d.isHistorical == true ? '☆' : ''),
           ),
           Expanded(
-            child: TextField(
-              controller: _nameTextControllers[d.motherName],
-              decoration: InputDecoration(
-                hintText: '${d.motherName}${d.birthYear % 100}',
-                hintStyle: TextStyle(
-                  fontWeight: FontWeight.w100,
+            child: CallbackShortcuts(
+              bindings: {
+                const SingleActivator(LogicalKeyboardKey.arrowDown): () => _moveNameFocus(d, 1),
+                const SingleActivator(LogicalKeyboardKey.arrowUp): () => _moveNameFocus(d, -1),
+              },
+              child: TextField(
+                controller: _nameTextControllers[d.motherName],
+                focusNode: _nameFocusNodes[d.motherName],
+                decoration: InputDecoration(
+                  hintText: '${d.motherName}${d.birthYear % 100}',
+                  hintStyle: TextStyle(
+                    fontWeight: FontWeight.w100,
+                  ),
                 ),
               ),
             ),
@@ -144,6 +192,9 @@ class _EditDebutPageState extends EditHorsePageStateBase<EditDebutPage> {
       headerAlignment: MainAxisAlignment.start,
       bodyAlignment: MainAxisAlignment.start,
       valueBuilder: (d) => d.motherName,
+      styleBuilder: (d, baseStyle) => baseStyle.copyWith(
+        decoration: (d.motherGradeWinner == true && d.sex == HorseSex.female.value) ? TextDecoration.underline : null,
+      ),
     ),
     CustomTableColumnDefinition(
       name: '成長型   ',
