@@ -34,6 +34,7 @@ class MaresDao extends DatabaseAccessor<AppDb> with _$MaresDaoMixin {
           name: name,
         )
       );
+      backfillFromHorses();
       final q2 = select(db.mares)
         ..where((t) => t.id.equals(id));
       return q2.getSingle();

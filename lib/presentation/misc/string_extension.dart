@@ -1,7 +1,7 @@
 extension StringExtension on String {
   String toKatakana()
     => replaceAllMapped(
-        RegExp('[あ-ゔ]'),
+        RegExp('[ぁ-ゖ]'),
         (Match m) => String.fromCharCode(
           m.group(0)!.codeUnitAt(0) + 0x60,
         ),

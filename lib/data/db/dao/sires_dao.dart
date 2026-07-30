@@ -33,6 +33,7 @@ class SiresDao extends DatabaseAccessor<AppDb> with _$SiresDaoMixin {
           name: name,
         )
       );
+      backfillFromHorses();
       final q2 = select(db.sires)
         ..where((t) => t.id.equals(id));
       return q2.getSingle();
