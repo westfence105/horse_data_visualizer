@@ -2,11 +2,13 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 
+import '../../data/entity/horse_memo_raw.dart';
 import '../../data/entity/horse_raw.dart';
 import '../../data/repository/horses_repository.dart';
 import '../misc/string_extension.dart';
 import '../widget/custom_table.dart';
 import '../widget/filter_dialog.dart';
+import '../widget/memo_icon_button.dart';
 import '../widget/spin_box.dart';
 
 class HorseListPage extends StatefulWidget {
@@ -93,9 +95,22 @@ class _HorseListPageState extends State<HorseListPage> {
         }
       }
     }
-    if (a.name == null) {
-      if (b.name != null) {
-        return -d;
+    else if (_sortColumn == 10) {
+      if (a.memoDate != null) {
+        if (b.memoDate != null) {
+          return a.memoDate!.compareTo(b.memoDate!) * -d;
+        }
+        else {
+          return -d;
+        }
+      }
+      else if (b.memoDate != null) {
+        return d;
+      }
+    }
+    if (a.name?.isNotEmpty != true) {
+      if (b.name?.isNotEmpty == true) {
+        return d;
       }
       else if (a.birthYear != b.birthYear) {
         return (a.birthYear - b.birthYear) * d;
@@ -104,8 +119,8 @@ class _HorseListPageState extends State<HorseListPage> {
         return a.motherName.compareKanaTo(b.motherName) * d;
       }
     }
-    else if (b.name == null) {
-      return d;
+    else if (b.name?.isNotEmpty != true) {
+      return -d;
     }
     else {
       return a.name!.compareKanaTo(b.name!) * d;
@@ -186,7 +201,7 @@ class _HorseListPageState extends State<HorseListPage> {
                   data: _sortedHorses,
                   sortColumn: _sortColumn,
                   sortAscending: _sortAscending,
-                  sortableColumns: [0,1,3,4,8],
+                  sortableColumns: [0,1,3,4,8,10],
                   onSort: _onSort,
                   columns: [
                     StaticTableColumnDefinition(
@@ -244,6 +259,27 @@ class _HorseListPageState extends State<HorseListPage> {
                       name: '所属',
                       width: 80,
                       valueBuilder: (d) => d.region ?? '',
+                    ),
+                    CustomTableColumnDefinition(
+                      name: 'メモ',
+                      width: 80,
+                      cellBuilder: (context, d) {
+                        final name = d.name ?? '${d.motherName}${d.birthYear % 100}';
+                        return MemoIconButton(
+                          name: name,
+                          content: d.memo,
+                          onChange: (memo) {
+                            HorsesRepository.updateMemo(
+                              HorseMemoRaw(
+                                birthYear: d.birthYear,
+                                motherName: d.motherName,
+                                content: memo,
+                              ),
+                            );
+                          },
+                          key: Key(name),
+                        );
+                      },
                     ),
                   ],
                 ),

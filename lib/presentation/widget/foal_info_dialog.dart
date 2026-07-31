@@ -33,6 +33,7 @@ class _FoalInfoDialogState extends State<FoalInfoDialog> {
   set horse(HorseRaw h) => widget.horses[_index] = h;
 
   final _nameController = TextEditingController();
+  final _memoController = TextEditingController();
 
   List<OwnedHorseData> sameSireOwnedHorses = [];
   List<OwnedHorseData> siblingOwnedHorses = [];
@@ -92,12 +93,14 @@ class _FoalInfoDialogState extends State<FoalInfoDialog> {
     super.initState();
     _index = widget.initialIndex;
     _nameController.text = horse.name ?? '';
+    _memoController.text = horse.memo ?? '';
     _fetch();
   }
 
   @override
   void dispose() {
     _nameController.dispose();
+    _memoController.dispose();
     super.dispose();
   }
 
@@ -167,6 +170,24 @@ class _FoalInfoDialogState extends State<FoalInfoDialog> {
                 },
                 icon: Icon(Icons.keyboard_arrow_right),
               ),
+            ],
+          ),
+          Row(
+            children: [
+              SizedBox(width: horse.isHistorical == true ? 52 : 40),
+              SizedBox(
+                width: 400,
+                child: TextField(
+                  controller: _memoController,
+                  decoration: InputDecoration(
+                    hintText: 'メモ',
+                    hintStyle: TextStyle(
+                      fontWeight: FontWeight.w100,
+                    ),
+                  ),
+                ),
+              ),
+              Expanded(child: SizedBox.shrink()),
             ],
           ),
           Expanded(
@@ -297,9 +318,11 @@ class _FoalInfoDialogState extends State<FoalInfoDialog> {
 
   void _accept(int next) {
     final name = _nameController.text;
-    if (name != horse.name) {
+    final memo = _memoController.text;
+    if (name != horse.name || memo != horse.memo) {
       horse = horse.copyWith(
         name: name,
+        memo: memo,
       );
     }
     widget.onChanged(horse);
@@ -318,6 +341,7 @@ class _FoalInfoDialogState extends State<FoalInfoDialog> {
             _index = 0;
           }
           _nameController.text = horse.name ?? '';
+          _memoController.text = horse.memo ?? '';
           _fetch();
         });
       }

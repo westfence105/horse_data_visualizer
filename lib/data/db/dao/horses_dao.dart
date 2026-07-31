@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
 import '../../entity/foal_data.dart';
+import '../../entity/horse_memo_raw.dart';
 import '../../entity/horse_raw.dart';
 import '../../repository/mares_repository.dart';
 import '../../repository/sires_repository.dart';
@@ -12,7 +13,7 @@ import 'dao_util.dart';
 
 part 'horses_dao.g.dart';
 
-@DriftAccessor(tables: [Horses])
+@DriftAccessor(tables: [Horses,HorseMemos])
 class HorsesDao extends DatabaseAccessor<AppDb> with _$HorsesDaoMixin {
   HorsesDao(super.db);
 
@@ -31,13 +32,15 @@ class HorsesDao extends DatabaseAccessor<AppDb> with _$HorsesDaoMixin {
   }
 
   Future<void> _upsert(HorseRaw d) async {
+    final fatherId = await SiresRepository.findByName(d.fatherName);
+    final motherId = await MaresRepository.findByName(d.motherName);
     await into(db.horses).insert(
       HorsesCompanion.insert(
         birthYear: d.birthYear,
         name: Value(d.name?.trim()),
         sex:       Value(inlistOrNull(d.sex, [1,-1])),
-        fatherId:  await SiresRepository.findByName(d.fatherName),
-        motherId:  await MaresRepository.findByName(d.motherName),
+        fatherId:  fatherId,
+        motherId:  motherId,
         rating01:  d.rating01,
         rating02:  d.rating02,
         rating03:  d.rating03,
@@ -55,14 +58,40 @@ class HorsesDao extends DatabaseAccessor<AppDb> with _$HorsesDaoMixin {
       ),
       mode: InsertMode.insertOrReplace,
     );
+    await into(db.horseMemos).insert(
+      HorseMemosCompanion.insert(
+        id: Value.absentIfNull(await getLatestMemoId(d.birthYear, motherId)),
+        birthYear: d.birthYear,
+        motherId: motherId,
+        content: Value(d.memo),
+        updatedAt: Value(DateTime.now()),
+      ),
+      mode: InsertMode.insertOrReplace,
+    );
+    cleanupMemos();
+  }
+
+  Future<void> upsertMemo(HorseMemoRaw memo, [bool overwrite = true]) async {
+    final motherId = await MaresRepository.findByName(memo.motherName);
+    await into(db.horseMemos).insert(
+      HorseMemosCompanion.insert(
+        id: overwrite ? Value.absentIfNull(await getLatestMemoId(memo.birthYear, motherId)) : const Value.absent(),
+        birthYear: memo.birthYear,
+        motherId: motherId,
+        content: Value(memo.content),
+        updatedAt: Value(DateTime.now()),
+      ),
+      mode: InsertMode.insertOrReplace,
+    );
+    cleanupMemos();
   }
 
   Future<int?> getFirstProductionYear() async {
     final q = selectOnly(horses)
       ..addColumns([horses.birthYear.min()])
       ..where(horses.sex.isNotNull());
-    final r = await q.getSingle();
-    return r.read(db.horses.birthYear.min());
+    final r = await q.getSingleOrNull();
+    return r?.read(db.horses.birthYear.min());
   }
 
   Future<int?> getLatestProductionYear() async {
@@ -84,6 +113,17 @@ class HorsesDao extends DatabaseAccessor<AppDb> with _$HorsesDaoMixin {
     return r.read(db.horses.birthYear.max());
   }
 
+  Future<int?> getLatestMemoId(int birthYear, int motherId) async {
+    final q = selectOnly(horseMemos)
+                ..addColumns([horseMemos.id])
+                ..where(horseMemos.birthYear.equals(birthYear))
+                ..where(horseMemos.motherId.equals(motherId))
+                ..orderBy([OrderingTerm.desc(horseMemos.updatedAt)])
+                ..limit(1);
+    final r = await q.getSingleOrNull();
+    return r?.read(horseMemos.id);
+  }
+
   Future<List<HorseRaw>> fetch({int? beginYear, int? endYear, int? fatherId, int? motherId}) async {
     final conds = <String>[];
     final wp = whereParent(fatherId, motherId);
@@ -102,7 +142,8 @@ class HorsesDao extends DatabaseAccessor<AppDb> with _$HorsesDaoMixin {
           $horseIdentityColumns,
           $foalRatingColumns,
           $horseStatusColumns,
-          $horseExtraColumns
+          $horseExtraColumns,
+          $horseMemoExpr
         FROM horses h
         LEFT JOIN sires f ON f.id = h.father_id
         LEFT JOIN mares b ON b.id = h.mother_id
@@ -110,6 +151,24 @@ class HorsesDao extends DatabaseAccessor<AppDb> with _$HorsesDaoMixin {
       '''
     ).get();
     return rows.map(HorseRaw.fromRow).toList(growable: false);
+  }
+
+  Future<List<HorseMemoRaw>> fetchMemos() async {
+    final rows = await customSelect(
+      '''
+      SELECT
+        n.birth_year,
+        b.name AS mother_name,
+        h.name,
+        n.content,
+        n.created_at,
+        n.updated_at
+      FROM horse_memos
+      LEFT JOIN horses h ON h.birth_year = n.birth_year AND h.mother_id = n.mother_id
+      LEFT JOIN mares b ON b.id = n.mother_id
+      '''
+    ).get();
+    return rows.map(HorseMemoRaw.fromRow).toList(growable: false);
   }
 
   Future<List<OwnedHorseData>> fetchOwnedHorseData(int? fatherId, int? motherId) async {
@@ -122,6 +181,7 @@ class HorsesDao extends DatabaseAccessor<AppDb> with _$HorsesDaoMixin {
         $horseIdentityColumns,
         $horseStatusColumns,
         $horseExtraColumns,
+        $horseMemoExpr,
         $breedingExistsExpr
       FROM horses AS h
       LEFT JOIN sires AS f ON h.father_id = f.id
@@ -148,7 +208,8 @@ class HorsesDao extends DatabaseAccessor<AppDb> with _$HorsesDaoMixin {
       SELECT
         $horseIdentityColumns,
         $foalRatingColumns,
-        $horseExtraColumns
+        $horseExtraColumns,
+        $horseMemoExpr
       FROM horses AS h
       LEFT JOIN sires AS f ON h.father_id = f.id
       LEFT JOIN mares AS b ON h.mother_id = b.id
@@ -167,6 +228,12 @@ class HorsesDao extends DatabaseAccessor<AppDb> with _$HorsesDaoMixin {
     int emptyFather = await SiresRepository.findByName("");
     final q = delete(horses)
       ..where((h) => h.fatherId.equals(emptyFather));
+    return await q.go();
+  }
+
+  Future<int> cleanupMemos() async {
+    final q = delete(horseMemos)
+      ..where((n) => Expression.or([n.content.isNull(), n.content.equals('')]));
     return await q.go();
   }
 }

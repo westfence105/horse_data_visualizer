@@ -7,4 +7,5 @@ mixin _$HorsesDaoMixin on DatabaseAccessor<AppDb> {
   $SiresTable get sires => attachedDatabase.sires;
   $MaresTable get mares => attachedDatabase.mares;
   $HorsesTable get horses => attachedDatabase.horses;
+  $HorseMemosTable get horseMemos => attachedDatabase.horseMemos;
 }

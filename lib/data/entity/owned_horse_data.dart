@@ -14,6 +14,7 @@ class OwnedHorseData {
   final int? matingRank;
   final int? explosionPower;
   final bool? isHistorical;
+  final String? memo;
 
   const OwnedHorseData({
     required this.birthYear,
@@ -29,6 +30,7 @@ class OwnedHorseData {
     this.matingRank,
     this.explosionPower,
     this.isHistorical,
+    this.memo,
   });
 
   OwnedHorseData.fromRow(QueryRow r) : this(
@@ -45,5 +47,6 @@ class OwnedHorseData {
     matingRank: r.read('mating_rank'),
     explosionPower: r.read('explosion_power'),
     isHistorical: r.read('is_historical'),
+    memo: r.read('memo'),
   );
 }

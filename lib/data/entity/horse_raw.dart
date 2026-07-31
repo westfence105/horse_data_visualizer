@@ -25,6 +25,8 @@ class HorseRaw {
   final bool? isHistorical;
   final int? region;
   final bool? motherGradeWinner;
+  final String? memo;
+  final DateTime? memoDate;
 
   const HorseRaw({
     required this.birthYear,
@@ -47,6 +49,8 @@ class HorseRaw {
     this.isHistorical,
     this.region,
     this.motherGradeWinner,
+    this.memo,
+    this.memoDate,
   });
 
   HorseRaw.fromRow(QueryRow r) : this(
@@ -70,6 +74,8 @@ class HorseRaw {
     isHistorical: r.read('is_historical'),
     region: r.read('region'),
     motherGradeWinner: r.read('mother_grade_winner'),
+    memo: r.read('memo'),
+    memoDate: r.read('memo_date'),
   );
 
   HorseRaw copyWith({
@@ -91,6 +97,7 @@ class HorseRaw {
     bool? isHistorical,
     int? region,
     bool? motherGradeWinner,
+    String? memo,
   }) {
     if (retireYear == null) {
       retireYear = this.retireYear;
@@ -123,6 +130,7 @@ class HorseRaw {
       isHistorical: isHistorical ?? this.isHistorical,
       region: region ?? this.region,
       motherGradeWinner: motherGradeWinner ?? this.motherGradeWinner,
+      memo: memo ?? this.memo,
     );
   }
 }
@@ -150,6 +158,8 @@ class HorseData {
     bool? isHistorical,
     int? region,
     bool? motherGradeWinner,
+    String? memo,
+    DateTime? memoDate,
   }) : rawData = HorseRaw(
     birthYear: birthYear,
     sex: sex,
@@ -168,6 +178,8 @@ class HorseData {
     isHistorical: isHistorical,
     region: region,
     motherGradeWinner: motherGradeWinner,
+    memo: memo,
+    memoDate: memoDate,
   );
 
   static bool checkMap(Map<String,String> d) {
@@ -205,6 +217,7 @@ class HorseData {
     retireYear: int.tryParse(d['引退年'] ?? ''),
     isHistorical: d['名前']?.startsWith('☆') == true,
     region: HorseRegion.reverse(d['所属']),
+    memo: d['メモ'],
   );
 
   Map<String,String> toMap() => {
@@ -225,6 +238,7 @@ class HorseData {
     '評価': rating ?? '',
     '所属': region ?? '',
     '引退年': retireYear ?? '',
+    'メモ': memo ?? '',
   };
 
   HorseData.fromRow(QueryRow r) : rawData = HorseRaw.fromRow(r);
@@ -258,4 +272,6 @@ class HorseData {
   bool? get isHistorical => rawData.isHistorical;
   String? get region => HorseRegion.labelOf(rawData.region);
   bool? get motherGradeWinner => rawData.motherGradeWinner;
+  String? get memo => rawData.memo;
+  DateTime? get memoDate => rawData.memoDate;
 }

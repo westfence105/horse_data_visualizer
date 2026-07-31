@@ -15,7 +15,7 @@ import 'dao/mare_stats_dao.dart';
 part 'app_database.g.dart';
 
 @DriftDatabase(
-  tables: [Sires, Horses, Mares],
+  tables: [Sires, Horses, Mares, HorseMemos],
   daos: [SiresDao, MaresDao, HorsesDao, SireStatsDao, MareStatsDao],
 )
 class AppDb extends _$AppDb {
@@ -54,7 +54,7 @@ class AppDb extends _$AppDb {
   final Future<File> dbPath;
 
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 8;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -89,6 +89,9 @@ class AppDb extends _$AppDb {
       }
       if (from < 7) {
         await m.addColumn(horses, horses.region);
+      }
+      if (from < 8) {
+        await m.createTable(horseMemos);
       }
     }
   );

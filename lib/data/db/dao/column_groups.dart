@@ -34,6 +34,30 @@ h.is_historical,
 h.region
 ''';
 
+const horseMemoExpr =
+'''
+(
+  SELECT n.content
+  FROM horse_memos AS n
+  WHERE n.birth_year = h.birth_year
+    AND n.mother_id = h.mother_id
+  ORDER BY
+    n.updated_at DESC,
+    n.id DESC
+  LIMIT 1
+) AS memo,
+(
+  SELECT n.updated_at
+  FROM horse_memos AS n
+  WHERE n.birth_year = h.birth_year
+    AND n.mother_id = h.mother_id
+  ORDER BY
+    n.updated_at DESC,
+    n.id DESC
+  LIMIT 1
+) AS memo_date
+''';
+
 const breedingExistsExpr =
 '''
 (

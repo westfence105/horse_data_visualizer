@@ -56,3 +56,23 @@ class Horses extends Table {
   @override
   Set<Column<Object>>? get primaryKey => { birthYear, motherId };
 }
+
+@TableIndex(name: 'memo_horse_id', columns: {#birthYear, #motherId})
+class HorseMemos extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get birthYear => integer()();
+  IntColumn get motherId => integer()();
+  TextColumn get content => text().nullable()();
+  DateTimeColumn get createdAt => dateTime().clientDefault(DateTime.now)();
+  DateTimeColumn get updatedAt => dateTime().clientDefault(DateTime.now)();
+
+  @override
+  List<String> get customConstraints => [
+        '''
+        FOREIGN KEY (birth_year, mother_id)
+        REFERENCES horses (birth_year, mother_id)
+        ON UPDATE CASCADE
+        ON DELETE CASCADE
+        ''',
+      ];
+}

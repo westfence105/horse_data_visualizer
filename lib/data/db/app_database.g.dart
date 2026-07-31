@@ -2034,12 +2034,414 @@ class HorsesCompanion extends UpdateCompanion<Horse> {
   }
 }
 
+class $HorseMemosTable extends HorseMemos
+    with TableInfo<$HorseMemosTable, HorseMemo> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $HorseMemosTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _birthYearMeta = const VerificationMeta(
+    'birthYear',
+  );
+  @override
+  late final GeneratedColumn<int> birthYear = GeneratedColumn<int>(
+    'birth_year',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _motherIdMeta = const VerificationMeta(
+    'motherId',
+  );
+  @override
+  late final GeneratedColumn<int> motherId = GeneratedColumn<int>(
+    'mother_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _contentMeta = const VerificationMeta(
+    'content',
+  );
+  @override
+  late final GeneratedColumn<String> content = GeneratedColumn<String>(
+    'content',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    clientDefault: DateTime.now,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    clientDefault: DateTime.now,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    birthYear,
+    motherId,
+    content,
+    createdAt,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'horse_memos';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<HorseMemo> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('birth_year')) {
+      context.handle(
+        _birthYearMeta,
+        birthYear.isAcceptableOrUnknown(data['birth_year']!, _birthYearMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_birthYearMeta);
+    }
+    if (data.containsKey('mother_id')) {
+      context.handle(
+        _motherIdMeta,
+        motherId.isAcceptableOrUnknown(data['mother_id']!, _motherIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_motherIdMeta);
+    }
+    if (data.containsKey('content')) {
+      context.handle(
+        _contentMeta,
+        content.isAcceptableOrUnknown(data['content']!, _contentMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  HorseMemo map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return HorseMemo(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      birthYear: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}birth_year'],
+      )!,
+      motherId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}mother_id'],
+      )!,
+      content: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}content'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $HorseMemosTable createAlias(String alias) {
+    return $HorseMemosTable(attachedDatabase, alias);
+  }
+}
+
+class HorseMemo extends DataClass implements Insertable<HorseMemo> {
+  final int id;
+  final int birthYear;
+  final int motherId;
+  final String? content;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  const HorseMemo({
+    required this.id,
+    required this.birthYear,
+    required this.motherId,
+    this.content,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['birth_year'] = Variable<int>(birthYear);
+    map['mother_id'] = Variable<int>(motherId);
+    if (!nullToAbsent || content != null) {
+      map['content'] = Variable<String>(content);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  HorseMemosCompanion toCompanion(bool nullToAbsent) {
+    return HorseMemosCompanion(
+      id: Value(id),
+      birthYear: Value(birthYear),
+      motherId: Value(motherId),
+      content: content == null && nullToAbsent
+          ? const Value.absent()
+          : Value(content),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory HorseMemo.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return HorseMemo(
+      id: serializer.fromJson<int>(json['id']),
+      birthYear: serializer.fromJson<int>(json['birthYear']),
+      motherId: serializer.fromJson<int>(json['motherId']),
+      content: serializer.fromJson<String?>(json['content']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'birthYear': serializer.toJson<int>(birthYear),
+      'motherId': serializer.toJson<int>(motherId),
+      'content': serializer.toJson<String?>(content),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  HorseMemo copyWith({
+    int? id,
+    int? birthYear,
+    int? motherId,
+    Value<String?> content = const Value.absent(),
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) => HorseMemo(
+    id: id ?? this.id,
+    birthYear: birthYear ?? this.birthYear,
+    motherId: motherId ?? this.motherId,
+    content: content.present ? content.value : this.content,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  HorseMemo copyWithCompanion(HorseMemosCompanion data) {
+    return HorseMemo(
+      id: data.id.present ? data.id.value : this.id,
+      birthYear: data.birthYear.present ? data.birthYear.value : this.birthYear,
+      motherId: data.motherId.present ? data.motherId.value : this.motherId,
+      content: data.content.present ? data.content.value : this.content,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('HorseMemo(')
+          ..write('id: $id, ')
+          ..write('birthYear: $birthYear, ')
+          ..write('motherId: $motherId, ')
+          ..write('content: $content, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, birthYear, motherId, content, createdAt, updatedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is HorseMemo &&
+          other.id == this.id &&
+          other.birthYear == this.birthYear &&
+          other.motherId == this.motherId &&
+          other.content == this.content &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class HorseMemosCompanion extends UpdateCompanion<HorseMemo> {
+  final Value<int> id;
+  final Value<int> birthYear;
+  final Value<int> motherId;
+  final Value<String?> content;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  const HorseMemosCompanion({
+    this.id = const Value.absent(),
+    this.birthYear = const Value.absent(),
+    this.motherId = const Value.absent(),
+    this.content = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+  });
+  HorseMemosCompanion.insert({
+    this.id = const Value.absent(),
+    required int birthYear,
+    required int motherId,
+    this.content = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+  }) : birthYear = Value(birthYear),
+       motherId = Value(motherId);
+  static Insertable<HorseMemo> custom({
+    Expression<int>? id,
+    Expression<int>? birthYear,
+    Expression<int>? motherId,
+    Expression<String>? content,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (birthYear != null) 'birth_year': birthYear,
+      if (motherId != null) 'mother_id': motherId,
+      if (content != null) 'content': content,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+    });
+  }
+
+  HorseMemosCompanion copyWith({
+    Value<int>? id,
+    Value<int>? birthYear,
+    Value<int>? motherId,
+    Value<String?>? content,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+  }) {
+    return HorseMemosCompanion(
+      id: id ?? this.id,
+      birthYear: birthYear ?? this.birthYear,
+      motherId: motherId ?? this.motherId,
+      content: content ?? this.content,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (birthYear.present) {
+      map['birth_year'] = Variable<int>(birthYear.value);
+    }
+    if (motherId.present) {
+      map['mother_id'] = Variable<int>(motherId.value);
+    }
+    if (content.present) {
+      map['content'] = Variable<String>(content.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('HorseMemosCompanion(')
+          ..write('id: $id, ')
+          ..write('birthYear: $birthYear, ')
+          ..write('motherId: $motherId, ')
+          ..write('content: $content, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDb extends GeneratedDatabase {
   _$AppDb(QueryExecutor e) : super(e);
   $AppDbManager get managers => $AppDbManager(this);
   late final $SiresTable sires = $SiresTable(this);
   late final $MaresTable mares = $MaresTable(this);
   late final $HorsesTable horses = $HorsesTable(this);
+  late final $HorseMemosTable horseMemos = $HorseMemosTable(this);
+  late final Index memoHorseId = Index(
+    'memo_horse_id',
+    'CREATE INDEX memo_horse_id ON horse_memos (birth_year, mother_id)',
+  );
   late final SiresDao siresDao = SiresDao(this as AppDb);
   late final MaresDao maresDao = MaresDao(this as AppDb);
   late final HorsesDao horsesDao = HorsesDao(this as AppDb);
@@ -2049,7 +2451,13 @@ abstract class _$AppDb extends GeneratedDatabase {
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
-  List<DatabaseSchemaEntity> get allSchemaEntities => [sires, mares, horses];
+  List<DatabaseSchemaEntity> get allSchemaEntities => [
+    sires,
+    mares,
+    horses,
+    horseMemos,
+    memoHorseId,
+  ];
 }
 
 typedef $$SiresTableCreateCompanionBuilder =
@@ -3588,6 +3996,213 @@ typedef $$HorsesTableProcessedTableManager =
       Horse,
       PrefetchHooks Function({bool fatherId, bool motherId})
     >;
+typedef $$HorseMemosTableCreateCompanionBuilder =
+    HorseMemosCompanion Function({
+      Value<int> id,
+      required int birthYear,
+      required int motherId,
+      Value<String?> content,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+    });
+typedef $$HorseMemosTableUpdateCompanionBuilder =
+    HorseMemosCompanion Function({
+      Value<int> id,
+      Value<int> birthYear,
+      Value<int> motherId,
+      Value<String?> content,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+    });
+
+class $$HorseMemosTableFilterComposer
+    extends Composer<_$AppDb, $HorseMemosTable> {
+  $$HorseMemosTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get birthYear => $composableBuilder(
+    column: $table.birthYear,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get motherId => $composableBuilder(
+    column: $table.motherId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get content => $composableBuilder(
+    column: $table.content,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$HorseMemosTableOrderingComposer
+    extends Composer<_$AppDb, $HorseMemosTable> {
+  $$HorseMemosTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get birthYear => $composableBuilder(
+    column: $table.birthYear,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get motherId => $composableBuilder(
+    column: $table.motherId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get content => $composableBuilder(
+    column: $table.content,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$HorseMemosTableAnnotationComposer
+    extends Composer<_$AppDb, $HorseMemosTable> {
+  $$HorseMemosTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<int> get birthYear =>
+      $composableBuilder(column: $table.birthYear, builder: (column) => column);
+
+  GeneratedColumn<int> get motherId =>
+      $composableBuilder(column: $table.motherId, builder: (column) => column);
+
+  GeneratedColumn<String> get content =>
+      $composableBuilder(column: $table.content, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+}
+
+class $$HorseMemosTableTableManager
+    extends
+        RootTableManager<
+          _$AppDb,
+          $HorseMemosTable,
+          HorseMemo,
+          $$HorseMemosTableFilterComposer,
+          $$HorseMemosTableOrderingComposer,
+          $$HorseMemosTableAnnotationComposer,
+          $$HorseMemosTableCreateCompanionBuilder,
+          $$HorseMemosTableUpdateCompanionBuilder,
+          (HorseMemo, BaseReferences<_$AppDb, $HorseMemosTable, HorseMemo>),
+          HorseMemo,
+          PrefetchHooks Function()
+        > {
+  $$HorseMemosTableTableManager(_$AppDb db, $HorseMemosTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$HorseMemosTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$HorseMemosTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$HorseMemosTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<int> birthYear = const Value.absent(),
+                Value<int> motherId = const Value.absent(),
+                Value<String?> content = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+              }) => HorseMemosCompanion(
+                id: id,
+                birthYear: birthYear,
+                motherId: motherId,
+                content: content,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required int birthYear,
+                required int motherId,
+                Value<String?> content = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+              }) => HorseMemosCompanion.insert(
+                id: id,
+                birthYear: birthYear,
+                motherId: motherId,
+                content: content,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$HorseMemosTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDb,
+      $HorseMemosTable,
+      HorseMemo,
+      $$HorseMemosTableFilterComposer,
+      $$HorseMemosTableOrderingComposer,
+      $$HorseMemosTableAnnotationComposer,
+      $$HorseMemosTableCreateCompanionBuilder,
+      $$HorseMemosTableUpdateCompanionBuilder,
+      (HorseMemo, BaseReferences<_$AppDb, $HorseMemosTable, HorseMemo>),
+      HorseMemo,
+      PrefetchHooks Function()
+    >;
 
 class $AppDbManager {
   final _$AppDb _db;
@@ -3598,4 +4213,6 @@ class $AppDbManager {
       $$MaresTableTableManager(_db, _db.mares);
   $$HorsesTableTableManager get horses =>
       $$HorsesTableTableManager(_db, _db.horses);
+  $$HorseMemosTableTableManager get horseMemos =>
+      $$HorseMemosTableTableManager(_db, _db.horseMemos);
 }

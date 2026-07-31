@@ -5,6 +5,7 @@ import '../db/dao/sires_dao.dart';
 import '../db/dao/mares_dao.dart';
 import '../db/dao/sire_stats_dao.dart';
 import '../entity/foal_data.dart';
+import '../entity/horse_memo_raw.dart';
 import '../entity/horse_raw.dart';
 import '../entity/horse_status_distribution.dart';
 import '../entity/lineage_summary.dart';
@@ -79,6 +80,10 @@ class HorsesRepository {
     return _horsesDao.upsertList(data);
   }
 
+  static Future<void> updateMemo(HorseMemoRaw memo) {
+    return _horsesDao.upsertMemo(memo);
+  }
+
   static Future<List<HorseData>> fetchHorseData({int? beginYear, int? endYear, int? fatherId, int? motherId}) {
     return _horsesDao.fetch(
       beginYear: beginYear, endYear: endYear,
@@ -104,6 +109,10 @@ class HorsesRepository {
 
   static Future<LineageAnnualSexRatio?> fetchLineageAnnualSexRatio(int founderId, [int? beginYear, int? endYear]) {
     return _sireStatsDao.fetchLineageAnnualSexRatio(founderId, beginYear, endYear);
+  }
+
+  static Future<List<HorseMemoRaw>> fetchMemos() {
+    return _horsesDao.fetchMemos();
   }
 
   static Future<int> cleanupEmptyHorses() {

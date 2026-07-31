@@ -431,7 +431,8 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
         $horseIdentityColumns,
         $horseStatusColumns,
         $breedingExistsExpr,
-        $horseExtraColumns
+        $horseExtraColumns,
+        $horseMemoExpr
       FROM horses AS h
       INNER JOIN lineage l ON l.id = h.father_id
       LEFT JOIN sires AS f ON h.father_id = f.id
@@ -455,7 +456,8 @@ class SireStatsDao extends DatabaseAccessor<AppDb> with _$SireStatsDaoMixin {
       SELECT
         $horseIdentityColumns,
         $foalRatingColumns,
-        $horseExtraColumns
+        $horseExtraColumns,
+        $horseMemoExpr
       FROM horses AS h
       INNER JOIN lineage l ON l.id = h.father_id
       LEFT JOIN sires AS f ON h.father_id = f.id

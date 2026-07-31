@@ -263,7 +263,8 @@ class MareStatsDao extends DatabaseAccessor<AppDb> with _$MareStatsDaoMixin {
         $horseIdentityColumns,
         $horseStatusColumns,
         $breedingExistsExpr,
-        $horseExtraColumns
+        $horseExtraColumns,
+        $horseMemoExpr
       FROM target_mares l
       LEFT JOIN horses h ON l.mare_id = h.mother_id
       LEFT JOIN sires AS f ON h.father_id = f.id
@@ -304,7 +305,8 @@ class MareStatsDao extends DatabaseAccessor<AppDb> with _$MareStatsDaoMixin {
       SELECT
         $horseIdentityColumns,
         $foalRatingColumns,
-        $horseExtraColumns
+        $horseExtraColumns,
+        $horseMemoExpr
       FROM target_mares l
       LEFT JOIN horses h ON l.mare_id = h.mother_id
       LEFT JOIN sires AS f ON h.father_id = f.id

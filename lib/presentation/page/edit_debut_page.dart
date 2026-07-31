@@ -288,6 +288,7 @@ class _EditDebutPageState extends EditHorsePageStateBase<EditDebutPage> {
             h.motherName,
             name: h.name,
             region: h.region,
+            memo: h.memo,
           );
         },
       ),

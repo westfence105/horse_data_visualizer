@@ -13,6 +13,7 @@ class FoalData {
   final int? matingRank;
   final int? explosionPower;
   final bool? isHistorical;
+  final String? memo;
 
   const FoalData({
     required this.birthYear,
@@ -27,6 +28,7 @@ class FoalData {
     this.matingRank,
     this.explosionPower,
     this.isHistorical,
+    this.memo,
   });
 
   FoalData.fromRow(QueryRow r) : this(
@@ -42,6 +44,7 @@ class FoalData {
     matingRank: r.read('mating_rank'),
     explosionPower: r.read('explosion_power'),
     isHistorical: r.read('is_historical'),
+    memo: r.read('memo'),
   );
 
   int get foalRating {

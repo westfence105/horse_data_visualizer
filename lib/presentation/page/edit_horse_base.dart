@@ -44,6 +44,7 @@ abstract class EditHorsePageStateBase<T extends StatefulWidget> extends State<T>
     int? distance,
     int? rating,
     int? region,
+    String? memo,
   }) {
     if (horses.containsKey(motherName)) {
       horses[motherName] = horses[motherName]!.copyWith(
@@ -56,6 +57,7 @@ abstract class EditHorsePageStateBase<T extends StatefulWidget> extends State<T>
         growth: growth, surface: surface,
         distance: distance, rating: rating,
         region: region,
+        memo: memo,
       );
       updateList();
     }
