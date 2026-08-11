@@ -82,6 +82,14 @@ class _EditDebutPageState extends EditHorsePageStateBase<EditDebutPage> {
     else if (b.name?.isNotEmpty == true) {
       return 1;
     }
+    else if ((a.isHistorical == true) != (b.isHistorical == true)) {
+      if (a.isHistorical == true) {
+        return -1;
+      }
+      else {
+        return 1;
+      }
+    }
     else {
       return a.motherName.compareKanaTo(b.motherName);
     }
@@ -99,6 +107,10 @@ class _EditDebutPageState extends EditHorsePageStateBase<EditDebutPage> {
 
   @override
   Future<void> prepareUpdate() async {
+    _applyNames();
+  }
+
+  void _applyNames() {
     for (final e in _nameTextControllers.entries) {
       updateData(e.key, name: e.value.text);
     }
@@ -277,6 +289,7 @@ class _EditDebutPageState extends EditHorsePageStateBase<EditDebutPage> {
   ];
   
   void _showFoalInfoDialog(HorseRaw d) {
+    _applyNames();
     showDialog<HorseRaw>(
       context: context,
       builder: (context) => FoalInfoDialog(
